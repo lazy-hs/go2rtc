@@ -1,0 +1,42 @@
+# go2rtc.yml
+ffmpeg:
+  file: "-re -stream_loop -1 -i {input}"
+
+streams:
+  main:
+  - ffmpeg:C:/Users/8054/Videos/2026.06.21-第12期下-4K.高码率.mp4#video=h264#audio=aac#input=file
+  car:
+  - ffmpeg:C:/Users/8054/Videos/监控中心二期算法测试数据/监控中心二期算法测试数据/人脸/光线充足/car.mp4#video=h264#audio=aac#input=file
+  package:
+  - ffmpeg:C:/Users/8054/Videos/监控中心二期算法测试数据/监控中心二期算法测试数据/包裹/光线充足/包裹被取走消失.mp4#video=h264#audio=aac#input=file
+  normal:
+  - ffmpeg:C:/Users/8054/Videos/监控中心二期算法测试数据/监控中心二期算法测试数据/宠物/宠物监控录像/normal_video.mp4#video=h264#audio=aac#input=file
+  people:
+  - ffmpeg:C:/Users/8054/Videos/监控中心二期算法测试数据/监控中心二期算法测试数据/未分类/盘点监控下的倒霉人类.mp4#video=h264#audio=aac#input=file
+  cars:
+  - ffmpeg:C:/Users/8054/Videos/监控中心二期算法测试数据/监控中心二期算法测试数据/车辆/公司口的监控视角，红色轿车.mp4#video=h264#audio=aac#input=file
+  animal:
+  - ffmpeg:C:/Users/8054/Videos/监控中心二期算法测试数据/监控中心二期算法测试数据/宠物/光线充足/小狗照镜子.mp4#video=h264#audio=aac#input=file
+  main2:
+  - ffmpeg:C:/Users/8054/Videos/2026.06.21-第12期下-4K.高码率.mp4#video=h264#audio=aac#input=file
+  test2:
+    - ffmpeg:D:/huangsheng/project/go2rtc/static/car.mp4#video=h264#input=file#audio=aac
+api:
+  # ONVIF 协议以及 Web UI 监听地址
+  listen: ":2984"
+
+rtsp:
+  listen: ":9554"
+
+webrtc:
+  listen: ":9555"
+
+app:
+  # 只启用必要模块
+  modules:
+    - "api"
+    - "http"
+    - "rtsp"
+    - "onvif"
+    - "exec"
+    - "ffmpeg"

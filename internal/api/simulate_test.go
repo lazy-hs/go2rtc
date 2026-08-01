@@ -15,14 +15,21 @@ func TestSimulateHandlerUsesRequestHostAndBasePath(t *testing.T) {
 	oldBasePath := basePath
 	oldConfigPath := app.ConfigPath
 	oldUploadDir := simulateUploadDir
+	oldRTSP, hadRTSP := app.Info["rtsp"]
 	t.Cleanup(func() {
 		basePath = oldBasePath
 		app.ConfigPath = oldConfigPath
 		simulateUploadDir = oldUploadDir
+		if hadRTSP {
+			app.Info["rtsp"] = oldRTSP
+		} else {
+			delete(app.Info, "rtsp")
+		}
 	})
 
 	basePath = "/rtc"
 	app.ConfigPath = ""
+	delete(app.Info, "rtsp")
 	simulateUploadDir = filepath.Join(t.TempDir(), "static")
 	app.Info["host"] = "stale.example:1984"
 
@@ -42,6 +49,47 @@ func TestSimulateHandlerUsesRequestHostAndBasePath(t *testing.T) {
 	require.Equal(t, "/rtc/api/simulate/upload", info.UploadAPI)
 	require.Equal(t, "/rtc/onvif/device_service", info.ONVIFPath)
 	require.Equal(t, "8554", info.RTSPPort)
+}
+
+func TestSimulateHandlerUsesConfiguredRTSPPort(t *testing.T) {
+	oldConfigPath := app.ConfigPath
+	oldRTSP, hadRTSP := app.Info["rtsp"]
+	t.Cleanup(func() {
+		app.ConfigPath = oldConfigPath
+		if hadRTSP {
+			app.Info["rtsp"] = oldRTSP
+		} else {
+			delete(app.Info, "rtsp")
+		}
+	})
+
+	configPath := filepath.Join(t.TempDir(), "go2rtc.yaml")
+	require.NoError(t, os.WriteFile(configPath, []byte("rtsp:\n  listen: \":9554\"\n"), 0644))
+	app.ConfigPath = configPath
+	delete(app.Info, "rtsp")
+
+	req := httptest.NewRequest("GET", "http://ignored/api/simulate", nil)
+	res := httptest.NewRecorder()
+	simulateHandler(res, req)
+
+	require.Equal(t, 200, res.Code)
+	var info simulateInfo
+	require.NoError(t, json.Unmarshal(res.Body.Bytes(), &info))
+	require.Equal(t, "9554", info.RTSPPort)
+}
+
+func TestSimulateRTSPPortUsesEffectiveRuntimeConfig(t *testing.T) {
+	oldRTSP, hadRTSP := app.Info["rtsp"]
+	t.Cleanup(func() {
+		if hadRTSP {
+			app.Info["rtsp"] = oldRTSP
+		} else {
+			delete(app.Info, "rtsp")
+		}
+	})
+
+	app.Info["rtsp"] = map[string]any{"listen": "[::]:10554"}
+	require.Equal(t, "10554", simulateRTSPPort(""))
 }
 
 func TestConfiguredStreamsFromFile(t *testing.T) {

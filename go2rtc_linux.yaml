@@ -1,0 +1,58 @@
+ffmpeg:
+  file: "-re -stream_loop -1 -i {input}"
+
+streams:
+  main:
+    - 'ffmpeg:/root/hsheng/videos/2026.06.28-第1期下-4K.高码率.mp4#video=h264#audio=aac#input=file'  
+  main2:
+    - 'ffmpeg:/root/hsheng/videos/2026.06.21-第12期下-4K.高码率.mp4#video=h264#audio=aac#input=file'  
+  car:
+    - 'ffmpeg:/root/hsheng/videos/监控中心二期算法测试数据/人脸/光线充足/car.mp4#video=h264#audio=aac#input=file'
+  package:
+    - 'ffmpeg:/root/hsheng/videos/监控中心二期算法测试数据/包裹/光线充足/包裹被取走消失.MP4#video=h264#audio=aac#input=file'
+  normal:
+    - 'ffmpeg:/root/hsheng/videos/监控中心二期算法测试数据/宠物/宠物监控录像/normal_video.mp4#video=h264#audio=aac#input=file'
+  people:
+    - 'ffmpeg:/root/hsheng/videos/监控中心二期算法测试数据/未分类/盘点监控下的倒霉人类.mp4#video=h264#audio=aac#input=file'
+  outside:
+    - 'ffmpeg:/root/hsheng/videos/监控中心二期算法测试数据/人脸/光线充足/行人检测视频，国外街头广场行人视频，有人有狗.mp4#video=h264#audio=aac#input=file'
+  animal:
+    - 'ffmpeg:/root/hsheng/videos/监控中心二期算法测试数据/宠物/光线充足/小狗照镜子.mp4#video=h264#audio=aac#input=file'
+  face-dog:
+    - 'ffmpeg:/root/hsheng/videos/监控中心二期算法测试数据/人脸/人脸与狗.mp4#video=h264#input=file#audio=aac'
+  
+api:
+  # ONVIF 协议以及 Web UI 监听地址
+  listen: ":2984"
+rtsp:
+  listen: ":9554"
+# webrtc:
+#   listen: ":9555"
+app:
+  # 只启用必要模块
+  modules:
+  - "api"
+  - "http"
+  - "rtsp"
+  - "onvif"
+  - "exec"
+  - "ffmpeg"
+# event:
+  # 事件产生时间间隔
+  # interval: "1m"
+  # 初始事件数
+  # burst: 10
+  # 事件模板，每次上报随机选择一条
+#   templates:
+  # 移动检测
+#   - topic: "tns1:VideoSource/MotionAlarm"
+#     startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
+#     endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
+  # 有人出现
+#   - topic: "tns1:VideoSource/PeopleDetect"
+#     startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
+#     endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
+  # 车辆
+#   - topic: "tns1:VideoAnalytics/Vehicle"
+#     startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
+#     endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
