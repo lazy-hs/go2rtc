@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>log - go2rtc</title>
+    <title>运行日志 - go2rtc</title>
     <style>
         main > div {
             display: flex;
@@ -42,16 +42,16 @@
 
 <main>
     <div>
-        <button id="clean">Clean</button>
-        <button id="update">Auto Update: ON</button>
-        <button id="reverse">Reverse Log Order: OFF</button>
+        <button id="clean">清空日志</button>
+        <button id="update">自动刷新：开</button>
+        <button id="reverse">倒序显示：关</button>
     </div>
     <table>
         <thead>
         <tr>
-            <th style="width: 100px">Time</th>
-            <th style="width: 40px">Level</th>
-            <th>Message</th>
+            <th style="width: 160px">时间</th>
+            <th style="width: 72px">级别</th>
+            <th>消息</th>
         </tr>
         </thead>
         <tbody id="log">
@@ -83,8 +83,8 @@
     let reverseOrder = false;
     let autoUpdateEnabled = true;
 
-    reverseBtn.textContent = `Reverse Log Order: ${reverseOrder ? 'ON' : 'OFF'}`;
-    update.textContent = `Auto Update: ${autoUpdateEnabled ? 'ON' : 'OFF'}`;
+    reverseBtn.textContent = `倒序显示：${reverseOrder ? '开' : '关'}`;
+    update.textContent = `自动刷新：${autoUpdateEnabled ? '开' : '关'}`;
 
     function applyLogStyling(jsonlines) {
         const KEYS = ['time', 'level', 'message'];
@@ -121,17 +121,17 @@
 
     reload();
 
-    update.textContent = `Auto Update: ${autoUpdateEnabled ? 'ON' : 'OFF'}`;
+    update.textContent = `自动刷新：${autoUpdateEnabled ? '开' : '关'}`;
     update.addEventListener('click', () => {
         autoUpdateEnabled = !autoUpdateEnabled;
-        update.textContent = `Auto Update: ${autoUpdateEnabled ? 'ON' : 'OFF'}`;
+        update.textContent = `自动刷新：${autoUpdateEnabled ? '开' : '关'}`;
     });
 
     // Toggle log order
-    reverseBtn.textContent = `Reverse Log Order: ${reverseOrder ? 'ON' : 'OFF'}`;
+    reverseBtn.textContent = `倒序显示：${reverseOrder ? '开' : '关'}`;
     reverseBtn.addEventListener('click', () => {
         reverseOrder = !reverseOrder;
-        reverseBtn.textContent = `Reverse Log Order: ${reverseOrder ? 'ON' : 'OFF'}`;
+        reverseBtn.textContent = `倒序显示：${reverseOrder ? '开' : '关'}`;
         reload(); // Reload logs to apply the new order
     });
 

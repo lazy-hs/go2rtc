@@ -87,6 +87,15 @@
             "www"
           ]
         },
+        "upload_dir": {
+          "description": "Destination for uploaded simulation media files (relative to the config file directory)",
+          "type": "string",
+          "default": "static",
+          "examples": [
+            "static",
+            "D:/go2rtc-media"
+          ]
+        },
         "origin": {
           "description": "Allow CORS requests (only * supported)",
           "type": "string",

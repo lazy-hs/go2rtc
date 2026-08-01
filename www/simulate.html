@@ -1,0 +1,2517 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模拟流控制台 - go2rtc</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #0b1120;
+            --panel: rgba(17, 24, 39, 0.92);
+            --panel-strong: rgba(18, 28, 48, 0.96);
+            --line: #22324d;
+            --line-strong: #2b3f63;
+            --text: #e2e8f0;
+            --text-muted: #94a3b8;
+            --text-faint: #64748b;
+            --primary: #22d3ee;
+            --primary-soft: rgba(34, 211, 238, 0.12);
+            --accent: #22d3ee;
+            --accent-strong: #67e8f9;
+            --ok: #34d399;
+            --warn: #fbbf24;
+            --danger: #fb7185;
+            --danger-soft: rgba(251, 113, 133, 0.10);
+            --shadow: 0 20px 50px rgba(2, 6, 23, 0.34);
+            --shadow-strong: 0 30px 80px rgba(2, 6, 23, 0.46);
+            --radius-xl: 28px;
+            --radius-lg: 20px;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        html {
+            background: var(--bg);
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background:
+                radial-gradient(1100px 600px at 12% -10%, rgba(34, 211, 238, 0.10), transparent 60%),
+                radial-gradient(900px 500px at 100% 0%, rgba(14, 116, 144, 0.10), transparent 55%),
+                var(--bg);
+            color: var(--text);
+            font-family: "Noto Sans SC", "Segoe UI", system-ui, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        main {
+            display: grid;
+            padding: 18px;
+            gap: 22px;
+            background: transparent;
+        }
+
+        .panel {
+            border: 1px solid var(--line);
+            border-radius: var(--radius-xl);
+            background: var(--panel);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+
+        .hero-panel {
+            position: relative;
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.96) 0%, rgba(17, 24, 39, 0.96) 100%);
+            color: white;
+            box-shadow: var(--shadow-strong);
+        }
+
+        .hero-panel::after {
+            content: "";
+            position: absolute;
+            inset: auto -60px -80px auto;
+            width: 260px;
+            height: 260px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(34, 211, 238, 0.18), transparent 65%);
+            pointer-events: none;
+        }
+
+        .panel-header {
+            padding: 28px 28px 14px;
+            display: flex;
+            justify-content: space-between;
+            gap: 22px;
+            align-items: stretch;
+        }
+
+        .panel-title {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: rgba(191, 219, 254, 0.92);
+            font-weight: 700;
+        }
+
+        .eyebrow::before {
+            content: "";
+            width: 22px;
+            height: 1px;
+            background: currentColor;
+        }
+
+        .panel-title h1 {
+            margin: 0;
+            font-size: 38px;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+        }
+
+        .panel-title p {
+            margin: 0;
+            max-width: 760px;
+            color: rgba(219, 234, 254, 0.92);
+            line-height: 1.7;
+            font-size: 14px;
+        }
+
+        .hero-band {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 6px;
+        }
+
+        .hero-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: rgba(34, 211, 238, 0.08);
+            border: 1px solid rgba(34, 211, 238, 0.22);
+            color: rgba(224, 242, 254, 0.92);
+            font-size: 12px;
+        }
+
+        .hero-chip strong {
+            color: white;
+            font-size: 13px;
+        }
+
+        .hero-aside {
+            width: min(360px, 100%);
+            border-radius: 24px;
+            background: rgba(15, 23, 42, 0.72);
+            border: 1px solid rgba(34, 211, 238, 0.14);
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .hero-aside h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .hero-aside p {
+            margin: 8px 0 0;
+            color: rgba(219, 234, 254, 0.84);
+            line-height: 1.6;
+            font-size: 13px;
+        }
+
+        .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .hero-stat {
+            background: rgba(15, 23, 42, 0.72);
+            border: 1px solid rgba(34, 211, 238, 0.12);
+            border-radius: 18px;
+            padding: 16px;
+        }
+
+        .hero-stat span {
+            display: block;
+            font-size: 12px;
+            color: rgba(191, 219, 254, 0.88);
+            margin-bottom: 8px;
+        }
+
+        .hero-stat strong {
+            display: block;
+            font-size: 22px;
+            color: white;
+            word-break: break-word;
+        }
+
+        .hero-stat small {
+            display: block;
+            margin-top: 8px;
+            color: rgba(219, 234, 254, 0.82);
+            line-height: 1.5;
+        }
+
+        .panel-body {
+            padding: 0 28px 28px;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: minmax(0, 1.35fr) minmax(340px, 0.65fr);
+            gap: 18px;
+            align-items: start;
+        }
+
+        .stack {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .form-card,
+        .side-card {
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            background: var(--panel-strong);
+            overflow: hidden;
+        }
+
+        .surface-card {
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            background: rgba(15, 23, 42, 0.68);
+            box-shadow: var(--shadow);
+        }
+
+        .card-head {
+            padding: 18px 20px 12px;
+            border-bottom: 1px solid rgba(34, 50, 77, 0.9);
+        }
+
+        .card-head h3 {
+            margin: 0;
+            font-size: 18px;
+            color: var(--text);
+        }
+
+        .card-head p {
+            margin: 8px 0 0;
+            color: var(--text-muted);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .card-body {
+            padding: 18px 20px 20px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .field.wide {
+            grid-column: 1 / -1;
+        }
+
+        .field label {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            font-weight: 600;
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        .field label small,
+        .field small,
+        .helper,
+        .muted {
+            color: var(--text-muted);
+            font-size: 12px;
+            line-height: 1.55;
+        }
+
+        input[type="text"],
+        textarea,
+        select {
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid var(--line-strong);
+            border-radius: 14px;
+            background: rgba(15, 23, 42, 0.72);
+            color: var(--text);
+            padding: 12px 14px;
+            font-size: 14px;
+            transition: border-color .2s ease, box-shadow .2s ease, background .2s ease, transform .2s ease;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: rgba(34, 211, 238, 0.55);
+            box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.12);
+            background: rgba(15, 23, 42, 0.95);
+            transform: translateY(-1px);
+        }
+
+        textarea {
+            min-height: 86px;
+            resize: vertical;
+        }
+
+        .toggle-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            border: 1px solid var(--line-strong);
+            border-radius: 18px;
+            background: rgba(15, 23, 42, 0.44);
+        }
+
+        .toggle-row label,
+        .actions,
+        .sim-actions,
+        .copy-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        button {
+            border-radius: 16px;
+            padding: 10px 18px;
+            border: 1px solid var(--line-strong);
+            background: rgba(15, 23, 42, 0.82);
+            color: var(--text);
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease, color .15s ease;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+        }
+
+        button:disabled {
+            opacity: 0.48;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .primary {
+            background: linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%);
+            border-color: #22d3ee;
+            color: #062436;
+            box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.18), 0 12px 26px rgba(34, 211, 238, 0.18);
+        }
+
+        .secondary {
+            background: rgba(15, 23, 42, 0.72);
+            border-color: var(--line);
+            color: var(--text);
+        }
+
+        .ghost {
+            background: rgba(15, 23, 42, 0.72);
+        }
+
+        .copy-btn {
+            background: rgba(15, 23, 42, 0.72);
+            border-color: var(--line);
+            color: var(--text-muted);
+        }
+
+        .copy-btn.inline {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            min-width: 0;
+            font-size: 12px;
+            line-height: 1;
+            border-radius: 12px;
+            box-shadow: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .copy-btn.inline svg,
+        .copy-btn.icon svg {
+            width: 15px;
+            height: 15px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .copy-btn.is-copied {
+            color: var(--ok);
+            border-color: rgba(52, 211, 153, 0.24);
+            background: rgba(52, 211, 153, 0.10);
+        }
+
+        .floating-action {
+            background: linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%);
+            border-color: #22d3ee;
+            color: #04253a;
+            font-weight: 700;
+            box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.18), 0 12px 26px rgba(34, 211, 238, 0.18);
+        }
+
+        .danger {
+            background: var(--danger-soft);
+            border-color: #ffd0de;
+            color: var(--danger);
+        }
+
+        .status {
+            min-height: 22px;
+            font-size: 13px;
+            color: var(--accent);
+            line-height: 1.5;
+        }
+
+        .status.error {
+            color: var(--danger);
+        }
+
+        .mini-grid,
+        .section-shell,
+        .sim-links,
+        .task-cards {
+            display: grid;
+            gap: 12px;
+        }
+
+        .sim-links,
+        .task-cards {
+            width: 100%;
+            min-width: 0;
+        }
+
+        .section-shell {
+            padding-top: 2px;
+            background: transparent;
+        }
+
+        #sim-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+            gap: 12px;
+            align-items: start;
+            min-width: 0;
+        }
+
+        #sim-list > * {
+            min-width: 0;
+            max-width: 100%;
+        }
+
+        .mini-item,
+        .meta-box,
+        .sim-link,
+        .task-card {
+            padding: 14px 16px;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            background: rgba(15, 23, 42, 0.6);
+            min-width: 0;
+            max-width: 100%;
+        }
+
+        .task-card {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .mini-item strong,
+        .sim-link strong,
+        .task-card strong {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text);
+            font-size: 13px;
+        }
+
+        .mini-item .value,
+        .sim-link code,
+        .task-card code,
+        .source-preview code {
+            word-break: break-all;
+            white-space: pre-wrap;
+            font-family: Consolas, Monaco, monospace;
+            font-size: 12px;
+            line-height: 1.65;
+        }
+
+        .source-preview {
+            padding: 18px;
+            border-radius: 20px;
+            background: rgba(2, 6, 23, 0.55);
+            color: #dbeafe;
+            box-shadow: inset 0 0 0 1px rgba(34, 50, 77, 0.82);
+        }
+
+        .launcher-card {
+            min-height: 100%;
+        }
+
+        .launcher-card .card-body {
+            display: grid;
+            gap: 16px;
+        }
+
+        .launcher-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .launcher-item {
+            padding: 16px;
+            border-radius: 18px;
+            border: 1px solid var(--line);
+            background: rgba(15, 23, 42, 0.6);
+        }
+
+        .launcher-item span {
+            display: block;
+            color: var(--text-muted);
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        .launcher-item strong {
+            display: block;
+            color: var(--text);
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .source-preview strong {
+            display: block;
+            margin-bottom: 10px;
+            color: white;
+        }
+
+        .source-preview code {
+            color: #cfe1ff;
+        }
+
+        .section-top,
+        .sim-link-top,
+        .task-card-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: center;
+            min-width: 0;
+        }
+
+        .task-card-top {
+            gap: 8px;
+        }
+
+        .task-card-top strong {
+            min-width: 0;
+            margin-bottom: 0;
+        }
+
+        .sim-card-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 14px;
+            min-width: 0;
+        }
+
+        .section-top h2,
+        .sim-card-head h3 {
+            margin: 0;
+            color: var(--text);
+        }
+
+        .section-top {
+            padding: 0 2px;
+        }
+
+        .toolbar-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .toolbar-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 14px;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.72);
+            border: 1px solid var(--line);
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .toolbar-pill strong {
+            color: var(--text);
+            font-size: 13px;
+        }
+
+        .sim-card {
+            position: relative;
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            background: rgba(18, 28, 48, 0.92);
+            padding: 14px;
+            display: grid;
+            gap: 9px;
+            transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+            box-shadow: 0 14px 34px rgba(2, 6, 23, 0.28);
+            width: 100%;
+            min-width: 0;
+            max-width: 100%;
+        }
+
+        .sim-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 22px 44px rgba(2, 6, 23, 0.34);
+        }
+
+        .task-cards {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .sim-card .task-card {
+            padding: 9px 11px;
+            border-radius: 11px;
+        }
+
+        .sim-card .task-card strong {
+            margin-bottom: 2px;
+            font-size: 12px;
+        }
+
+        .sim-card .task-card .helper {
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        .sim-card .sim-links {
+            gap: 8px;
+        }
+
+        .sim-card .sim-link {
+            padding: 10px 12px;
+            border-radius: 12px;
+        }
+
+        .sim-card .sim-link strong {
+            margin-bottom: 4px;
+            font-size: 12px;
+        }
+
+        .sim-card .sim-link code {
+            display: -webkit-box;
+            overflow: hidden;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 3;
+            font-size: 11px;
+            line-height: 1.45;
+        }
+
+        .sim-card .copy-btn.inline {
+            width: 28px;
+            height: 28px;
+            border-radius: 9px;
+            flex: 0 0 auto;
+        }
+
+        .sim-card.is-highlighted {
+            border-color: rgba(34, 211, 238, 0.42);
+            box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.10), 0 22px 46px rgba(34, 211, 238, 0.12);
+            background: rgba(15, 23, 42, 0.98);
+        }
+
+        .sim-card.is-highlighted .sim-badges::before {
+            content: "刚刚保存";
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(34, 211, 238, 0.12);
+            color: var(--accent-strong);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .sim-title-wrap {
+            display: grid;
+            gap: 3px;
+            min-width: 0;
+        }
+
+        .sim-title-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: rgba(148, 163, 184, 0.8);
+            box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.12);
+            flex: 0 0 auto;
+        }
+
+        .status-dot.is-idle {
+            background: rgba(148, 163, 184, 0.8);
+            box-shadow: 0 0 0 4px rgba(148, 163, 184, 0.12);
+        }
+
+        .status-dot.is-active {
+            background: var(--ok);
+            box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.14);
+        }
+
+        .status-dot.is-error {
+            background: var(--danger);
+            box-shadow: 0 0 0 4px rgba(251, 113, 133, 0.14);
+        }
+
+        .sim-title-row h3 {
+            min-width: 0;
+            font-size: 16px;
+            line-height: 1.3;
+            overflow-wrap: anywhere;
+        }
+
+        .sim-subline {
+            color: var(--text-faint);
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        .sim-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: flex-end;
+            flex: 0 1 auto;
+            min-width: 0;
+            max-width: 100%;
+        }
+
+        .sim-summary {
+            color: var(--text-muted);
+            font-size: 12px;
+            line-height: 1.45;
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .rtsp-inline {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            background: rgba(15, 23, 42, 0.52);
+            width: 100%;
+            min-width: 0;
+            max-width: 100%;
+        }
+
+        .rtsp-inline code {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: 999px;
+            border: 1px solid rgba(34, 211, 238, 0.18);
+            background: rgba(34, 211, 238, 0.10);
+            color: var(--accent-strong);
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .badge.success {
+            background: rgba(52, 211, 153, 0.10);
+            color: var(--ok);
+            border-color: rgba(52, 211, 153, 0.16);
+        }
+
+        .sim-meta {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .meta-box span {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .meta-box strong {
+            display: block;
+            color: var(--text);
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .sim-actions {
+            justify-content: flex-end;
+            padding-top: 0;
+            width: 100%;
+            min-width: 0;
+        }
+
+        .sim-actions .actions {
+            max-width: 100%;
+        }
+
+        .icon-btn {
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            border-radius: 11px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-btn svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        #empty-state {
+            color: var(--text-muted);
+            border: 1px dashed var(--line-strong);
+            border-radius: 24px;
+            padding: 28px;
+            background: rgba(15, 23, 42, 0.6);
+            text-align: center;
+            line-height: 1.8;
+        }
+
+        .modal-shell {
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 12, 24, 0.52);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: stretch;
+            justify-content: flex-end;
+            z-index: 50;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity .22s ease, visibility 0s linear .3s;
+        }
+
+        .modal-shell.is-open {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transition-delay: 0s;
+        }
+
+        .modal-panel {
+            width: min(520px, 100%);
+            height: 100%;
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.98) 0%, rgba(17, 24, 39, 0.98) 100%);
+            color: #e2e8f0;
+            box-shadow: -24px 0 80px rgba(2, 6, 23, 0.42);
+            border-left: 1px solid rgba(34, 50, 77, 0.96);
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%);
+            transition: transform .3s cubic-bezier(.22, .8, .24, 1);
+        }
+
+        .modal-shell.is-open .modal-panel {
+            transform: translateX(0);
+        }
+
+        .modal-head {
+            padding: 18px 22px 14px;
+            border-bottom: 1px solid rgba(34, 50, 77, 0.82);
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .modal-head h2 {
+            margin: 0;
+            color: white;
+            font-size: 20px;
+            line-height: 1.3;
+        }
+
+        .modal-head p {
+            margin: 4px 0 0;
+            color: #94a3b8;
+            line-height: 1.5;
+            font-size: 12px;
+        }
+
+        .modal-close {
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            border: 0;
+            background: transparent;
+            color: #cbd5e1;
+            font-size: 19px;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-form {
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            flex-wrap: nowrap;
+            align-items: stretch;
+            gap: 0;
+        }
+
+        .modal-form-scroll {
+            flex: 1;
+            min-height: 0;
+            overflow: auto;
+            padding: 14px 22px 16px;
+            display: grid;
+            gap: 12px;
+        }
+
+        .modal-section {
+            display: grid;
+            gap: 9px;
+            padding: 0 0 13px;
+            border: 0;
+            border-bottom: 1px solid rgba(34, 50, 77, 0.72);
+            border-radius: 0;
+            background: transparent;
+        }
+
+        .modal-section:last-of-type {
+            border-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .modal-section > h3 {
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.4;
+            color: #cbd5e1;
+        }
+
+        .section-note {
+            color: #94a3b8;
+            font-size: 11px;
+            line-height: 1.45;
+            margin-top: -2px;
+        }
+
+        .mode-grid,
+        .file-actions,
+        .rate-grid,
+        .preview-grid {
+            display: grid;
+            gap: 8px;
+        }
+
+        .mode-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .file-actions,
+        .rate-grid,
+        .preview-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .rate-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .segmented-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-height: 36px;
+            border-radius: 10px;
+            border: 1px solid rgba(71, 85, 105, 0.65);
+            background: rgba(15, 23, 42, 0.62);
+            color: #94a3b8;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .segmented-btn.is-active {
+            border-color: #22c7df;
+            background: #22c7df;
+            color: #07111f;
+        }
+
+        .file-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 38px;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+
+        .upload-location {
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .upload-location code {
+            color: #cbd5e1;
+            font-family: Consolas, Monaco, monospace;
+            font-size: 11px;
+        }
+
+        .upload-progress {
+            width: 100%;
+            height: 5px;
+            border: 0;
+            border-radius: 999px;
+            overflow: hidden;
+            background: rgba(30, 41, 59, 0.9);
+        }
+
+        .upload-progress::-webkit-progress-bar {
+            background: rgba(30, 41, 59, 0.9);
+        }
+
+        .upload-progress::-webkit-progress-value {
+            background: #22c7df;
+            border-radius: 999px;
+        }
+
+        .upload-progress::-moz-progress-bar {
+            background: #22c7df;
+            border-radius: 999px;
+        }
+
+        .preview-grid .mini-item {
+            min-height: 72px;
+            padding: 12px;
+            border-radius: 12px;
+        }
+
+        .modal-form .form-grid,
+        .modal-form .field {
+            gap: 7px;
+        }
+
+        .modal-form .field label {
+            font-size: 12px;
+        }
+
+        .modal-form .field label,
+        .modal-form .helper,
+        .modal-form .muted,
+        .modal-form .field label small,
+        .modal-form .field small {
+            color: #94a3b8;
+        }
+
+        .modal-form input[type="text"],
+        .modal-form textarea,
+        .modal-form select {
+            background: rgba(15, 23, 42, 0.72);
+            border-color: rgba(71, 85, 105, 0.65);
+            color: #f8fafc;
+            min-height: 38px;
+            padding: 9px 12px;
+            border-radius: 11px;
+            font-size: 13px;
+        }
+
+        .modal-form input[type="text"]::placeholder,
+        .modal-form textarea::placeholder {
+            color: #64748b;
+        }
+
+        .modal-form input[type="text"]:focus,
+        .modal-form textarea:focus,
+        .modal-form select:focus {
+            border-color: rgba(34, 211, 238, 0.55);
+            box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.12);
+            background: rgba(15, 23, 42, 0.95);
+        }
+
+        .modal-form .toggle-row {
+            border-style: solid;
+            border-color: rgba(71, 85, 105, 0.55);
+            background: rgba(15, 23, 42, 0.44);
+            padding: 10px 12px;
+            border-radius: 12px;
+        }
+
+        .modal-preview {
+            border-radius: 12px;
+            background: rgba(2, 6, 23, 0.55);
+            border: 1px solid rgba(34, 50, 77, 0.82);
+            padding: 12px;
+        }
+
+        .modal-preview strong {
+            display: block;
+            margin-bottom: 6px;
+            color: #f8fafc;
+            font-size: 12px;
+        }
+
+        .modal-preview code {
+            color: #67e8f9;
+            word-break: break-all;
+            white-space: pre-wrap;
+            font-family: Consolas, Monaco, monospace;
+            line-height: 1.5;
+            font-size: 11px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #22324d;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #2b3f63;
+            background-clip: padding-box;
+        }
+
+        .modal-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            padding: 12px 22px 14px;
+            border-top: 1px solid rgba(34, 50, 77, 0.82);
+            background: rgba(15, 23, 42, 0.98);
+        }
+
+        .modal-actions button {
+            justify-content: center;
+            min-height: 40px;
+            border-radius: 11px;
+            padding: 8px 14px;
+            font-size: 13px;
+        }
+
+        .modal-form .status:empty {
+            display: none;
+        }
+
+        .file-browser-shell {
+            position: fixed;
+            inset: 0;
+            z-index: 70;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            background: rgba(3, 7, 18, 0.68);
+            backdrop-filter: blur(8px);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity .18s ease, visibility 0s linear .2s;
+        }
+
+        .file-browser-shell.is-open {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transition-delay: 0s;
+        }
+
+        .file-browser-panel {
+            width: min(680px, 100%);
+            max-height: min(680px, calc(100vh - 32px));
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid var(--line-strong);
+            border-radius: 16px;
+            background: rgba(15, 23, 42, 0.99);
+            box-shadow: 0 30px 90px rgba(2, 6, 23, 0.58);
+            transform: translateY(12px) scale(.985);
+            transition: transform .2s ease;
+        }
+
+        .file-browser-shell.is-open .file-browser-panel {
+            transform: translateY(0) scale(1);
+        }
+
+        .file-browser-head,
+        .file-browser-toolbar,
+        .file-browser-footer {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+        }
+
+        .file-browser-head {
+            justify-content: space-between;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .file-browser-head h3 {
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .file-browser-toolbar {
+            border-bottom: 1px solid var(--line);
+            background: rgba(15, 23, 42, 0.72);
+        }
+
+        .file-browser-toolbar button,
+        .file-browser-footer button {
+            min-height: 34px;
+            padding: 7px 12px;
+            border-radius: 9px;
+            font-size: 12px;
+        }
+
+        .file-browser-path {
+            min-width: 0;
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: #cbd5e1;
+            font-family: Consolas, Monaco, monospace;
+            font-size: 11px;
+        }
+
+        .file-browser-list {
+            min-height: 180px;
+            flex: 1;
+            overflow: auto;
+            padding: 8px;
+            display: grid;
+            align-content: start;
+            gap: 4px;
+        }
+
+        .file-entry {
+            width: 100%;
+            min-width: 0;
+            display: grid;
+            grid-template-columns: 42px minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 10px;
+            border: 1px solid transparent;
+            border-radius: 9px;
+            background: transparent;
+            text-align: left;
+            box-shadow: none;
+        }
+
+        .file-entry:hover {
+            border-color: var(--line);
+            background: rgba(30, 41, 59, 0.66);
+            box-shadow: none;
+            transform: none;
+        }
+
+        .file-entry-kind {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 26px;
+            padding: 4px 6px;
+            border-radius: 7px;
+            background: rgba(34, 211, 238, 0.10);
+            color: var(--accent-strong);
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .file-entry-name {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: var(--text);
+            font-size: 13px;
+        }
+
+        .file-entry-meta {
+            color: var(--text-muted);
+            font-size: 11px;
+            white-space: nowrap;
+        }
+
+        .file-browser-empty,
+        .file-browser-status {
+            color: var(--text-muted);
+            text-align: center;
+            font-size: 12px;
+            line-height: 1.6;
+            padding: 26px 14px;
+        }
+
+        .file-browser-status.error {
+            color: var(--danger);
+        }
+
+        .file-browser-footer {
+            justify-content: flex-end;
+            border-top: 1px solid var(--line);
+        }
+
+        .visually-hidden {
+            position: absolute !important;
+            width: 1px !important;
+            height: 1px !important;
+            padding: 0 !important;
+            margin: -1px !important;
+            overflow: hidden !important;
+            clip: rect(0, 0, 0, 0) !important;
+            white-space: nowrap !important;
+            border: 0 !important;
+        }
+
+        @media (max-width: 1180px) {
+            .panel-header,
+            .dashboard,
+            .hero-stats,
+            .sim-meta {
+                grid-template-columns: 1fr;
+            }
+
+            .panel-header {
+                flex-direction: column;
+            }
+
+            .hero-aside {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 760px) {
+            html,
+            body {
+                overflow-x: hidden;
+            }
+
+            main {
+                padding: 12px;
+            }
+
+            .panel,
+            .surface-card,
+            .panel-title,
+            .launcher-item,
+            .mini-item,
+            .sim-card,
+            .task-card {
+                min-width: 0;
+            }
+
+            #sim-list,
+            .launcher-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-head,
+            .modal-form-scroll {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+
+            .modal-actions {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+
+            .file-browser-shell {
+                padding: 10px;
+            }
+
+            .file-browser-panel {
+                max-height: calc(100vh - 20px);
+            }
+
+            .file-entry {
+                grid-template-columns: 38px minmax(0, 1fr);
+            }
+
+            .file-entry-meta {
+                display: none;
+            }
+
+            .panel-header,
+            .panel-body,
+            .card-head,
+            .card-body {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+
+            .form-grid,
+            .hero-stats,
+            .sim-meta,
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-form .form-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .section-top,
+            .sim-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .panel-header .actions,
+            .panel-header .actions button {
+                width: 100%;
+            }
+
+            .sim-badges {
+                padding-right: 0;
+            }
+
+            .panel-title h1 {
+                font-size: 28px;
+                line-height: 1.16;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .modal-shell,
+            .modal-panel,
+            .file-browser-shell,
+            .file-browser-panel {
+                transition: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<script src="main.js"></script>
+
+<main>
+    <section class="panel hero-panel">
+        <div class="panel-header">
+            <div class="panel-title">
+                <div class="eyebrow">流媒体总览</div>
+                <h1>本地视频模拟流发布面板</h1>
+                <p>创建测试用模拟流、本地视频回放流，并统一交给 go2rtc 发布。整体布局、卡片层级和抽屉交互按你提供的参考前端页靠拢。</p>
+            </div>
+            <div class="actions">
+                <button class="floating-action" id="open-create" type="button">＋ 新建任务</button>
+            </div>
+        </div>
+        <div class="panel-body stack">
+            <div class="hero-stats">
+                <div class="hero-stat">
+                    <span>已配置任务</span>
+                    <strong id="summary-stream-count">0</strong>
+                    <small>当前识别到的本地文件模拟流数量。</small>
+                </div>
+                <div class="hero-stat">
+                    <span>运行中流</span>
+                    <strong id="summary-running-count">0</strong>
+                    <small>根据消费者数量估算当前活跃流。</small>
+                </div>
+                <div class="hero-stat">
+                    <span>ONVIF 摄像机</span>
+                    <strong id="summary-onvif-count">1</strong>
+                    <small>当前按单设备服务入口进行模拟发布。</small>
+                </div>
+            </div>
+
+            <div class="dashboard">
+                <section class="side-card launcher-card surface-card">
+                    <div class="card-head">
+                        <h3>任务创建器</h3>
+                        <p>浏览器模式下可通过上传文件、选择本机文件路径，创建模拟流任务，并统一交给 go2rtc 发布。</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="launcher-grid">
+                            <div class="launcher-item">
+                                <span>创建方式</span>
+                                <strong>本地文件</strong>
+                            </div>
+                            <div class="launcher-item">
+                                <span>发布协议</span>
+                                <strong>RTSP + ONVIF</strong>
+                            </div>
+                            <div class="launcher-item">
+                                <span>当前主机</span>
+                                <strong id="api-host">加载中...</strong>
+                            </div>
+                            <div class="launcher-item">
+                                <span>RTSP 端口</span>
+                                <strong id="rtsp-port">加载中...</strong>
+                            </div>
+                        </div>
+                        <div class="source-preview">
+                            <strong>默认生成预览</strong>
+                            <code id="source-value">点击“新建任务”后在弹窗中填写表单</code>
+                        </div>
+                        <div class="actions">
+                            <button class="secondary" id="refresh-state" type="button">刷新列表</button>
+                        </div>
+                    </div>
+                </section>
+
+                <aside class="side-card surface-card">
+                    <div class="card-head">
+                        <h3>访问概览</h3>
+                        <p>保存后即可复制 RTSP 地址与 ONVIF 服务入口，用于第三方平台接入测试。</p>
+                    </div>
+                    <div class="card-body stack">
+                        <div class="mini-grid">
+                            <div class="mini-item">
+                                <strong>ONVIF 服务</strong>
+                                <div class="value" id="onvif-service">加载中...</div>
+                            </div>
+                            <div class="mini-item">
+                                <strong>接口前缀</strong>
+                                <div class="value" id="onvif-path">加载中...</div>
+                            </div>
+                            <div class="mini-item">
+                                <strong>流管理接口</strong>
+                                <div class="value" id="streams-api">加载中...</div>
+                            </div>
+                            <div class="mini-item">
+                                <strong>日志接口</strong>
+                                <div class="value" id="log-api">加载中...</div>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-shell">
+        <div class="section-top">
+            <div>
+                <h2>已配置任务</h2>
+                <p>仅展示 `ffmpeg:` 且包含 `#input=file` 的本地文件模拟流。支持编辑回填、地址复制与删除。</p>
+            </div>
+            <div class="toolbar-pills">
+                <div class="toolbar-pill">当前识别 <strong id="stream-count">0</strong></div>
+                <div class="toolbar-pill">最近操作 <strong id="current-highlight-label">无</strong></div>
+            </div>
+        </div>
+        <div id="sim-list"></div>
+        <div id="empty-state" hidden>当前还没有识别到模拟流。你可以先在上方填写本地视频路径并保存，保存成功后这里会显示访问地址、编码信息、复制按钮和编辑入口。</div>
+    </section>
+
+</main>
+
+<div id="task-modal" class="modal-shell" aria-hidden="true">
+    <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="form-title">
+        <div class="modal-head">
+            <div>
+                <h2 id="form-title">新建任务</h2>
+                <p id="form-subtitle">浏览器模式下可通过上传文件、浏览后端本机文件或 RTSP 输入创建任务，并统一交给 go2rtc 发布。</p>
+            </div>
+            <button id="close-modal" class="modal-close" type="button" aria-label="关闭">×</button>
+        </div>
+        <form id="simulate-form" class="modal-form">
+            <div class="modal-form-scroll">
+            <div class="modal-section">
+                <div class="form-grid">
+                    <div class="field wide">
+                        <label for="name">任务名称</label>
+                        <input id="name" name="name" type="text" placeholder="例如：demo-stream-2" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-section">
+                <h3>来源类型</h3>
+                <div class="mode-grid">
+                    <button class="segmented-btn is-active" type="button" data-source-mode="file">本地文件</button>
+                    <button class="segmented-btn" type="button" data-source-mode="testsrc" disabled>测试图像</button>
+                    <button class="segmented-btn" type="button" data-source-mode="rtsp" disabled>RTSP 输入</button>
+                </div>
+            </div>
+
+            <div class="modal-section">
+                <h3>媒体文件</h3>
+                <div class="field wide">
+                    <label for="file" class="visually-hidden">媒体文件路径</label>
+                    <input id="file" name="file" type="text" placeholder="上传视频，或填写后端机器可访问的文件绝对路径" required>
+                </div>
+                <div class="file-actions">
+                    <button class="ghost file-action" id="upload-local-file" type="button">上传本地文件</button>
+                    <button class="ghost file-action" id="browse-backend-files" type="button">浏览后端文件</button>
+                </div>
+                <input class="visually-hidden" id="local-file-input" type="file" accept="video/*,.3gp,.avi,.flv,.m2ts,.m4v,.mkv,.mov,.mp4,.mpeg,.mpg,.mts,.ts,.webm">
+                <progress class="upload-progress" id="upload-progress" max="100" value="0" hidden></progress>
+                <div class="helper upload-location">上传目录：<code id="upload-directory">加载中...</code></div>
+            </div>
+
+            <div class="modal-section">
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="video">视频编码</label>
+                        <select id="video" name="video">
+                            <option value="h264">H.264</option>
+                            <option value="h265">H.265</option>
+                            <option value="mjpeg">MJPEG</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="audio">音频策略</label>
+                        <select id="audio" name="audio">
+                            <option value="">无音频</option>
+                            <option value="auto">自动跟随</option>
+                            <option value="aac">AAC</option>
+                            <option value="opus">Opus</option>
+                            <option value="pcma">PCMA</option>
+                            <option value="pcmu">PCMU</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="rate-grid">
+                    <div class="field">
+                        <label for="bitrate">码率 kbps</label>
+                        <input id="bitrate" name="bitrate" type="text" placeholder="例如：6000">
+                    </div>
+                    <div class="field">
+                        <label for="maxrate">最大码率 kbps</label>
+                        <input id="maxrate" name="maxrate" type="text" placeholder="例如：6000" disabled>
+                    </div>
+                    <div class="field">
+                        <label for="bufsize">缓冲区 kbps</label>
+                        <input id="bufsize" name="bufsize" type="text" placeholder="例如：12000" disabled>
+                    </div>
+                </div>
+                <div class="toggle-row">
+                    <div>
+                        <label><input id="loop" name="loop" type="checkbox" checked>循环播放</label>
+                        <div class="helper">当前页不直接改写 ffmpeg 模板，仅按现有 go2rtc 配置方式生成模拟流 source。</div>
+                    </div>
+                    <div class="actions">
+                        <button class="ghost" id="reset-form" type="button">清空表单</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-section">
+                <div class="preview-grid">
+                    <div class="mini-item">
+                        <strong>发布 RTSP 地址</strong>
+                        <div class="value" id="modal-rtsp-preview">请先填写任务名称</div>
+                    </div>
+                    <div class="mini-item">
+                        <strong>ONVIF 服务地址</strong>
+                        <div class="value" id="modal-onvif-preview">加载中...</div>
+                    </div>
+                </div>
+                <div class="modal-preview">
+                    <strong>生成命令预览</strong>
+                    <code id="modal-source-preview">请先填写表单字段</code>
+                </div>
+                <div id="form-status" class="status"></div>
+            </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="ghost" id="cancel-modal" type="button">取消</button>
+                <button class="floating-action" id="submit-button" type="submit">创建</button>
+            </div>
+        </form>
+    </section>
+</div>
+
+<div id="file-browser" class="file-browser-shell" aria-hidden="true">
+    <section class="file-browser-panel" role="dialog" aria-modal="true" aria-labelledby="file-browser-title">
+        <div class="file-browser-head">
+            <h3 id="file-browser-title">选择后端媒体文件</h3>
+            <button id="close-file-browser" class="modal-close" type="button" aria-label="关闭">×</button>
+        </div>
+        <div class="file-browser-toolbar">
+            <button class="ghost" id="file-browser-up" type="button">返回上级</button>
+            <code class="file-browser-path" id="file-browser-path">加载中...</code>
+        </div>
+        <div class="file-browser-list" id="file-browser-list"></div>
+        <div class="file-browser-footer">
+            <button class="ghost" id="cancel-file-browser" type="button">取消</button>
+        </div>
+    </section>
+</div>
+
+<script>
+    const form = document.getElementById('simulate-form');
+    const formStatus = document.getElementById('form-status');
+    const simList = document.getElementById('sim-list');
+    const emptyState = document.getElementById('empty-state');
+    const sourceValue = document.getElementById('source-value');
+    const refreshStateBtn = document.getElementById('refresh-state');
+    const resetBtn = document.getElementById('reset-form');
+    const submitButton = document.getElementById('submit-button');
+    const formTitle = document.getElementById('form-title');
+    const formSubtitle = document.getElementById('form-subtitle');
+    const streamCount = document.getElementById('stream-count');
+    const highlightLabel = document.getElementById('current-highlight-label');
+    const modal = document.getElementById('task-modal');
+    const openCreateBtn = document.getElementById('open-create');
+    const closeModalBtn = document.getElementById('close-modal');
+    const cancelModalBtn = document.getElementById('cancel-modal');
+    const modalSourcePreview = document.getElementById('modal-source-preview');
+    const modalRTSPPreview = document.getElementById('modal-rtsp-preview');
+    const modalONVIFPreview = document.getElementById('modal-onvif-preview');
+    const uploadLocalBtn = document.getElementById('upload-local-file');
+    const browseBackendBtn = document.getElementById('browse-backend-files');
+    const localFileInput = document.getElementById('local-file-input');
+    const uploadProgress = document.getElementById('upload-progress');
+    const uploadDirectory = document.getElementById('upload-directory');
+    const fileBrowser = document.getElementById('file-browser');
+    const fileBrowserList = document.getElementById('file-browser-list');
+    const fileBrowserPath = document.getElementById('file-browser-path');
+    const fileBrowserUpBtn = document.getElementById('file-browser-up');
+    const closeFileBrowserBtn = document.getElementById('close-file-browser');
+    const cancelFileBrowserBtn = document.getElementById('cancel-file-browser');
+
+    let editingName = '';
+    let highlightedStreamName = '';
+    let cachedStreams = {};
+    let currentBrowserPath = '';
+    let currentBrowserParent = '';
+    let uploadBusy = false;
+    let meta = {
+        host: location.host,
+        base_path: '',
+        rtsp_port: '8554',
+        rtsp_path: '/',
+        onvif_path: '/onvif/device_service',
+        streams_api: 'api/streams',
+        log_api: 'api/log',
+        files_api: 'api/simulate/files',
+        upload_api: 'api/simulate/upload',
+        upload_dir: 'static',
+        configured_streams: {},
+    };
+
+    function baseURL(path) {
+        return new URL(path, location.href).toString();
+    }
+
+    function splitHostPort(host) {
+        if (!host) return {hostname: location.hostname || '127.0.0.1', port: ''};
+        try {
+            const url = new URL(`http://${host}`);
+            return {hostname: url.hostname, port: url.port};
+        } catch {
+            return {hostname: host, port: ''};
+        }
+    }
+
+    function buildSource() {
+        const data = new FormData(form);
+        const file = (data.get('file') || '').toString().trim();
+        const video = (data.get('video') || 'h264').toString();
+        const audio = (data.get('audio') || '').toString();
+        const bitrate = (data.get('bitrate') || '').toString().trim();
+
+        if (!file) return '';
+
+        const params = [`video=${video}`, 'input=file'];
+        if (bitrate) params.push(`bitrate=${bitrate}`);
+        if (audio) params.push(`audio=${audio}`);
+
+        return `ffmpeg:${file}#${params.join('#')}`;
+    }
+
+    function updatePreview() {
+        const source = buildSource();
+        const name = form.elements.name.value.trim();
+        sourceValue.textContent = source || '点击“新建任务”后在弹窗中填写表单';
+        modalSourcePreview.textContent = source || '请先填写表单字段';
+        modalRTSPPreview.textContent = name ? rtspURL(name) : '请先填写任务名称';
+        modalONVIFPreview.textContent = onvifURL();
+    }
+
+    function setStatus(message, isError = false) {
+        formStatus.textContent = message;
+        formStatus.classList.toggle('error', isError);
+    }
+
+    function formatFileSize(size) {
+        const value = Number(size) || 0;
+        if (value < 1024) return `${value} B`;
+        if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+        if (value < 1024 * 1024 * 1024) return `${(value / 1024 / 1024).toFixed(1)} MB`;
+        return `${(value / 1024 / 1024 / 1024).toFixed(2)} GB`;
+    }
+
+    function setUploadBusy(busy, progress = 0) {
+        uploadBusy = busy;
+        uploadLocalBtn.disabled = busy;
+        browseBackendBtn.disabled = busy;
+        uploadProgress.hidden = !busy;
+        uploadProgress.value = Math.max(0, Math.min(100, progress));
+        uploadLocalBtn.textContent = busy ? `上传中 ${Math.round(uploadProgress.value)}%` : '上传本地文件';
+    }
+
+    function uploadLocalFile(file) {
+        return new Promise((resolve, reject) => {
+            const request = new XMLHttpRequest();
+            const body = new FormData();
+            body.append('path', '');
+            body.append('file', file, file.name);
+
+            request.open('POST', baseURL(meta.upload_api));
+            request.upload.addEventListener('progress', event => {
+                if (!event.lengthComputable) return;
+                setUploadBusy(true, event.loaded / event.total * 100);
+            });
+            request.addEventListener('load', () => {
+                let response = null;
+                try {
+                    response = JSON.parse(request.responseText || '{}');
+                } catch {
+                    response = null;
+                }
+                if (request.status >= 200 && request.status < 300 && response?.path) {
+                    resolve(response);
+                    return;
+                }
+                reject(new Error(response?.message || request.responseText?.trim() || `上传失败 (${request.status})`));
+            });
+            request.addEventListener('error', () => reject(new Error('上传失败，请检查网络连接。')));
+            request.addEventListener('abort', () => reject(new Error('上传已取消。')));
+            request.send(body);
+        });
+    }
+
+    function setFileBrowserStatus(message, isError = false) {
+        const status = document.createElement('div');
+        status.className = `file-browser-status${isError ? ' error' : ''}`;
+        status.textContent = message;
+        fileBrowserList.replaceChildren(status);
+    }
+
+    function renderBackendFiles(data) {
+        currentBrowserPath = data.path || '';
+        currentBrowserParent = data.parent || '';
+        fileBrowserPath.textContent = currentBrowserPath || '此电脑';
+        fileBrowserPath.title = fileBrowserPath.textContent;
+        fileBrowserUpBtn.disabled = !currentBrowserPath;
+        fileBrowserList.replaceChildren();
+
+        const entries = Array.isArray(data.entries) ? data.entries : [];
+        if (!entries.length) {
+            const empty = document.createElement('div');
+            empty.className = 'file-browser-empty';
+            empty.textContent = '当前目录中没有可用的媒体文件。';
+            fileBrowserList.appendChild(empty);
+            return;
+        }
+
+        for (const entry of entries) {
+            const button = document.createElement('button');
+            button.className = 'file-entry';
+            button.type = 'button';
+            button.dataset.entryPath = entry.path || '';
+            button.dataset.isDir = entry.is_dir ? 'true' : 'false';
+
+            const kind = document.createElement('span');
+            kind.className = 'file-entry-kind';
+            kind.textContent = entry.is_dir
+                ? '目录'
+                : (entry.name.split('.').pop() || '文件').slice(0, 4).toUpperCase();
+
+            const name = document.createElement('span');
+            name.className = 'file-entry-name';
+            name.textContent = entry.name;
+            name.title = entry.name;
+
+            const detail = document.createElement('span');
+            detail.className = 'file-entry-meta';
+            detail.textContent = entry.is_dir ? '打开' : `选择 · ${formatFileSize(entry.size)}`;
+
+            button.append(kind, name, detail);
+            fileBrowserList.appendChild(button);
+        }
+    }
+
+    async function loadBackendFiles(path = '') {
+        setFileBrowserStatus('正在加载文件列表...');
+        try {
+            const url = new URL(baseURL(meta.files_api));
+            if (path) url.searchParams.set('path', path);
+            const response = await fetch(url, {cache: 'no-cache'});
+            if (!response.ok) throw new Error(await response.text() || '加载后端文件失败');
+            renderBackendFiles(await response.json());
+        } catch (error) {
+            setFileBrowserStatus(error.message, true);
+        }
+    }
+
+    function openFileBrowser() {
+        fileBrowser.classList.add('is-open');
+        fileBrowser.setAttribute('aria-hidden', 'false');
+        currentBrowserPath = '';
+        currentBrowserParent = '';
+        loadBackendFiles();
+    }
+
+    function closeFileBrowser(restoreFocus = true) {
+        fileBrowser.classList.remove('is-open');
+        fileBrowser.setAttribute('aria-hidden', 'true');
+        if (restoreFocus && modal.classList.contains('is-open')) {
+            browseBackendBtn.focus({preventScroll: true});
+        }
+    }
+
+    function selectBackendFile(path) {
+        if (!path) return;
+        form.elements.file.value = path;
+        setStatus(`已选择后端文件：${path}`);
+        updatePreview();
+        closeFileBrowser();
+    }
+
+    function escapeHTML(text) {
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;')
+            .replace(/\n/g, '<br>');
+    }
+
+    function isSimulatedStream(source) {
+        return typeof source === 'string' && source.startsWith('ffmpeg:') && source.includes('#input=file');
+    }
+
+    function getSimulatedSources(stream) {
+        const configured = Array.isArray(stream?.configured_sources) ? stream.configured_sources : [];
+        const producers = Array.isArray(stream?.producers) ? stream.producers : [];
+        const runtime = producers
+            .map(item => item && item.url)
+            .filter(isSimulatedStream);
+        return [...new Set([...configured, ...runtime].filter(isSimulatedStream))];
+    }
+
+    function mergeConfiguredStreams(runtimeData) {
+        const merged = {};
+        for (const [name, stream] of Object.entries(runtimeData || {})) {
+            merged[name] = {...(stream || {}), runtime_present: true};
+        }
+
+        for (const [name, sources] of Object.entries(meta.configured_streams || {})) {
+            const configuredSources = Array.isArray(sources) ? sources : [sources];
+            if (!configuredSources.some(isSimulatedStream)) continue;
+            merged[name] = {
+                ...(merged[name] || {}),
+                configured_sources: configuredSources,
+                runtime_present: Boolean(merged[name]?.runtime_present),
+            };
+        }
+
+        return merged;
+    }
+
+    function parseSource(source) {
+        const match = source.match(/^ffmpeg:(.*?)(?:#(.*))?$/);
+        if (!match) return null;
+
+        const [, file, rawParams = ''] = match;
+        const params = rawParams ? rawParams.split('#') : [];
+        const result = { file, video: 'h264', audio: '', bitrate: '' };
+
+        for (const part of params) {
+            const [key, value = ''] = part.split('=');
+            if (key === 'video' && value) result.video = value;
+            if (key === 'audio') result.audio = value;
+            if (key === 'bitrate') result.bitrate = value;
+        }
+
+        return result;
+    }
+
+    function rtspURL(name) {
+        const {hostname} = splitHostPort(meta.host || location.host);
+        return `rtsp://${hostname}:${meta.rtsp_port}/${encodeURIComponent(name)}`;
+    }
+
+    function onvifURL() {
+        const host = meta.host || location.host;
+        return `${location.protocol}//${host}${meta.onvif_path}`;
+    }
+
+    function updateHighlightLabel(name = '') {
+        highlightLabel.textContent = name || '无';
+    }
+
+    function highlightStream(name, scroll = false) {
+        highlightedStreamName = name || '';
+        updateHighlightLabel(highlightedStreamName);
+        if (!highlightedStreamName) return;
+
+        requestAnimationFrame(() => {
+            const selector = `[data-stream-name="${CSS.escape(highlightedStreamName)}"]`;
+            const card = simList.querySelector(selector);
+            if (!card) return;
+            card.classList.add('is-highlighted');
+            if (scroll) card.scrollIntoView({behavior: 'smooth', block: 'center'});
+        });
+    }
+
+    function copyTextFallback(text) {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.readOnly = true;
+        textarea.style.position = 'fixed';
+        textarea.style.top = '0';
+        textarea.style.left = '-9999px';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+
+        const activeElement = document.activeElement;
+        const selection = document.getSelection();
+        const ranges = selection ? [...Array(selection.rangeCount)].map((_, index) => selection.getRangeAt(index)) : [];
+
+        textarea.focus({preventScroll: true});
+        textarea.select();
+        textarea.setSelectionRange(0, textarea.value.length);
+
+        let copied = false;
+        try {
+            copied = document.execCommand('copy');
+        } finally {
+            textarea.remove();
+            selection?.removeAllRanges();
+            for (const range of ranges) selection?.addRange(range);
+            activeElement?.focus?.({preventScroll: true});
+        }
+
+        if (!copied) throw new Error('copy command failed');
+    }
+
+    async function copyText(text, successMessage) {
+        let copied = false;
+        if (window.isSecureContext && navigator.clipboard?.writeText) {
+            try {
+                await navigator.clipboard.writeText(text);
+                copied = true;
+            } catch {
+                copied = false;
+            }
+        }
+        if (!copied) copyTextFallback(text);
+        setStatus(successMessage);
+    }
+
+    function flashCopiedIcon(button) {
+        if (!button) return;
+        const original = button.innerHTML;
+        button.classList.add('is-copied');
+        button.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+        window.setTimeout(() => {
+            button.classList.remove('is-copied');
+            button.innerHTML = original;
+        }, 1200);
+    }
+
+    function setEditingMode(name = '') {
+        editingName = name;
+        if (name) {
+            formTitle.textContent = `编辑任务：${name}`;
+            formSubtitle.textContent = '已将现有模拟流配置回填到弹窗表单。修改后点击“保存修改”即可覆盖原有配置。';
+            submitButton.textContent = '保存修改';
+        } else {
+            formTitle.textContent = '新建任务';
+            formSubtitle.textContent = '浏览器模式下可通过上传文件、浏览后端本机文件或 RTSP 输入创建任务，并统一交给 go2rtc 发布。';
+            submitButton.textContent = '创建';
+        }
+    }
+
+    function resetFormState() {
+        form.reset();
+        localFileInput.value = '';
+        form.elements.video.value = 'h264';
+        form.elements.audio.value = '';
+        form.elements.loop.checked = true;
+        if (!uploadBusy) setUploadBusy(false, 0);
+        setEditingMode('');
+        setStatus('');
+        updatePreview();
+    }
+
+    function openModal() {
+        modal.classList.add('is-open');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        updatePreview();
+        requestAnimationFrame(() => form.elements.name.focus({preventScroll: true}));
+    }
+
+    function closeModal() {
+        closeFileBrowser(false);
+        modal.classList.remove('is-open');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+    }
+
+    function fillFormFromStream(name, source) {
+        const parsed = parseSource(source);
+        if (!parsed) {
+            setStatus('无法解析该模拟流的 source，无法回填。', true);
+            return;
+        }
+
+        form.elements.name.value = name;
+        form.elements.file.value = parsed.file;
+        form.elements.video.value = parsed.video;
+        form.elements.audio.value = parsed.audio;
+        form.elements.bitrate.value = parsed.bitrate;
+        form.elements.loop.checked = true;
+        setEditingMode(name);
+        highlightStream(name);
+        setStatus(`已回填模拟流 ${name}，可直接修改后保存。`);
+        updatePreview();
+        openModal();
+    }
+
+    async function loadMeta() {
+        const response = await fetch(baseURL('api/simulate'), {cache: 'no-cache'});
+        if (!response.ok) throw new Error(await response.text() || '加载模拟页状态失败');
+
+        meta = {...meta, ...(await response.json())};
+        if (!meta.configured_streams || typeof meta.configured_streams !== 'object') {
+            meta.configured_streams = {};
+        }
+        document.getElementById('api-host').textContent = meta.host || location.host;
+        document.getElementById('rtsp-port').textContent = meta.rtsp_port;
+        document.getElementById('onvif-path').textContent = meta.onvif_path;
+        document.getElementById('onvif-service').textContent = onvifURL();
+        document.getElementById('streams-api').textContent = meta.streams_api;
+        document.getElementById('log-api').textContent = meta.log_api;
+        uploadDirectory.textContent = meta.upload_dir || 'static';
+        uploadDirectory.title = uploadDirectory.textContent;
+        updatePreview();
+    }
+
+    function renderStreams(data) {
+        cachedStreams = data || {};
+        simList.innerHTML = '';
+        const entries = Object.entries(cachedStreams).filter(([, stream]) => getSimulatedSources(stream).length > 0);
+
+        const runningCount = entries.filter(([, stream]) => (Array.isArray(stream?.consumers) ? stream.consumers.length : 0) > 0).length;
+        streamCount.textContent = String(entries.length);
+        document.getElementById('summary-stream-count').textContent = String(entries.length);
+        document.getElementById('summary-running-count').textContent = String(runningCount);
+        emptyState.hidden = entries.length > 0;
+
+        for (const [name, stream] of entries) {
+            const src = getSimulatedSources(stream)[0];
+            const parsed = parseSource(src) || {};
+            const online = Array.isArray(stream?.consumers) ? stream.consumers.length : 0;
+            const rtsp = rtspURL(name);
+            const onvif = onvifURL();
+
+            const card = document.createElement('article');
+            card.className = 'sim-card';
+            card.dataset.streamName = name;
+            if (highlightedStreamName === name) card.classList.add('is-highlighted');
+            const hasError = src.includes('#error=') || src.includes('error=');
+            const runtimePresent = stream?.runtime_present !== false;
+            const stateClass = hasError ? 'is-error' : (online > 0 ? 'is-active' : 'is-idle');
+            const stateText = hasError
+                ? '异常'
+                : (!runtimePresent ? '已配置 · 待重载' : (online > 0 ? `运行中 · 消费者 ${online}` : '空闲'));
+            card.innerHTML = `
+                <div class="sim-card-head">
+                    <div class="sim-title-wrap">
+                        <div class="sim-title-row">
+                            <span class="status-dot ${stateClass}"></span>
+                            <h3>${escapeHTML(name)}</h3>
+                        </div>
+                        <div class="sim-subline">${stateText}</div>
+                    </div>
+                    <div class="sim-badges">
+                        <span class="badge">${escapeHTML((parsed.video || '未指定').toUpperCase())}</span>
+                    </div>
+                </div>
+
+                <div class="rtsp-inline">
+                    <code>${escapeHTML(rtsp)}</code>
+                    <button class="copy-btn inline" type="button" data-copy="${encodeURIComponent(rtsp)}" data-copy-label="RTSP 地址" aria-label="复制 RTSP 地址">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    </button>
+                </div>
+
+                <div class="sim-summary">来源：${escapeHTML(parsed.file || '未识别本地文件')}</div>
+
+                <div class="task-cards">
+                    <div class="task-card">
+                        <strong>编码与音频</strong>
+                        <div class="helper">${escapeHTML((parsed.video || '未指定').toUpperCase())} / ${escapeHTML(parsed.audio || '无音频')}</div>
+                    </div>
+                    <div class="task-card">
+                        <strong>视频码率</strong>
+                        <div class="helper">${escapeHTML(parsed.bitrate || '默认')}</div>
+                    </div>
+                    <div class="task-card">
+                        <div class="task-card-top">
+                            <strong>ONVIF 入口</strong>
+                            <button class="copy-btn inline" type="button" data-copy="${encodeURIComponent(onvif)}" data-copy-label="ONVIF 地址" aria-label="复制 ONVIF 地址">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                            </button>
+                        </div>
+                        <code>${escapeHTML(onvif)}</code>
+                    </div>
+                    <div class="task-card">
+                        <strong>发布协议</strong>
+                        <div class="helper">RTSP / ONVIF</div>
+                    </div>
+                </div>
+
+                <div class="sim-links">
+                    <div class="sim-link">
+                        <div class="sim-link-top">
+                            <strong>实际 Source</strong>
+                            <div class="copy-actions"><button class="copy-btn inline" type="button" data-copy="${encodeURIComponent(src)}" data-copy-label="Source" aria-label="复制 Source">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                            </button></div>
+                        </div>
+                        <code>${escapeHTML(src)}</code>
+                    </div>
+                </div>
+
+                <div class="sim-actions">
+                    <div class="actions">
+                        <button class="secondary icon-btn" type="button" data-edit="${encodeURIComponent(name)}" title="编辑任务" aria-label="编辑任务">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+                        </button>
+                        <button class="danger icon-btn" type="button" data-delete="${encodeURIComponent(name)}" title="删除任务" aria-label="删除任务">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                        </button>
+                    </div>
+                </div>
+            `;
+            simList.appendChild(card);
+        }
+    }
+
+    async function loadStreams() {
+        const response = await fetch(baseURL(meta.streams_api), {cache: 'no-cache'});
+        if (!response.ok) throw new Error(await response.text() || '加载流列表失败');
+        renderStreams(mergeConfiguredStreams(await response.json()));
+    }
+
+    async function removeStream(name) {
+        if (prompt(`请输入流名称 ${name} 以确认删除。`) !== name) return;
+
+        const url = new URL(baseURL(meta.streams_api));
+        url.searchParams.set('src', name);
+        const response = await fetch(url, {method: 'DELETE'});
+        if (!response.ok) throw new Error(await response.text() || '删除失败');
+
+        if (editingName === name) resetFormState();
+        if (highlightedStreamName === name) {
+            highlightedStreamName = '';
+            updateHighlightLabel('');
+        }
+
+        setStatus(`已删除模拟流 ${name}`);
+        await loadMeta();
+        await loadStreams();
+    }
+
+    form.addEventListener('input', updatePreview);
+
+    openCreateBtn.addEventListener('click', () => {
+        resetFormState();
+        openModal();
+    });
+
+    uploadLocalBtn.addEventListener('click', () => {
+        if (!uploadBusy) localFileInput.click();
+    });
+
+    localFileInput.addEventListener('change', async () => {
+        const file = localFileInput.files?.[0];
+        if (!file) return;
+
+        setUploadBusy(true, 0);
+        setStatus(`正在上传 ${file.name}...`);
+        try {
+            const uploaded = await uploadLocalFile(file);
+            form.elements.file.value = uploaded.path;
+            setStatus(`上传完成：${uploaded.name}（${formatFileSize(uploaded.size)}）`);
+            updatePreview();
+        } catch (error) {
+            setStatus(error.message, true);
+        } finally {
+            localFileInput.value = '';
+            setUploadBusy(false, 0);
+        }
+    });
+
+    browseBackendBtn.addEventListener('click', openFileBrowser);
+    closeFileBrowserBtn.addEventListener('click', () => closeFileBrowser());
+    cancelFileBrowserBtn.addEventListener('click', () => closeFileBrowser());
+    fileBrowserUpBtn.addEventListener('click', () => loadBackendFiles(currentBrowserParent));
+    fileBrowser.addEventListener('click', event => {
+        if (event.target === fileBrowser) {
+            closeFileBrowser();
+            return;
+        }
+
+        const entry = event.target.closest('.file-entry');
+        if (!entry) return;
+        if (entry.dataset.isDir === 'true') {
+            loadBackendFiles(entry.dataset.entryPath || '');
+        } else {
+            selectBackendFile(entry.dataset.entryPath || '');
+        }
+    });
+
+    document.addEventListener('keydown', event => {
+        if (event.key !== 'Escape') return;
+        if (fileBrowser.classList.contains('is-open')) {
+            closeFileBrowser();
+        } else if (modal.classList.contains('is-open')) {
+            closeModal();
+        }
+    });
+
+    closeModalBtn.addEventListener('click', closeModal);
+    cancelModalBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', event => {
+        if (event.target === modal) closeModal();
+    });
+
+    refreshStateBtn?.addEventListener('click', async () => {
+        try {
+            await loadMeta();
+            await loadStreams();
+            setStatus('模拟流列表已刷新');
+        } catch (error) {
+            setStatus(error.message, true);
+        }
+    });
+
+    resetBtn.addEventListener('click', () => {
+        resetFormState();
+        setStatus('表单已清空，可继续新建任务。');
+    });
+
+    form.addEventListener('submit', async event => {
+        event.preventDefault();
+        const name = form.elements.name.value.trim();
+        const source = buildSource();
+
+        if (!name) return setStatus('请填写流名称。', true);
+        if (!source) return setStatus('请填写本地视频路径。', true);
+
+        const url = new URL(baseURL(meta.streams_api));
+        url.searchParams.set('name', name);
+        url.searchParams.append('src', source);
+
+        try {
+            const response = await fetch(url, {method: 'PUT'});
+            if (!response.ok) throw new Error(await response.text() || '保存失败');
+            setStatus(editingName ? `模拟流 ${name} 已更新，并已高亮当前流。` : `模拟流 ${name} 已保存，并已高亮当前流。`);
+            setEditingMode(name);
+            highlightedStreamName = name;
+            updateHighlightLabel(name);
+            await loadMeta();
+            await loadStreams();
+            highlightStream(name, true);
+            closeModal();
+        } catch (error) {
+            setStatus(error.message, true);
+            openModal();
+        }
+    });
+
+    simList.addEventListener('click', async event => {
+        const copyButton = event.target.closest('button[data-copy]');
+        if (copyButton) {
+            try {
+                await copyText(decodeURIComponent(copyButton.dataset.copy), `${copyButton.dataset.copyLabel || '内容'}已复制到剪贴板。`);
+                flashCopiedIcon(copyButton);
+            } catch {
+                setStatus('复制失败，请手动复制。', true);
+            }
+            return;
+        }
+
+        const editButton = event.target.closest('button[data-edit]');
+        if (editButton) {
+            const name = decodeURIComponent(editButton.dataset.edit);
+            const stream = cachedStreams[name];
+            const source = getSimulatedSources(stream)[0];
+            if (source) {
+                fillFormFromStream(name, source);
+            }
+            return;
+        }
+
+        const deleteButton = event.target.closest('button[data-delete]');
+        if (!deleteButton) return;
+        try {
+            await removeStream(decodeURIComponent(deleteButton.dataset.delete));
+        } catch (error) {
+            setStatus(error.message, true);
+        }
+    });
+
+    async function init() {
+        resetFormState();
+        closeModal();
+        updateHighlightLabel('');
+        await loadMeta();
+        await loadStreams();
+    }
+
+    init().catch(error => {
+        setStatus(error.message, true);
+    });
+</script>
+
+</body>
+</html>

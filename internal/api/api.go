@@ -27,6 +27,7 @@ func Init() {
 			LocalAuth  bool   `yaml:"local_auth"`
 			BasePath   string `yaml:"base_path"`
 			StaticDir  string `yaml:"static_dir"`
+			UploadDir  string `yaml:"upload_dir"`
 			Origin     string `yaml:"origin"`
 			TLSListen  string `yaml:"tls_listen"`
 			TLSCert    string `yaml:"tls_cert"`
@@ -52,12 +53,16 @@ func Init() {
 	log = app.GetLogger("api")
 
 	initStatic(cfg.Mod.StaticDir)
+	initSimulateFiles(cfg.Mod.UploadDir)
 
 	HandleFunc("api", apiHandler)
 	HandleFunc("api/config", configHandler)
 	HandleFunc("api/exit", exitHandler)
 	HandleFunc("api/restart", restartHandler)
 	HandleFunc("api/log", logHandler)
+	HandleFunc("api/simulate", simulateHandler)
+	HandleFunc("api/simulate/files", simulateFilesHandler)
+	HandleFunc("api/simulate/upload", simulateUploadHandler)
 
 	Handler = http.DefaultServeMux // 4th
 
