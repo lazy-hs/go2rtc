@@ -301,8 +301,14 @@
 
             while (Date.now() - startedAt < 15000) {
                 try {
-                    const response = await fetch('api/config', {cache: 'no-store'});
-                    if (response.ok && (observedOffline || Date.now() - startedAt > 1500)) return true;
+                    const [configResponse, streamsResponse] = await Promise.all([
+                        fetch('api/config', {cache: 'no-store'}),
+                        fetch('api/streams', {cache: 'no-store'}),
+                    ]);
+                    if (
+                        configResponse.ok && streamsResponse.ok &&
+                        (observedOffline || Date.now() - startedAt > 1500)
+                    ) return true;
                 } catch {
                     observedOffline = true;
                 }

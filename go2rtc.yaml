@@ -44,3 +44,8 @@ app:
     - "onvif"
     - "exec"
     - "ffmpeg"
+    - "ws"
+    - "webrtc"
+    - "mp4"
+    - "hls"
+    - "mjpeg"
