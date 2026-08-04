@@ -19,8 +19,12 @@ streams:
   - ffmpeg:C:/Users/8054/Videos/监控中心二期算法测试数据/监控中心二期算法测试数据/宠物/光线充足/小狗照镜子.mp4#video=h264#audio=aac#input=file
   main2:
   - ffmpeg:C:/Users/8054/Videos/2026.06.21-第12期下-4K.高码率.mp4#video=h264#audio=aac#input=file
-  test2:
-    - ffmpeg:D:/huangsheng/project/go2rtc/static/car.mp4#video=h264#input=file#audio=aac
+  main3:
+    - ffmpeg:C:/Users/8054/Videos/2026.06.21-第12期下-4K.高码率.mp4#video=h264#input=file#bitrate=4000k#audio=aac
+  main34:
+    - ffmpeg:C:/Users/8054/Videos/testvideo.mp4#video=h264#input=file
+  main35:
+    - ffmpeg:C:/Users/8054/Videos/testvideo.mp4#video=h264#input=file#bitrate=4000k
 api:
   # ONVIF 协议以及 Web UI 监听地址
   listen: ":2984"

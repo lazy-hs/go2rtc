@@ -348,6 +348,26 @@ func TestDeckLink(t *testing.T) {
 	require.Equal(t, `ffmpeg -hide_banner -hwaccel vaapi -hwaccel_output_format vaapi -hwaccel_flags allow_profile_mismatch -format_code Hp29 -f decklink -i "DeckLink SDI (2)" -c:v h264_vaapi -g 50 -bf 0 -profile:v high -level:v 4.1 -sei:v 0 -an -vf "format=vaapi|nv12,hwupload,scale_vaapi=out_color_matrix=bt709:out_range=tv:format=nv12" -user_agent ffmpeg/go2rtc -rtsp_transport tcp -f rtsp {output}`, args.String())
 }
 
+func TestParseArgsBitrateControls(t *testing.T) {
+	args := parseArgs("/media/bbb.mp4#video=h264#bitrate=4000k#maxrate=6000k#bufsize=12000k")
+	require.Contains(t, args.String(), "-b:v 4000k -maxrate 6000k -bufsize 12000k")
+
+	args = parseArgs("/media/bbb.mp4#video=h264#bitrate=4000k")
+	require.Contains(t, args.String(), "-b:v 4000k -maxrate 4000k -bufsize 4000k")
+}
+
+func TestAutoAudioProducerConstraints(t *testing.T) {
+	args := parseArgs("/media/bbb.mp4#video=h264#audio=copy")
+	require.Contains(t, args.String(), "-c:a copy")
+
+	producer, err := NewProducer("/media/bbb.mp4#audio=auto")
+	require.NoError(t, err)
+	require.NotNil(t, producer)
+
+	_, err = NewProducer("/media/bbb.mp4#video=h264#audio=auto")
+	require.EqualError(t, err, "ffmpeg: unsupported params: #video=h264#audio=auto")
+}
+
 func TestDrawText(t *testing.T) {
 	tests := []struct {
 		name   string

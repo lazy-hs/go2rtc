@@ -1,18 +1,229 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>config - go2rtc</title>
+    <title>Go2RTC控制台</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <style>
-        html, body {
-            height: 100%;
+        :root {
+            color-scheme: dark;
         }
 
-        #config {
+        html,
+        body {
+            min-height: 100%;
+        }
+
+        .config-main {
+            width: min(1440px, 100%);
+            min-height: calc(100vh - 64px);
+            margin: 0 auto;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .config-header {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 18px;
+            padding: 4px 2px 0;
+        }
+
+        .config-heading {
+            min-width: 0;
+        }
+
+        .config-heading h1 {
+            margin: 0;
+            color: #f8fafc;
+            font-size: 28px;
+            line-height: 1.2;
+            font-weight: 750;
+        }
+
+        .config-heading p {
+            margin: 7px 0 0;
+            color: #94a3b8;
+            font-size: 13px;
+            line-height: 1.55;
+        }
+
+        .config-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+            flex: 0 0 auto;
+        }
+
+        .config-actions button {
+            min-height: 38px;
+            padding: 8px 13px;
+            border-radius: 9px;
+            font-size: 13px;
+        }
+
+        .config-actions svg {
+            width: 16px;
+            height: 16px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        #save {
+            border-color: #22d3ee;
+            background: #22c7df;
+            color: #061923;
+            box-shadow: 0 10px 24px rgba(34, 211, 238, 0.16);
+        }
+
+        #save:hover {
+            background: #67e8f9;
+            color: #061923;
+        }
+
+        .editor-shell {
             flex: 1 1 auto;
-            border-top: 1px solid #ccc;
-            min-height: 300px;
+            min-height: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #22324d;
+            border-radius: 12px;
+            background: #0b1220;
+            box-shadow: 0 20px 50px rgba(2, 6, 23, 0.34);
+        }
+
+        .editor-head,
+        .editor-statusbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex: 0 0 auto;
+        }
+
+        .editor-head {
+            min-height: 44px;
+            padding: 0 14px;
+            border-bottom: 1px solid #22324d;
+            background: rgba(15, 23, 42, 0.94);
+        }
+
+        .file-identity {
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            color: #e2e8f0;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .file-identity svg {
+            width: 17px;
+            height: 17px;
+            fill: none;
+            stroke: #67e8f9;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .editor-mode {
+            color: #64748b;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .editor-shell #config {
+            flex: 1 1 auto;
+            width: 100%;
+            height: clamp(480px, calc(100vh - 224px), 900px);
+            min-height: 480px;
+            border: 0;
+            border-radius: 0;
+            background: #0b1220;
+            box-shadow: none;
+        }
+
+        .editor-loading {
+            height: 100%;
+            display: grid;
+            place-items: center;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        .editor-statusbar {
+            min-height: 34px;
+            padding: 0 12px;
+            border-top: 1px solid #22324d;
+            background: rgba(15, 23, 42, 0.96);
+            color: #64748b;
+            font-size: 11px;
+        }
+
+        #config-status {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        #config-status.is-success {
+            color: #34d399;
+        }
+
+        #config-status.is-warning {
+            color: #fbbf24;
+        }
+
+        #config-status.is-error {
+            color: #fb7185;
+        }
+
+        #cursor-status {
+            flex: 0 0 auto;
+            color: #94a3b8;
+            font-variant-numeric: tabular-nums;
+        }
+
+        @media (max-width: 720px) {
+            .config-main {
+                min-height: calc(100vh - 56px);
+                padding: 12px;
+            }
+
+            .config-header {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .config-heading h1 {
+                font-size: 23px;
+            }
+
+            .config-actions,
+            .config-actions button {
+                width: 100%;
+            }
+
+            .config-actions button {
+                flex: 1 1 0;
+            }
+
+            .editor-shell #config {
+                height: max(460px, calc(100vh - 278px));
+                min-height: 460px;
+            }
         }
     </style>
 </head>
@@ -20,13 +231,38 @@
 
 <script src="main.js"></script>
 
-<main>
-    <div>
-        <button id="save">Save & Restart</button>
-        <button id="suggest" title="ctrl + space">Suggest</button>
-    </div>
+<main class="config-main">
+    <section class="config-header">
+        <div class="config-heading">
+            <h1>配置管理</h1>
+            <p>编辑并应用当前 go2rtc 配置文件。</p>
+        </div>
+        <div class="config-actions">
+            <button id="suggest" type="button" title="打开配置建议" disabled>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M8.5 14.5A7 7 0 1 1 15.5 14.5c-.9.7-1.5 1.5-1.5 2.5h-4c0-1-.6-1.8-1.5-2.5Z"/></svg>
+                配置建议
+            </button>
+            <button id="save" type="button" disabled>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
+                保存并重启
+            </button>
+        </div>
+    </section>
+    <section class="editor-shell" aria-label="go2rtc YAML 配置编辑器">
+        <div class="editor-head">
+            <div class="file-identity">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="m9 13-2 2 2 2"/><path d="m15 13 2 2-2 2"/></svg>
+                <span>go2rtc.yaml</span>
+            </div>
+            <span class="editor-mode">YAML</span>
+        </div>
+        <div id="config"><div class="editor-loading">正在加载配置编辑器...</div></div>
+        <div class="editor-statusbar">
+            <span id="config-status">正在加载配置...</span>
+            <span id="cursor-status">行 1，列 1</span>
+        </div>
+    </section>
 </main>
-<div id="config"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/min/vs/loader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
@@ -47,7 +283,33 @@
 
     require(['vs/editor/editor.main'], () => {
         const container = document.getElementById('config');
+        const saveButton = document.getElementById('save');
+        const suggestButton = document.getElementById('suggest');
+        const configStatus = document.getElementById('config-status');
+        const cursorStatus = document.getElementById('cursor-status');
         container.textContent = '';
+
+        const setConfigStatus = (message, type = '') => {
+            configStatus.textContent = message;
+            configStatus.className = type ? `is-${type}` : '';
+        };
+
+        const waitForRestart = async () => {
+            const startedAt = Date.now();
+            let observedOffline = false;
+            await new Promise(resolve => setTimeout(resolve, 350));
+
+            while (Date.now() - startedAt < 15000) {
+                try {
+                    const response = await fetch('api/config', {cache: 'no-store'});
+                    if (response.ok && (observedOffline || Date.now() - startedAt > 1500)) return true;
+                } catch {
+                    observedOffline = true;
+                }
+                await new Promise(resolve => setTimeout(resolve, 400));
+            }
+            return false;
+        };
 
         const ensureYamlLanguage = () => {
             const languages =
@@ -116,8 +378,35 @@
 
         ensureYamlLanguage();
 
-        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        monaco.editor.setTheme(prefersDark ? 'vs-dark' : 'vs');
+        monaco.editor.defineTheme('go2rtc-console', {
+            base: 'vs-dark',
+            inherit: true,
+            rules: [
+                {token: 'comment', foreground: '64748B'},
+                {token: 'key', foreground: '67E8F9'},
+                {token: 'string', foreground: 'CBD5E1'},
+                {token: 'number', foreground: 'FBBF24'},
+                {token: 'keyword', foreground: '34D399'},
+                {token: 'delimiter', foreground: '94A3B8'},
+            ],
+            colors: {
+                'editor.background': '#0B1220',
+                'editor.foreground': '#E2E8F0',
+                'editorLineNumber.foreground': '#475569',
+                'editorLineNumber.activeForeground': '#94A3B8',
+                'editor.lineHighlightBackground': '#111C30',
+                'editor.selectionBackground': '#164E63AA',
+                'editor.inactiveSelectionBackground': '#164E6355',
+                'editorCursor.foreground': '#22D3EE',
+                'editorIndentGuide.background1': '#1E293B',
+                'editorIndentGuide.activeBackground1': '#334155',
+                'editorSuggestWidget.background': '#111827',
+                'editorSuggestWidget.border': '#2B3F63',
+                'editorHoverWidget.background': '#111827',
+                'editorHoverWidget.border': '#2B3F63',
+            },
+        });
+        monaco.editor.setTheme('go2rtc-console');
 
         const editor = monaco.editor.create(container, {
             language: 'yaml',
@@ -130,7 +419,16 @@
             wordBasedSuggestions: false,
             suggest: {showWords: false},
             scrollBeyondLastLine: false,
+            fontFamily: 'Consolas, "JetBrains Mono", Monaco, monospace',
+            fontSize: 13,
+            lineHeight: 21,
+            padding: {top: 12, bottom: 12},
+            renderLineHighlight: 'all',
+            smoothScrolling: true,
+            bracketPairColorization: {enabled: true},
         });
+
+        suggestButton.disabled = false;
 
         const stripInlineComment = (line) => {
             let inSingle = false;
@@ -955,7 +1253,15 @@
             };
         })();
 
-        editor.onDidChangeModelContent(() => scheduleLint());
+        editor.onDidChangeModelContent(() => {
+            scheduleLint();
+            if (dump === undefined) return;
+            setConfigStatus(editor.getValue() === dump ? '配置已同步' : '有未保存的更改', editor.getValue() === dump ? '' : 'warning');
+        });
+
+        editor.onDidChangeCursorPosition((event) => {
+            cursorStatus.textContent = `行 ${event.position.lineNumber}，列 ${event.position.column}`;
+        });
 
         const setupYamlHints = (schemaRoot) => {
             schemaTools = createSchemaTools(schemaRoot);
@@ -1173,8 +1479,6 @@
         };
 
         const layout = () => {
-            const top = container.getBoundingClientRect().top;
-            container.style.height = `${Math.max(200, window.innerHeight - top)}px`;
             editor.layout();
         };
         window.addEventListener('resize', layout);
@@ -1182,25 +1486,50 @@
 
         let dump;
 
-        document.getElementById('save').addEventListener('click', async () => {
-            let r = await fetch('api/config', {cache: 'no-cache'});
-            if (r.ok && dump !== await r.text()) {
-                alert('Config was changed from another place. Refresh the page and make changes again');
-                return;
-            }
+        saveButton.addEventListener('click', async () => {
+            saveButton.disabled = true;
+            setConfigStatus('正在检查并保存配置...');
+            try {
+                let r = await fetch('api/config', {cache: 'no-cache'});
+                if (r.ok && dump !== await r.text()) {
+                    setConfigStatus('配置已在其他位置修改，请刷新页面后重新编辑', 'warning');
+                    return;
+                }
 
-            r = await fetch('api/config', {method: 'POST', body: editor.getValue()});
-            if (r.ok) {
-                alert('OK');
+                r = await fetch('api/config', {method: 'POST', body: editor.getValue()});
+                if (!r.ok) {
+                    setConfigStatus(await r.text() || '配置保存失败', 'error');
+                    return;
+                }
+
                 dump = editor.getValue();
-                await fetch('api/restart', {method: 'POST'});
-            } else {
-                alert(await r.text());
+                setConfigStatus('配置已保存，正在重启服务...');
+                try {
+                    const restartResponse = await fetch('api/restart', {method: 'POST'});
+                    if (!restartResponse.ok) {
+                        setConfigStatus(await restartResponse.text() || '服务重启失败', 'error');
+                        return;
+                    }
+                } catch {
+                    // The restart may close the current HTTP connection.
+                }
+
+                if (await waitForRestart()) {
+                    setConfigStatus('配置已保存，服务已重启', 'success');
+                    window.setTimeout(() => location.reload(), 450);
+                } else {
+                    setConfigStatus('配置已保存，但未能确认服务重启状态', 'warning');
+                }
+            } catch (error) {
+                setConfigStatus(error.message || '配置保存失败', 'error');
+            } finally {
+                saveButton.disabled = false;
             }
         });
 
-        document.getElementById('suggest').addEventListener('click', () => {
+        suggestButton.addEventListener('click', () => {
             editor.trigger('source', 'editor.action.triggerSuggest', {});
+            editor.focus();
         });
 
         (async () => {
@@ -1213,16 +1542,23 @@
 
             const r = await fetch('api/config', {cache: 'no-cache'});
             if (r.status === 410) {
-                alert('Config file is not set');
+                setConfigStatus('未设置配置文件路径', 'error');
             } else if (r.status === 404) {
+                dump = '';
                 editor.setValue(''); // config file not exist
+                saveButton.disabled = false;
+                setConfigStatus('配置文件不存在，保存后将创建文件', 'warning');
             } else if (r.ok) {
                 dump = await r.text();
                 editor.setValue(dump);
+                saveButton.disabled = false;
+                setConfigStatus('配置已加载');
             } else {
-                alert(`Unknown error: ${r.statusText} (${r.status})`);
+                setConfigStatus(`加载失败：${r.statusText} (${r.status})`, 'error');
             }
-        })();
+        })().catch(error => {
+            setConfigStatus(error.message || '配置加载失败', 'error');
+        });
     });
 </script>
 

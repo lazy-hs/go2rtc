@@ -109,8 +109,9 @@ func TestConfiguredStreamsFromFile(t *testing.T) {
 `)
 	require.NoError(t, os.WriteFile(configPath, config, 0644))
 
-	streams := configuredStreamsFromFile(configPath)
+	streams, order := configuredStreamsFromFile(configPath)
 	require.Len(t, streams, 7)
+	require.Equal(t, []string{"camera1", "camera2", "camera3", "camera4", "camera5", "camera6", "camera7"}, order)
 	require.Equal(t, []string{"ffmpeg:D:/media/1.mp4#video=h264#input=file"}, streams["camera1"])
 	require.Equal(t, []string{
 		"ffmpeg:D:/media/7.mp4#video=h265#input=file",

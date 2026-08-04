@@ -11,10 +11,12 @@ import (
 
 	"github.com/AlexxIT/go2rtc/internal/app"
 	"github.com/AlexxIT/go2rtc/pkg/yaml"
+	yamlv3 "gopkg.in/yaml.v3"
 )
 
 type simulateInfo struct {
 	BasePath          string              `json:"base_path"`
+	ConfiguredOrder   []string            `json:"configured_order"`
 	ConfiguredStreams map[string][]string `json:"configured_streams"`
 	FilesAPI          string              `json:"files_api"`
 	Host              string              `json:"host"`
@@ -28,9 +30,11 @@ type simulateInfo struct {
 }
 
 func simulateHandler(w http.ResponseWriter, r *http.Request) {
+	configuredStreams, configuredOrder := configuredStreamsFromFile(app.ConfigPath)
 	ResponseJSON(w, &simulateInfo{
 		BasePath:          basePath,
-		ConfiguredStreams: configuredStreamsFromFile(app.ConfigPath),
+		ConfiguredOrder:   configuredOrder,
+		ConfiguredStreams: configuredStreams,
 		FilesAPI:          simulateEndpoint("api/simulate/files"),
 		Host:              r.Host,
 		LogAPI:            simulateEndpoint("api/log"),
@@ -106,22 +110,22 @@ func simulateEndpoint(path string) string {
 	return strings.TrimRight(basePath, "/") + "/" + strings.TrimLeft(path, "/")
 }
 
-func configuredStreamsFromFile(configPath string) map[string][]string {
+func configuredStreamsFromFile(configPath string) (map[string][]string, []string) {
 	streams := map[string][]string{}
 	if configPath == "" {
-		return streams
+		return streams, nil
 	}
 
 	data, err := os.ReadFile(configPath)
 	if err != nil {
-		return streams
+		return streams, nil
 	}
 
 	var cfg struct {
 		Streams map[string]any `yaml:"streams"`
 	}
 	if err = yaml.Unmarshal(data, &cfg); err != nil {
-		return streams
+		return streams, nil
 	}
 
 	for name, value := range cfg.Streams {
@@ -144,5 +148,39 @@ func configuredStreamsFromFile(configPath string) map[string][]string {
 		}
 	}
 
-	return streams
+	return streams, configuredStreamOrder(data, streams)
+}
+
+func configuredStreamOrder(data []byte, streams map[string][]string) []string {
+	var document yamlv3.Node
+	if yamlv3.Unmarshal(data, &document) != nil || len(document.Content) == 0 {
+		return nil
+	}
+
+	root := document.Content[0]
+	if root.Kind != yamlv3.MappingNode {
+		return nil
+	}
+
+	for i := 0; i+1 < len(root.Content); i += 2 {
+		if root.Content[i].Value != "streams" {
+			continue
+		}
+
+		mapping := root.Content[i+1]
+		if mapping.Kind != yamlv3.MappingNode {
+			return nil
+		}
+
+		order := make([]string, 0, len(streams))
+		for j := 0; j+1 < len(mapping.Content); j += 2 {
+			name := mapping.Content[j].Value
+			if len(streams[name]) > 0 {
+				order = append(order, name)
+			}
+		}
+		return order
+	}
+
+	return nil
 }

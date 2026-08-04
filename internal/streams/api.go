@@ -52,13 +52,26 @@ func apiStreams(w http.ResponseWriter, r *http.Request) {
 			name = src
 		}
 
-		if _, err := New(name, query["src"]...); err != nil {
+		sources := query["src"]
+		for _, source := range sources {
+			if !HasProducer(source) {
+				http.Error(w, "streams: source not supported", http.StatusBadRequest)
+				return
+			}
+			if err := Validate(source); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+		}
+
+		if err := app.PatchConfig([]string{"streams", name}, sources); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
-		if err := app.PatchConfig([]string{"streams", name}, query["src"]); err != nil {
+		if _, err := New(name, sources...); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
 		}
 
 	case "PATCH":

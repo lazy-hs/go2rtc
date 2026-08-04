@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>模拟流控制台 - go2rtc</title>
+    <title>Go2RTC控制台</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <style>
         :root {
             color-scheme: dark;
@@ -622,6 +623,7 @@
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
+            align-items: center;
         }
 
         .toolbar-pill {
@@ -639,6 +641,30 @@
         .toolbar-pill strong {
             color: var(--text);
             font-size: 13px;
+        }
+
+        .sort-control {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+            padding: 5px 6px 5px 12px;
+            border-radius: 10px;
+            background: rgba(15, 23, 42, 0.72);
+            border: 1px solid var(--line);
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .sort-control select {
+            min-width: 150px;
+            min-height: 32px;
+            padding: 5px 28px 5px 9px;
+            border-radius: 8px;
+            border: 1px solid rgba(71, 85, 105, 0.7);
+            background: rgba(2, 6, 23, 0.55);
+            color: var(--text);
+            font-size: 12px;
         }
 
         .sim-card {
@@ -1633,6 +1659,16 @@
                 <p>仅展示 `ffmpeg:` 且包含 `#input=file` 的本地文件模拟流。支持编辑回填、地址复制与删除。</p>
             </div>
             <div class="toolbar-pills">
+                <label class="sort-control" for="stream-sort">
+                    <span>排序</span>
+                    <select id="stream-sort">
+                        <option value="created-asc">添加时间：最早优先</option>
+                        <option value="created-desc">添加时间：最新优先</option>
+                        <option value="name-asc">任务名称：A-Z</option>
+                        <option value="name-desc">任务名称：Z-A</option>
+                        <option value="status">运行状态：运行中优先</option>
+                    </select>
+                </label>
                 <div class="toolbar-pill">当前识别 <strong id="stream-count">0</strong></div>
                 <div class="toolbar-pill">最近操作 <strong id="current-highlight-label">无</strong></div>
             </div>
@@ -1643,7 +1679,7 @@
 
 </main>
 
-<div id="task-modal" class="modal-shell" aria-hidden="true">
+<div id="task-modal" class="modal-shell" aria-hidden="true" inert>
     <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="form-title">
         <div class="modal-head">
             <div>
@@ -1701,7 +1737,7 @@
                         <label for="audio">音频策略</label>
                         <select id="audio" name="audio">
                             <option value="">无音频</option>
-                            <option value="auto">自动跟随</option>
+                            <option value="copy">自动跟随（复制源音频）</option>
                             <option value="aac">AAC</option>
                             <option value="opus">Opus</option>
                             <option value="pcma">PCMA</option>
@@ -1712,15 +1748,15 @@
                 <div class="rate-grid">
                     <div class="field">
                         <label for="bitrate">码率 kbps</label>
-                        <input id="bitrate" name="bitrate" type="text" placeholder="例如：6000">
+                        <input id="bitrate" name="bitrate" type="number" min="1" step="1" inputmode="numeric" placeholder="例如：6000">
                     </div>
                     <div class="field">
                         <label for="maxrate">最大码率 kbps</label>
-                        <input id="maxrate" name="maxrate" type="text" placeholder="例如：6000" disabled>
+                        <input id="maxrate" name="maxrate" type="number" min="1" step="1" inputmode="numeric" placeholder="例如：6000">
                     </div>
                     <div class="field">
                         <label for="bufsize">缓冲区 kbps</label>
-                        <input id="bufsize" name="bufsize" type="text" placeholder="例如：12000" disabled>
+                        <input id="bufsize" name="bufsize" type="number" min="1" step="1" inputmode="numeric" placeholder="例如：12000">
                     </div>
                 </div>
                 <div class="toggle-row">
@@ -1791,6 +1827,7 @@
     const formSubtitle = document.getElementById('form-subtitle');
     const streamCount = document.getElementById('stream-count');
     const highlightLabel = document.getElementById('current-highlight-label');
+    const streamSort = document.getElementById('stream-sort');
     const modal = document.getElementById('task-modal');
     const openCreateBtn = document.getElementById('open-create');
     const closeModalBtn = document.getElementById('close-modal');
@@ -1812,6 +1849,7 @@
 
     let editingName = '';
     let highlightedStreamName = '';
+    let modalReturnFocus = null;
     let cachedStreams = {};
     let currentBrowserPath = '';
     let currentBrowserParent = '';
@@ -1827,6 +1865,7 @@
         files_api: 'api/simulate/files',
         upload_api: 'api/simulate/upload',
         upload_dir: 'static',
+        configured_order: [],
         configured_streams: {},
     };
 
@@ -1849,15 +1888,43 @@
         const file = (data.get('file') || '').toString().trim();
         const video = (data.get('video') || 'h264').toString();
         const audio = (data.get('audio') || '').toString();
-        const bitrate = (data.get('bitrate') || '').toString().trim();
+        const bitrate = normalizeBitrate(data.get('bitrate'));
+        const maxrate = normalizeBitrate(data.get('maxrate'));
+        const bufsize = normalizeBitrate(data.get('bufsize'));
 
         if (!file) return '';
 
         const params = [`video=${video}`, 'input=file'];
         if (bitrate) params.push(`bitrate=${bitrate}`);
+        if (maxrate) params.push(`maxrate=${maxrate}`);
+        if (bufsize) params.push(`bufsize=${bufsize}`);
         if (audio) params.push(`audio=${audio}`);
 
         return `ffmpeg:${file}#${params.join('#')}`;
+    }
+
+    function normalizeBitrate(value) {
+        const raw = (value || '').toString().trim();
+        if (!raw) return '';
+        const kbps = Number(raw);
+        if (!Number.isFinite(kbps) || kbps <= 0) return '';
+        return `${Math.round(kbps)}k`;
+    }
+
+    function bitrateToKbps(value) {
+        const raw = (value || '').toString().trim();
+        const match = raw.match(/^(\d+(?:\.\d+)?)([kKmM]?)$/);
+        if (!match) return '';
+
+        const number = Number(match[1]);
+        if (!Number.isFinite(number) || number <= 0) return '';
+        if (match[2].toLowerCase() === 'm') return String(Math.round(number * 1000));
+        return String(Math.round(number));
+    }
+
+    function audioLabel(value) {
+        if (value === 'copy') return '复制源音频';
+        return value ? value.toUpperCase() : '无音频';
     }
 
     function updatePreview() {
@@ -2052,19 +2119,49 @@
         return merged;
     }
 
+    function sortStreamEntries(entries) {
+        const configuredOrder = Array.isArray(meta.configured_order) ? meta.configured_order : [];
+        const orderIndex = new Map(configuredOrder.map((name, index) => [name, index]));
+        const fallbackIndex = configuredOrder.length;
+        const mode = streamSort.value;
+
+        return entries.sort(([nameA, streamA], [nameB, streamB]) => {
+            if (mode === 'name-asc' || mode === 'name-desc') {
+                const result = nameA.localeCompare(nameB, 'zh-CN', {numeric: true, sensitivity: 'base'});
+                return mode === 'name-desc' ? -result : result;
+            }
+
+            if (mode === 'status') {
+                const consumersA = Array.isArray(streamA?.consumers) ? streamA.consumers.length : 0;
+                const consumersB = Array.isArray(streamB?.consumers) ? streamB.consumers.length : 0;
+                if ((consumersA > 0) !== (consumersB > 0)) return consumersA > 0 ? -1 : 1;
+                if (consumersA !== consumersB) return consumersB - consumersA;
+            }
+
+            const indexA = orderIndex.has(nameA) ? orderIndex.get(nameA) : fallbackIndex;
+            const indexB = orderIndex.has(nameB) ? orderIndex.get(nameB) : fallbackIndex;
+            const result = indexA === indexB
+                ? nameA.localeCompare(nameB, 'zh-CN', {numeric: true, sensitivity: 'base'})
+                : indexA - indexB;
+            return mode === 'created-desc' ? -result : result;
+        });
+    }
+
     function parseSource(source) {
         const match = source.match(/^ffmpeg:(.*?)(?:#(.*))?$/);
         if (!match) return null;
 
         const [, file, rawParams = ''] = match;
         const params = rawParams ? rawParams.split('#') : [];
-        const result = { file, video: 'h264', audio: '', bitrate: '' };
+        const result = { file, video: 'h264', audio: '', bitrate: '', maxrate: '', bufsize: '' };
 
         for (const part of params) {
             const [key, value = ''] = part.split('=');
             if (key === 'video' && value) result.video = value;
-            if (key === 'audio') result.audio = value;
-            if (key === 'bitrate') result.bitrate = value;
+            if (key === 'audio') result.audio = value === 'auto' ? 'copy' : value;
+            if (key === 'bitrate') result.bitrate = bitrateToKbps(value);
+            if (key === 'maxrate') result.maxrate = bitrateToKbps(value);
+            if (key === 'bufsize') result.bufsize = bitrateToKbps(value);
         }
 
         return result;
@@ -2180,6 +2277,12 @@
     }
 
     function openModal() {
+        if (!modal.classList.contains('is-open')) {
+            modalReturnFocus = document.activeElement instanceof HTMLElement && !modal.contains(document.activeElement)
+                ? document.activeElement
+                : openCreateBtn;
+        }
+        modal.inert = false;
         modal.classList.add('is-open');
         modal.setAttribute('aria-hidden', 'false');
         document.body.style.overflow = 'hidden';
@@ -2189,8 +2292,12 @@
 
     function closeModal() {
         closeFileBrowser(false);
+        if (modal.contains(document.activeElement)) {
+            (modalReturnFocus || openCreateBtn).focus({preventScroll: true});
+        }
         modal.classList.remove('is-open');
         modal.setAttribute('aria-hidden', 'true');
+        modal.inert = true;
         document.body.style.overflow = '';
     }
 
@@ -2206,6 +2313,8 @@
         form.elements.video.value = parsed.video;
         form.elements.audio.value = parsed.audio;
         form.elements.bitrate.value = parsed.bitrate;
+        form.elements.maxrate.value = parsed.maxrate;
+        form.elements.bufsize.value = parsed.bufsize;
         form.elements.loop.checked = true;
         setEditingMode(name);
         highlightStream(name);
@@ -2222,6 +2331,7 @@
         if (!meta.configured_streams || typeof meta.configured_streams !== 'object') {
             meta.configured_streams = {};
         }
+        if (!Array.isArray(meta.configured_order)) meta.configured_order = [];
         document.getElementById('api-host').textContent = meta.host || location.host;
         document.getElementById('rtsp-port').textContent = meta.rtsp_port;
         document.getElementById('onvif-path').textContent = meta.onvif_path;
@@ -2236,7 +2346,7 @@
     function renderStreams(data) {
         cachedStreams = data || {};
         simList.innerHTML = '';
-        const entries = Object.entries(cachedStreams).filter(([, stream]) => getSimulatedSources(stream).length > 0);
+        const entries = sortStreamEntries(Object.entries(cachedStreams).filter(([, stream]) => getSimulatedSources(stream).length > 0));
 
         const runningCount = entries.filter(([, stream]) => (Array.isArray(stream?.consumers) ? stream.consumers.length : 0) > 0).length;
         streamCount.textContent = String(entries.length);
@@ -2287,11 +2397,11 @@
                 <div class="task-cards">
                     <div class="task-card">
                         <strong>编码与音频</strong>
-                        <div class="helper">${escapeHTML((parsed.video || '未指定').toUpperCase())} / ${escapeHTML(parsed.audio || '无音频')}</div>
+                        <div class="helper">${escapeHTML((parsed.video || '未指定').toUpperCase())} / ${escapeHTML(audioLabel(parsed.audio))}</div>
                     </div>
                     <div class="task-card">
-                        <strong>视频码率</strong>
-                        <div class="helper">${escapeHTML(parsed.bitrate || '默认')}</div>
+                        <strong>码率控制</strong>
+                        <div class="helper">目标 ${escapeHTML(parsed.bitrate ? `${parsed.bitrate} kbps` : '默认')} / 最大 ${escapeHTML(parsed.maxrate ? `${parsed.maxrate} kbps` : '跟随目标')} / 缓冲 ${escapeHTML(parsed.bufsize ? `${parsed.bufsize} kbps` : '跟随目标')}</div>
                     </div>
                     <div class="task-card">
                         <div class="task-card-top">
@@ -2434,6 +2544,11 @@
         }
     });
 
+    streamSort.addEventListener('change', () => {
+        localStorage.setItem('go2rtc-simulate-sort', streamSort.value);
+        renderStreams(cachedStreams);
+    });
+
     resetBtn.addEventListener('click', () => {
         resetFormState();
         setStatus('表单已清空，可继续新建任务。');
@@ -2504,6 +2619,10 @@
         resetFormState();
         closeModal();
         updateHighlightLabel('');
+        const savedSort = localStorage.getItem('go2rtc-simulate-sort');
+        if ([...streamSort.options].some(option => option.value === savedSort)) {
+            streamSort.value = savedSort;
+        }
         await loadMeta();
         await loadStreams();
     }

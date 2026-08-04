@@ -7,6 +7,8 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/exec"
+	"runtime"
 	"slices"
 	"strconv"
 	"strings"
@@ -280,7 +282,31 @@ func restartHandler(w http.ResponseWriter, r *http.Request) {
 
 	log.Debug().Msgf("[api] restart %s", path)
 
-	go syscall.Exec(path, os.Args, os.Environ())
+	if runtime.GOOS == "windows" {
+		cmd := exec.Command(path, os.Args[1:]...)
+		cmd.Env = append(os.Environ(), app.RestartDelayEnv+"=750ms")
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err = cmd.Start(); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		Response(w, "OK", MimeText)
+		go func() {
+			time.Sleep(100 * time.Millisecond)
+			os.Exit(0)
+		}()
+		return
+	}
+
+	Response(w, "OK", MimeText)
+	go func() {
+		time.Sleep(50 * time.Millisecond)
+		if err := syscall.Exec(path, os.Args, os.Environ()); err != nil {
+			log.Error().Err(err).Msg("[api] restart")
+		}
+	}()
 }
 
 func logHandler(w http.ResponseWriter, r *http.Request) {

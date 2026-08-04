@@ -125,7 +125,8 @@ func nodeBounds(in []byte, node *yaml.Node) (offset0, offset1 int) {
 	for i := offset1; i < len(in); {
 		indent, length := parseLine(in[i:])
 		if indent+1 != length {
-			if node.Column < indent+1 {
+			line := in[i : i+length]
+			if node.Column < indent+1 || (node.Column == indent+1 && isSequenceLine(line, indent)) {
 				offset1 = i + length
 			} else {
 				break
@@ -135,6 +136,21 @@ func nodeBounds(in []byte, node *yaml.Node) (offset0, offset1 int) {
 	}
 
 	return
+}
+
+func isSequenceLine(line []byte, indent int) bool {
+	if indent >= len(line) || line[indent] != '-' {
+		return false
+	}
+	if indent+1 >= len(line) {
+		return true
+	}
+	switch line[indent+1] {
+	case ' ', '\t', '\r', '\n':
+		return true
+	default:
+		return false
+	}
 }
 
 func addToEnd(in []byte, path []string, value any) ([]byte, error) {

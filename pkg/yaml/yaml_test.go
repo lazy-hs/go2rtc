@@ -64,6 +64,13 @@ func TestPatch(t *testing.T) {
 			expect: "streams:\n  camera1:\n    - val1\n    - val2\n",
 		},
 		{
+			name:   "replace indentless array",
+			src:    "streams:\r\n  camera1:\r\n  - url1\r\n  camera2:\r\n    - url2\r\n",
+			path:   []string{"streams", "camera1"},
+			value:  []string{"val1"},
+			expect: "streams:\r\n  camera1:\n    - val1\n  camera2:\r\n    - url2\r\n",
+		},
+		{
 			name:   "remove value",
 			src:    "streams:\n  camera1: url1\n  camera2: url2",
 			path:   []string{"streams", "camera1"},

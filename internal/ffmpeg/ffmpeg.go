@@ -326,10 +326,26 @@ func parseArgs(s string) *ffmpeg.Args {
 			}
 		}
 
-		if query["bitrate"] != nil {
-			// https://trac.ffmpeg.org/wiki/Limiting%20the%20output%20bitrate
-			b := query["bitrate"][0]
-			args.AddCodec("-b:v " + b + " -maxrate " + b + " -bufsize " + b)
+		// https://trac.ffmpeg.org/wiki/Limiting%20the%20output%20bitrate
+		bitrate := query.Get("bitrate")
+		maxrate := query.Get("maxrate")
+		bufsize := query.Get("bufsize")
+		if bitrate != "" || maxrate != "" || bufsize != "" {
+			var rateArgs []string
+			if bitrate != "" {
+				rateArgs = append(rateArgs, "-b:v "+bitrate)
+			}
+			if maxrate != "" {
+				rateArgs = append(rateArgs, "-maxrate "+maxrate)
+			} else if bitrate != "" {
+				rateArgs = append(rateArgs, "-maxrate "+bitrate)
+			}
+			if bufsize != "" {
+				rateArgs = append(rateArgs, "-bufsize "+bufsize)
+			} else if bitrate != "" {
+				rateArgs = append(rateArgs, "-bufsize "+bitrate)
+			}
+			args.AddCodec(strings.Join(rateArgs, " "))
 		}
 
 		// 4. Process audio codecs

@@ -7,7 +7,10 @@ import (
 	"os/exec"
 	"runtime"
 	"runtime/debug"
+	"time"
 )
+
+const RestartDelayEnv = "GO2RTC_RESTART_DELAY"
 
 var (
 	Version    string
@@ -25,6 +28,13 @@ const usage = `Usage of go2rtc:
 `
 
 func Init() {
+	if value := os.Getenv(RestartDelayEnv); value != "" {
+		_ = os.Unsetenv(RestartDelayEnv)
+		if delay, err := time.ParseDuration(value); err == nil && delay > 0 && delay <= 5*time.Second {
+			time.Sleep(delay)
+		}
+	}
+
 	var config flagConfig
 	var daemon bool
 	var version bool
