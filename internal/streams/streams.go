@@ -3,12 +3,15 @@ package streams
 import (
 	"errors"
 	"net/url"
+	"os"
+	"sort"
 	"sync"
 	"time"
 
 	"github.com/AlexxIT/go2rtc/internal/api"
 	"github.com/AlexxIT/go2rtc/internal/app"
 	"github.com/rs/zerolog"
+	yamlv3 "gopkg.in/yaml.v3"
 )
 
 func Init() {
@@ -21,10 +24,14 @@ func Init() {
 	app.LoadConfig(&cfg)
 
 	log = app.GetLogger("streams")
+	streamsMu.Lock()
+	streamOrder = streamOrderFromConfig(app.ConfigPath)
 
 	for name, item := range cfg.Streams {
 		streams[name] = NewStream(item)
 	}
+	normalizeStreamOrderLocked()
+	streamsMu.Unlock()
 
 	api.HandleFunc("api/streams", apiStreams)
 	api.HandleFunc("api/streams.dot", apiStreamsDOT)
@@ -65,6 +72,7 @@ func New(name string, sources ...string) (*Stream, error) {
 
 	streamsMu.Lock()
 	streams[name] = stream
+	addStreamOrderLocked(name)
 	streamsMu.Unlock()
 
 	return stream, nil
@@ -82,6 +90,7 @@ func Patch(name string, source string) (*Stream, error) {
 				// link (alias) streams[name] to streams[rtspName]
 				streams[name] = stream
 			}
+			addStreamOrderLocked(name)
 			return stream, nil
 		}
 	}
@@ -91,6 +100,7 @@ func Patch(name string, source string) (*Stream, error) {
 			// link (alias) streams[name] to streams[source]
 			streams[name] = stream
 		}
+		addStreamOrderLocked(name)
 		return stream, nil
 	}
 
@@ -106,12 +116,14 @@ func Patch(name string, source string) (*Stream, error) {
 	// check an existing stream with this name
 	if stream, ok := streams[name]; ok {
 		stream.SetSource(source)
+		addStreamOrderLocked(name)
 		return stream, nil
 	}
 
 	// create new stream with this name
 	stream := NewStream(source)
 	streams[name] = stream
+	addStreamOrderLocked(name)
 	return stream, nil
 }
 
@@ -142,6 +154,7 @@ var log zerolog.Logger
 
 var streams = map[string]*Stream{}
 var streamsMu sync.Mutex
+var streamOrder []string
 
 func Get(name string) *Stream {
 	streamsMu.Lock()
@@ -153,16 +166,92 @@ func Delete(name string) {
 	streamsMu.Lock()
 	defer streamsMu.Unlock()
 	delete(streams, name)
+	for i, item := range streamOrder {
+		if item == name {
+			streamOrder = append(streamOrder[:i], streamOrder[i+1:]...)
+			break
+		}
+	}
 }
 
 func GetAllNames() []string {
 	streamsMu.Lock()
-	names := make([]string, 0, len(streams))
-	for name := range streams {
-		names = append(names, name)
+	defer streamsMu.Unlock()
+	normalizeStreamOrderLocked()
+	return append([]string(nil), streamOrder...)
+}
+
+func addStreamOrderLocked(name string) {
+	for _, item := range streamOrder {
+		if item == name {
+			return
+		}
 	}
-	streamsMu.Unlock()
-	return names
+	streamOrder = append(streamOrder, name)
+}
+
+func normalizeStreamOrderLocked() {
+	ordered := make([]string, 0, len(streams))
+	seen := make(map[string]struct{}, len(streams))
+	for _, name := range streamOrder {
+		if _, ok := streams[name]; !ok {
+			continue
+		}
+		if _, ok := seen[name]; ok {
+			continue
+		}
+		seen[name] = struct{}{}
+		ordered = append(ordered, name)
+	}
+
+	remaining := make([]string, 0, len(streams)-len(ordered))
+	for name := range streams {
+		if _, ok := seen[name]; !ok {
+			remaining = append(remaining, name)
+		}
+	}
+	sort.Strings(remaining)
+	streamOrder = append(ordered, remaining...)
+}
+
+func streamOrderFromConfig(configPath string) []string {
+	if configPath == "" {
+		return nil
+	}
+
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		return nil
+	}
+
+	var document yamlv3.Node
+	if yamlv3.Unmarshal(data, &document) != nil || len(document.Content) == 0 {
+		return nil
+	}
+
+	root := document.Content[0]
+	if root.Kind != yamlv3.MappingNode {
+		return nil
+	}
+
+	for i := 0; i+1 < len(root.Content); i += 2 {
+		if root.Content[i].Value != "streams" {
+			continue
+		}
+
+		mapping := root.Content[i+1]
+		if mapping.Kind != yamlv3.MappingNode {
+			return nil
+		}
+
+		order := make([]string, 0, len(mapping.Content)/2)
+		for j := 0; j+1 < len(mapping.Content); j += 2 {
+			order = append(order, mapping.Content[j].Value)
+		}
+		return order
+	}
+
+	return nil
 }
 
 func GetAllSources() map[string][]string {

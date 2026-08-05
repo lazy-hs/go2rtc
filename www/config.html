@@ -196,6 +196,69 @@
             font-variant-numeric: tabular-nums;
         }
 
+        .toast-region {
+            position: fixed;
+            top: 78px;
+            right: 18px;
+            z-index: 1000;
+            width: min(360px, calc(100vw - 24px));
+            pointer-events: none;
+        }
+
+        .config-toast {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px 14px;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            background: #111827;
+            color: #e2e8f0;
+            box-shadow: 0 18px 42px rgba(2, 6, 23, 0.42);
+            font-size: 13px;
+            line-height: 1.5;
+            opacity: 0;
+            transform: translateX(18px);
+            transition: opacity 180ms ease, transform 180ms ease;
+        }
+
+        .config-toast.is-visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .config-toast svg {
+            width: 18px;
+            height: 18px;
+            flex: 0 0 auto;
+            margin-top: 1px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .config-toast.is-success {
+            border-color: rgba(52, 211, 153, 0.5);
+            color: #6ee7b7;
+        }
+
+        .config-toast.is-warning {
+            border-color: rgba(251, 191, 36, 0.5);
+            color: #fcd34d;
+        }
+
+        .config-toast.is-error {
+            border-color: rgba(251, 113, 133, 0.55);
+            color: #fda4af;
+        }
+
+        .config-toast span {
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
         @media (max-width: 720px) {
             .config-main {
                 min-height: calc(100vh - 56px);
@@ -223,6 +286,11 @@
             .editor-shell #config {
                 height: max(460px, calc(100vh - 278px));
                 min-height: 460px;
+            }
+
+            .toast-region {
+                top: 66px;
+                right: 12px;
             }
         }
     </style>
@@ -264,6 +332,8 @@
     </section>
 </main>
 
+<div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+
 <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/min/vs/loader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
 <script>
@@ -287,12 +357,49 @@
         const suggestButton = document.getElementById('suggest');
         const configStatus = document.getElementById('config-status');
         const cursorStatus = document.getElementById('cursor-status');
+        const toastRegion = document.getElementById('toast-region');
         container.textContent = '';
+
+        let toastTimer;
 
         const setConfigStatus = (message, type = '') => {
             configStatus.textContent = message;
             configStatus.className = type ? `is-${type}` : '';
         };
+
+        const showToast = (message, type) => {
+            window.clearTimeout(toastTimer);
+
+            const toast = document.createElement('div');
+            toast.className = `config-toast is-${type}`;
+            toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
+            toast.innerHTML = type === 'success'
+                ? '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m8 12 2.5 2.5L16 9"></path></svg>'
+                : type === 'warning'
+                    ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.7 2.4 17.4A2 2 0 0 0 4.1 20h15.8a2 2 0 0 0 1.7-2.6L13.7 3.7a2 2 0 0 0-3.4 0Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>'
+                    : '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m9 9 6 6"></path><path d="m15 9-6 6"></path></svg>';
+
+            const text = document.createElement('span');
+            text.textContent = message;
+            toast.appendChild(text);
+            toastRegion.replaceChildren(toast);
+            window.requestAnimationFrame(() => toast.classList.add('is-visible'));
+
+            toastTimer = window.setTimeout(() => {
+                toast.classList.remove('is-visible');
+                window.setTimeout(() => toast.remove(), 200);
+            }, 8000);
+        };
+
+        try {
+            const savedToast = JSON.parse(sessionStorage.getItem('config-toast'));
+            sessionStorage.removeItem('config-toast');
+            if (savedToast && savedToast.message && savedToast.type) {
+                showToast(savedToast.message, savedToast.type);
+            }
+        } catch {
+            sessionStorage.removeItem('config-toast');
+        }
 
         const waitForRestart = async () => {
             const startedAt = Date.now();
@@ -1498,13 +1605,17 @@
             try {
                 let r = await fetch('api/config', {cache: 'no-cache'});
                 if (r.ok && dump !== await r.text()) {
-                    setConfigStatus('配置已在其他位置修改，请刷新页面后重新编辑', 'warning');
+                    const message = '配置已在其他位置修改，请刷新页面后重新编辑';
+                    setConfigStatus(message, 'warning');
+                    showToast(message, 'warning');
                     return;
                 }
 
                 r = await fetch('api/config', {method: 'POST', body: editor.getValue()});
                 if (!r.ok) {
-                    setConfigStatus(await r.text() || '配置保存失败', 'error');
+                    const message = await r.text() || '配置保存失败';
+                    setConfigStatus(message, 'error');
+                    showToast(message, 'error');
                     return;
                 }
 
@@ -1513,7 +1624,9 @@
                 try {
                     const restartResponse = await fetch('api/restart', {method: 'POST'});
                     if (!restartResponse.ok) {
-                        setConfigStatus(await restartResponse.text() || '服务重启失败', 'error');
+                        const message = await restartResponse.text() || '服务重启失败';
+                        setConfigStatus(message, 'error');
+                        showToast(message, 'error');
                         return;
                     }
                 } catch {
@@ -1521,13 +1634,22 @@
                 }
 
                 if (await waitForRestart()) {
-                    setConfigStatus('配置已保存，服务已重启', 'success');
-                    window.setTimeout(() => location.reload(), 450);
+                    const message = '配置保存成功，服务已重启';
+                    setConfigStatus(message, 'success');
+                    showToast(message, 'success');
+                    sessionStorage.setItem('config-toast', JSON.stringify({message, type: 'success'}));
+                    window.setTimeout(() => location.reload(), 900);
                 } else {
-                    setConfigStatus('配置已保存，但未能确认服务重启状态', 'warning');
+                    const message = '配置已保存，但未能确认服务重启状态';
+                    setConfigStatus(message, 'warning');
+                    showToast(message, 'warning');
                 }
             } catch (error) {
-                setConfigStatus(error.message || '配置保存失败', 'error');
+                const message = error instanceof TypeError
+                    ? '无法连接 go2rtc 服务，配置保存失败'
+                    : (error.message || '配置保存失败');
+                setConfigStatus(message, 'error');
+                showToast(message, 'error');
             } finally {
                 saveButton.disabled = false;
             }

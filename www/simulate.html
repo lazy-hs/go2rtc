@@ -707,6 +707,14 @@
             line-height: 1.4;
         }
 
+        .sim-card .task-card .onvif-link {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            word-break: normal;
+        }
+
         .sim-card .sim-links {
             gap: 8px;
         }
@@ -1851,6 +1859,7 @@
     let highlightedStreamName = '';
     let modalReturnFocus = null;
     let cachedStreams = {};
+    let onvifChannels = new Map();
     let currentBrowserPath = '';
     let currentBrowserParent = '';
     let uploadBusy = false;
@@ -2172,9 +2181,32 @@
         return `rtsp://${hostname}:${meta.rtsp_port}/${encodeURIComponent(name)}`;
     }
 
-    function onvifURL() {
+    function onvifURL(channel = 0) {
         const host = meta.host || location.host;
-        return `${location.protocol}//${host}${meta.onvif_path}`;
+        const url = new URL(meta.onvif_path, `${location.protocol}//${host}`);
+        if (channel > 0) url.searchParams.set('channel', String(channel));
+        return url.toString();
+    }
+
+    function buildONVIFChannels(data) {
+        const names = Object.keys(data || {});
+        const available = new Set(names);
+        const ordered = [];
+        const seen = new Set();
+
+        for (const name of meta.configured_order || []) {
+            if (available.has(name) && !seen.has(name)) {
+                ordered.push(name);
+                seen.add(name);
+            }
+        }
+
+        const remaining = names
+            .filter(name => !seen.has(name))
+            .sort();
+        ordered.push(...remaining);
+
+        return new Map(ordered.map((name, index) => [name, index + 1]));
     }
 
     function updateHighlightLabel(name = '') {
@@ -2345,6 +2377,7 @@
 
     function renderStreams(data) {
         cachedStreams = data || {};
+        onvifChannels = buildONVIFChannels(cachedStreams);
         simList.innerHTML = '';
         const entries = sortStreamEntries(Object.entries(cachedStreams).filter(([, stream]) => getSimulatedSources(stream).length > 0));
 
@@ -2359,7 +2392,8 @@
             const parsed = parseSource(src) || {};
             const online = Array.isArray(stream?.consumers) ? stream.consumers.length : 0;
             const rtsp = rtspURL(name);
-            const onvif = onvifURL();
+            const onvifChannel = onvifChannels.get(name) || 0;
+            const onvif = onvifURL(onvifChannel);
 
             const card = document.createElement('article');
             card.className = 'sim-card';
@@ -2405,12 +2439,13 @@
                     </div>
                     <div class="task-card">
                         <div class="task-card-top">
-                            <strong>ONVIF 入口</strong>
+                            <strong>ONVIF 入口 · 通道 ${onvifChannel}</strong>
                             <button class="copy-btn inline" type="button" data-copy="${encodeURIComponent(onvif)}" data-copy-label="ONVIF 地址" aria-label="复制 ONVIF 地址">
                                 <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                             </button>
                         </div>
-                        <code>${escapeHTML(onvif)}</code>
+                        <code class="onvif-link" title="${escapeHTML(onvif)}">${escapeHTML(onvif)}</code>
+                        <div class="helper">通道号 ${onvifChannel} · Profile Token：${escapeHTML(name)}</div>
                     </div>
                     <div class="task-card">
                         <strong>发布协议</strong>
