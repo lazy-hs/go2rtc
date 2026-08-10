@@ -22,10 +22,26 @@ import (
 func Init() {
 	log = app.GetLogger("onvif")
 
+	var cfg struct {
+		Event  eventConfig  `yaml:"event"`
+		Device deviceConfig `yaml:"onvif"`
+	}
+	app.LoadConfig(&cfg)
+	device = cfg.Device.withDefaults(app.Version)
+	events = newEventManager(cfg.Event)
+	events.start()
+	if len(events.templates) == 0 {
+		log.Warn().Msg("[onvif] event generator disabled: event.templates is empty")
+	} else {
+		log.Info().Dur("interval", events.interval).Int("burst", events.burst).
+			Int("templates", len(events.templates)).Msg("[onvif] event generator enabled")
+	}
+
 	streams.HandleFunc("onvif", streamOnvif)
 
 	// ONVIF server on all suburls
 	api.HandleFunc("/onvif/", onvifDeviceService)
+	startDiscovery(api.Port)
 
 	// ONVIF client autodiscovery
 	api.HandleFunc("api/onvif", apiOnvif)
@@ -65,7 +81,8 @@ func onvifDeviceService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	operation := onvif.GetRequestAction(b)
+	request := b
+	operation := onvif.GetRequestAction(request)
 	if operation == "" {
 		http.Error(w, "malformed request body", http.StatusBadRequest)
 		return
@@ -73,9 +90,27 @@ func onvifDeviceService(w http.ResponseWriter, r *http.Request) {
 
 	log.Trace().Msgf("[onvif] server request %s %s:\n%s", r.Method, r.RequestURI, b)
 
+	if isEventRequest(r, operation) {
+		b, err = eventResponse(r, request, operation)
+		if err != nil {
+			status := http.StatusBadRequest
+			if err == errSubscriptionNotFound {
+				status = http.StatusNotFound
+			}
+			http.Error(w, err.Error(), status)
+			log.Warn().Err(err).Str("operation", operation).Msg("[onvif] event request")
+			return
+		}
+		if b != nil {
+			action := eventResponseAction(operation)
+			b = eventAddressedResponse(r, request, b, action)
+			writeSOAPResponseAction(w, b, action)
+			return
+		}
+	}
+
 	switch operation {
 	case onvif.ServiceGetServiceCapabilities, // important for Hass
-		onvif.DeviceGetNetworkInterfaces, // important for Hass
 		onvif.DeviceGetSystemDateAndTime, // important for Hass
 		onvif.DeviceSetSystemDateAndTime, // return just OK
 		onvif.DeviceGetDiscoveryMode,
@@ -84,7 +119,6 @@ func onvifDeviceService(w http.ResponseWriter, r *http.Request) {
 		onvif.DeviceGetNetworkDefaultGateway,
 		onvif.DeviceGetNetworkProtocols,
 		onvif.DeviceGetNTP,
-		onvif.DeviceGetScopes,
 		onvif.MediaGetVideoEncoderConfiguration,
 		onvif.MediaGetVideoEncoderConfigurations,
 		onvif.MediaGetAudioEncoderConfigurations,
@@ -95,14 +129,28 @@ func onvifDeviceService(w http.ResponseWriter, r *http.Request) {
 
 	case onvif.DeviceGetCapabilities:
 		// important for Hass: Media section
-		b = onvif.GetCapabilitiesResponse(r.Host)
+		b = onvif.GetCapabilitiesResponseWithQuery(r.Host, onvifServiceQuery(r))
 
 	case onvif.DeviceGetServices:
-		b = onvif.GetServicesResponse(r.Host)
+		b = onvif.GetServicesResponseWithQuery(r.Host, onvifServiceQuery(r))
 
 	case onvif.DeviceGetDeviceInformation:
 		// important for Hass: SerialNumber (unique server ID)
-		b = onvif.GetDeviceInformationResponse("", "go2rtc", app.Version, r.Host)
+		serial := device.Serial
+		if serial == "" {
+			serial = r.Host
+		}
+		b = onvif.GetDeviceInformationResponse(
+			device.Manufacturer, device.Model, device.Firmware, serial, device.Hardware,
+		)
+
+	case onvif.DeviceGetScopes:
+		b = onvif.GetScopesResponse(device.Name, device.Hardware)
+
+	case onvif.DeviceGetNetworkInterfaces:
+		interfaces := networkInterfacesForRequest(r)
+		b = onvif.GetNetworkInterfacesResponse(interfaces)
+		logNetworkInterface(interfaces)
 
 	case onvif.DeviceSystemReboot:
 		b = onvif.StaticResponse(operation)
@@ -152,8 +200,24 @@ func onvifDeviceService(w http.ResponseWriter, r *http.Request) {
 
 	log.Trace().Msgf("[onvif] server response:\n%s", b)
 
+	writeSOAPResponse(w, b)
+}
+
+func writeSOAPResponse(w http.ResponseWriter, b []byte) {
 	w.Header().Set("Content-Type", "application/soap+xml; charset=utf-8")
-	if _, err = w.Write(b); err != nil {
+	if _, err := w.Write(b); err != nil {
+		log.Error().Err(err).Caller().Send()
+	}
+}
+
+func writeSOAPResponseAction(w http.ResponseWriter, b []byte, action string) {
+	if action == "" {
+		writeSOAPResponse(w, b)
+		return
+	}
+	w.Header().Set("Content-Type", `application/soap+xml; charset=utf-8; action="`+action+`"`)
+	w.Header().Set("SOAPAction", `"`+action+`"`)
+	if _, err := w.Write(b); err != nil {
 		log.Error().Err(err).Caller().Send()
 	}
 }

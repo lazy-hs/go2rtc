@@ -971,6 +971,74 @@
             transform: translateX(0);
         }
 
+        .onvif-identity-bar {
+            padding-bottom: 14px;
+            border-bottom: 1px solid rgba(34, 50, 77, 0.82);
+        }
+
+        .onvif-identity-copy {
+            min-width: 0;
+            display: grid;
+            gap: 2px;
+        }
+
+        .onvif-identity-copy span,
+        .onvif-identity-copy small {
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+
+        .onvif-identity-copy strong {
+            overflow: hidden;
+            color: var(--text);
+            font-size: 13px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .onvif-identity-actions {
+            flex: 0 0 auto;
+            display: grid;
+            justify-items: end;
+            gap: 4px;
+        }
+
+        .onvif-access-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 14px;
+        }
+
+        .onvif-access-title {
+            min-width: 0;
+        }
+
+        #open-onvif-config {
+            min-height: 36px;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+
+        #onvif-config-feedback {
+            min-height: 16px;
+            color: var(--ok);
+            font-size: 11px;
+        }
+
+        .onvif-config-panel {
+            width: min(560px, 100%);
+        }
+
+        .onvif-config-form .modal-form-scroll {
+            align-content: start;
+        }
+
+        .onvif-config-form .field input {
+            min-width: 0;
+        }
+
         .modal-head {
             padding: 18px 22px 14px;
             border-bottom: 1px solid rgba(34, 50, 77, 0.82);
@@ -1529,6 +1597,23 @@
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
 
+            .onvif-identity-bar {
+                padding-bottom: 12px;
+            }
+
+            .onvif-access-head {
+                flex-direction: column;
+            }
+
+            .onvif-identity-actions {
+                width: 100%;
+                justify-items: stretch;
+            }
+
+            #open-onvif-config {
+                width: 100%;
+            }
+
             .section-top,
             .sim-actions {
                 flex-direction: column;
@@ -1547,6 +1632,12 @@
             .panel-title h1 {
                 font-size: 28px;
                 line-height: 1.16;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .onvif-config-form .form-grid {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -1631,11 +1722,24 @@
                 </section>
 
                 <aside class="side-card surface-card">
-                    <div class="card-head">
-                        <h3>访问概览</h3>
-                        <p>保存后即可复制 RTSP 地址与 ONVIF 服务入口，用于第三方平台接入测试。</p>
+                    <div class="card-head onvif-access-head">
+                        <div class="onvif-access-title">
+                            <h3>访问概览</h3>
+                            <p>保存后即可复制 RTSP 地址与 ONVIF 服务入口，用于第三方平台接入测试。</p>
+                        </div>
+                        <div class="onvif-identity-actions">
+                            <button class="floating-action" id="open-onvif-config" type="button">设备信息</button>
+                            <span id="onvif-config-feedback" role="status" aria-live="polite"></span>
+                        </div>
                     </div>
                     <div class="card-body stack">
+                        <div class="onvif-identity-bar">
+                            <div class="onvif-identity-copy">
+                                <span>模拟设备</span>
+                                <strong id="onvif-device-name">加载中...</strong>
+                                <small id="onvif-device-model">加载中...</small>
+                            </div>
+                        </div>
                         <div class="mini-grid">
                             <div class="mini-item">
                                 <strong>ONVIF 服务</strong>
@@ -1805,6 +1909,55 @@
     </section>
 </div>
 
+<div id="onvif-config-modal" class="modal-shell" aria-hidden="true" inert>
+    <section class="modal-panel onvif-config-panel" role="dialog" aria-modal="true" aria-labelledby="onvif-config-title">
+        <div class="modal-head">
+            <div>
+                <h2 id="onvif-config-title">ONVIF 设备信息</h2>
+                <p>配置模拟摄像机在设备发现和设备信息接口中显示的身份。</p>
+            </div>
+            <button id="close-onvif-config" class="modal-close" type="button" aria-label="关闭">×</button>
+        </div>
+        <form id="onvif-config-form" class="modal-form onvif-config-form">
+            <div class="modal-form-scroll">
+                <div class="modal-section">
+                    <div class="form-grid">
+                        <div class="field">
+                            <label for="onvif-name">摄像机名称</label>
+                            <input id="onvif-name" name="name" type="text" maxlength="256">
+                        </div>
+                        <div class="field">
+                            <label for="onvif-manufacturer">制造商</label>
+                            <input id="onvif-manufacturer" name="manufacturer" type="text" maxlength="256">
+                        </div>
+                        <div class="field">
+                            <label for="onvif-model">设备型号</label>
+                            <input id="onvif-model" name="model" type="text" maxlength="256">
+                        </div>
+                        <div class="field">
+                            <label for="onvif-firmware">固件版本</label>
+                            <input id="onvif-firmware" name="firmware" type="text" maxlength="256">
+                        </div>
+                        <div class="field">
+                            <label for="onvif-serial">序列号</label>
+                            <input id="onvif-serial" name="serial" type="text" maxlength="256" placeholder="留空则自动使用访问地址">
+                        </div>
+                        <div class="field">
+                            <label for="onvif-hardware">硬件标识</label>
+                            <input id="onvif-hardware" name="hardware" type="text" maxlength="256">
+                        </div>
+                    </div>
+                </div>
+                <div id="onvif-config-status" class="status" role="status" aria-live="polite"></div>
+            </div>
+            <div class="modal-actions">
+                <button class="ghost" id="cancel-onvif-config" type="button">取消</button>
+                <button class="floating-action" id="save-onvif-config" type="submit">保存并重启</button>
+            </div>
+        </form>
+    </section>
+</div>
+
 <div id="file-browser" class="file-browser-shell" aria-hidden="true">
     <section class="file-browser-panel" role="dialog" aria-modal="true" aria-labelledby="file-browser-title">
         <div class="file-browser-head">
@@ -1854,10 +2007,19 @@
     const fileBrowserUpBtn = document.getElementById('file-browser-up');
     const closeFileBrowserBtn = document.getElementById('close-file-browser');
     const cancelFileBrowserBtn = document.getElementById('cancel-file-browser');
+    const onvifConfigModal = document.getElementById('onvif-config-modal');
+    const onvifConfigForm = document.getElementById('onvif-config-form');
+    const openONVIFConfigBtn = document.getElementById('open-onvif-config');
+    const closeONVIFConfigBtn = document.getElementById('close-onvif-config');
+    const cancelONVIFConfigBtn = document.getElementById('cancel-onvif-config');
+    const saveONVIFConfigBtn = document.getElementById('save-onvif-config');
+    const onvifConfigStatus = document.getElementById('onvif-config-status');
+    const onvifConfigFeedback = document.getElementById('onvif-config-feedback');
 
     let editingName = '';
     let highlightedStreamName = '';
     let modalReturnFocus = null;
+    let onvifConfigReturnFocus = null;
     let cachedStreams = {};
     let onvifChannels = new Map();
     let currentBrowserPath = '';
@@ -1869,6 +2031,7 @@
         rtsp_port: '8554',
         rtsp_path: '/',
         onvif_path: '/onvif/device_service',
+        onvif_config_api: 'api/simulate/onvif',
         streams_api: 'api/streams',
         log_api: 'api/log',
         files_api: 'api/simulate/files',
@@ -2333,6 +2496,66 @@
         document.body.style.overflow = '';
     }
 
+    function setONVIFConfigStatus(message, isError = false) {
+        onvifConfigStatus.textContent = message;
+        onvifConfigStatus.classList.toggle('error', isError);
+    }
+
+    function updateONVIFIdentitySummary(config) {
+        document.getElementById('onvif-device-name').textContent = config?.name || 'go2rtc';
+        document.getElementById('onvif-device-model').textContent = config?.model || 'go2rtc';
+    }
+
+    async function loadONVIFConfig() {
+        const response = await fetch(baseURL(meta.onvif_config_api), {cache: 'no-cache'});
+        if (!response.ok) throw new Error(await response.text() || '加载 ONVIF 设备信息失败');
+        const data = await response.json();
+        const config = data.config || {};
+        const defaults = data.defaults || {};
+        for (const field of ['name', 'manufacturer', 'model', 'firmware', 'serial', 'hardware']) {
+            const input = onvifConfigForm.elements[field];
+            input.value = config[field] || '';
+            if (field !== 'serial') input.placeholder = defaults[field] || '';
+        }
+        updateONVIFIdentitySummary(data.effective || config);
+
+        const savedMessage = sessionStorage.getItem('onvif-config-saved');
+        sessionStorage.removeItem('onvif-config-saved');
+        onvifConfigFeedback.textContent = savedMessage || '';
+        return data;
+    }
+
+    async function openONVIFConfig() {
+        onvifConfigReturnFocus = document.activeElement instanceof HTMLElement
+            ? document.activeElement
+            : openONVIFConfigBtn;
+        openONVIFConfigBtn.disabled = true;
+        onvifConfigFeedback.textContent = '';
+        try {
+            await loadONVIFConfig();
+            setONVIFConfigStatus('');
+            onvifConfigModal.inert = false;
+            onvifConfigModal.classList.add('is-open');
+            onvifConfigModal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            requestAnimationFrame(() => onvifConfigForm.elements.name.focus({preventScroll: true}));
+        } catch (error) {
+            onvifConfigFeedback.textContent = error.message;
+        } finally {
+            openONVIFConfigBtn.disabled = false;
+        }
+    }
+
+    function closeONVIFConfig() {
+        if (onvifConfigModal.contains(document.activeElement)) {
+            (onvifConfigReturnFocus || openONVIFConfigBtn).focus({preventScroll: true});
+        }
+        onvifConfigModal.classList.remove('is-open');
+        onvifConfigModal.setAttribute('aria-hidden', 'true');
+        onvifConfigModal.inert = true;
+        document.body.style.overflow = '';
+    }
+
     function fillFormFromStream(name, source) {
         const parsed = parseSource(source);
         if (!parsed) {
@@ -2372,6 +2595,12 @@
         document.getElementById('log-api').textContent = meta.log_api;
         uploadDirectory.textContent = meta.upload_dir || 'static';
         uploadDirectory.title = uploadDirectory.textContent;
+        try {
+            await loadONVIFConfig();
+        } catch (error) {
+            updateONVIFIdentitySummary();
+            onvifConfigFeedback.textContent = error.message;
+        }
         updatePreview();
     }
 
@@ -2558,6 +2787,8 @@
         if (event.key !== 'Escape') return;
         if (fileBrowser.classList.contains('is-open')) {
             closeFileBrowser();
+        } else if (onvifConfigModal.classList.contains('is-open')) {
+            closeONVIFConfig();
         } else if (modal.classList.contains('is-open')) {
             closeModal();
         }
@@ -2567,6 +2798,39 @@
     cancelModalBtn.addEventListener('click', closeModal);
     modal.addEventListener('click', event => {
         if (event.target === modal) closeModal();
+    });
+
+    openONVIFConfigBtn.addEventListener('click', openONVIFConfig);
+    closeONVIFConfigBtn.addEventListener('click', closeONVIFConfig);
+    cancelONVIFConfigBtn.addEventListener('click', closeONVIFConfig);
+    onvifConfigModal.addEventListener('click', event => {
+        if (event.target === onvifConfigModal) closeONVIFConfig();
+    });
+
+    onvifConfigForm.addEventListener('submit', async event => {
+        event.preventDefault();
+        saveONVIFConfigBtn.disabled = true;
+        setONVIFConfigStatus('正在保存...');
+        try {
+            const config = Object.fromEntries(new FormData(onvifConfigForm).entries());
+            const response = await fetch(baseURL(meta.onvif_config_api), {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(config),
+            });
+            if (!response.ok) throw new Error(await response.text() || '保存 ONVIF 设备信息失败');
+            const data = await response.json();
+            updateONVIFIdentitySummary(data.effective || data.config);
+            setONVIFConfigStatus('配置已保存，正在重启...');
+
+            const restartResponse = await fetch(baseURL('api/restart'), {method: 'POST'});
+            if (!restartResponse.ok) throw new Error(await restartResponse.text() || '重启失败');
+            sessionStorage.setItem('onvif-config-saved', '设备信息已保存');
+            window.setTimeout(() => location.reload(), 1500);
+        } catch (error) {
+            setONVIFConfigStatus(error.message, true);
+            saveONVIFConfigBtn.disabled = false;
+        }
     });
 
     refreshStateBtn?.addEventListener('click', async () => {
@@ -2653,6 +2917,7 @@
     async function init() {
         resetFormState();
         closeModal();
+        closeONVIFConfig();
         updateHighlightLabel('');
         const savedSort = localStorage.getItem('go2rtc-simulate-sort');
         if ([...streamSort.options].some(option => option.value === savedSort)) {

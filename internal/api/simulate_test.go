@@ -45,6 +45,7 @@ func TestSimulateHandlerUsesRequestHostAndBasePath(t *testing.T) {
 	require.Equal(t, "/rtc", info.BasePath)
 	require.Equal(t, "/rtc/api/streams", info.StreamsAPI)
 	require.Equal(t, "/rtc/api/log", info.LogAPI)
+	require.Equal(t, "/rtc/api/simulate/onvif", info.ONVIFConfigAPI)
 	require.Equal(t, "/rtc/api/simulate/files", info.FilesAPI)
 	require.Equal(t, "/rtc/api/simulate/upload", info.UploadAPI)
 	require.Equal(t, "/rtc/onvif/device_service", info.ONVIFPath)

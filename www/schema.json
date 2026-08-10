@@ -205,6 +205,146 @@
         "type": "string"
       }
     },
+    "onvif": {
+      "description": "ONVIF simulated camera identity",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "description": "Camera name shown during WS-Discovery and GetScopes",
+          "type": "string",
+          "default": "go2rtc",
+          "examples": [
+            "Front Door Camera"
+          ]
+        },
+        "manufacturer": {
+          "description": "Manufacturer returned by GetDeviceInformation",
+          "type": "string",
+          "default": "go2rtc",
+          "examples": [
+            "ACME"
+          ]
+        },
+        "model": {
+          "description": "Camera model returned by GetDeviceInformation",
+          "type": "string",
+          "default": "go2rtc",
+          "examples": [
+            "Virtual IPC-9000"
+          ]
+        },
+        "firmware": {
+          "description": "Firmware version; defaults to the go2rtc version",
+          "type": "string",
+          "examples": [
+            "2.1.0"
+          ]
+        },
+        "serial": {
+          "description": "Camera serial number; defaults to the request host when empty",
+          "type": "string",
+          "examples": [
+            "CAM-001"
+          ]
+        },
+        "hardware": {
+          "description": "Hardware identifier shown in discovery and device information",
+          "type": "string",
+          "default": "go2rtc",
+          "examples": [
+            "Virtual IPC"
+          ]
+        }
+      }
+    },
+    "event": {
+      "description": "ONVIF simulated event generation settings",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "interval": {
+          "description": "Interval between generated ONVIF events",
+          "type": "string",
+          "default": "1m",
+          "examples": [
+            "10s",
+            "1m"
+          ]
+        },
+        "burst": {
+          "description": "Number of initial events generated when the event service starts",
+          "type": "integer",
+          "minimum": 0,
+          "default": 10
+        },
+        "templates": {
+          "description": "ONVIF event templates; one template is selected randomly for each report",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "topic",
+              "startData",
+              "endData"
+            ],
+            "properties": {
+              "topic": {
+                "description": "ONVIF event topic",
+                "type": "string",
+                "examples": [
+                  "tns1:VideoSource/MotionAlarm",
+                  "tns1:VideoSource/PeopleDetect",
+                  "tns1:VideoAnalytics/Vehicle"
+                ]
+              },
+              "sourceData": {
+                "description": "Additional XML SimpleItem elements appended to the ONVIF event Source",
+                "type": "string",
+                "examples": [
+                  "<tt:SimpleItem Value=\"analytics_video_source_audio_source\" Name=\"VideoAnalyticsConfigurationToken\"/><tt:SimpleItem Value=\"MyMotionDetectorRule\" Name=\"Rule\"/>"
+                ]
+              },
+              "startData": {
+                "description": "XML payload reported when the event starts",
+                "type": "string",
+                "examples": [
+                  "<tt:SimpleItem Value=\"true\" Name=\"IsMotion\"/>"
+                ]
+              },
+              "endData": {
+                "description": "XML payload reported when the event ends",
+                "type": "string",
+                "examples": [
+                  "<tt:SimpleItem Value=\"false\" Name=\"IsMotion\"/>"
+                ]
+              },
+              "startOperation": {
+                "description": "ONVIF PropertyOperation used for the start event",
+                "type": "string",
+                "enum": [
+                  "Initialized",
+                  "Changed",
+                  "Deleted"
+                ],
+                "default": "Changed"
+              },
+              "endOperation": {
+                "description": "ONVIF PropertyOperation used for the end event",
+                "type": "string",
+                "enum": [
+                  "Initialized",
+                  "Changed",
+                  "Deleted"
+                ],
+                "default": "Changed"
+              }
+            }
+          }
+        }
+      }
+    },
     "echo": {
       "type": "object",
       "properties": {

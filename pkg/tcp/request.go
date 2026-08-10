@@ -124,6 +124,12 @@ func Do(req *http.Request) (*http.Response, error) {
 		}
 
 		req.Header.Set("Authorization", header)
+		if req.GetBody != nil {
+			req.Body, err = req.GetBody()
+			if err != nil {
+				return nil, err
+			}
+		}
 
 		if res, err = client.Do(req); err != nil {
 			return nil, err

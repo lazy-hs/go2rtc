@@ -3,6 +3,7 @@ package app
 import (
 	"io"
 	"os"
+	"sort"
 	"strings"
 	"sync"
 
@@ -14,6 +15,10 @@ import (
 var MemoryLog = newBuffer()
 
 func GetLogger(module string) zerolog.Logger {
+	loggerModulesMu.Lock()
+	loggerModules[module] = struct{}{}
+	loggerModulesMu.Unlock()
+
 	Logger.Trace().Str("module", module).Msgf("[log] init")
 
 	if s, ok := modules[module]; ok {
@@ -26,6 +31,22 @@ func GetLogger(module string) zerolog.Logger {
 
 	return Logger
 }
+
+func LogModules() []string {
+	loggerModulesMu.RLock()
+	result := make([]string, 0, len(loggerModules))
+	for module := range loggerModules {
+		result = append(result, module)
+	}
+	loggerModulesMu.RUnlock()
+	sort.Strings(result)
+	return result
+}
+
+var (
+	loggerModulesMu sync.RWMutex
+	loggerModules   = map[string]struct{}{}
+)
 
 // initLogger support:
 // - output: empty (only to memory), stderr, stdout

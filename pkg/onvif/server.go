@@ -2,6 +2,8 @@ package onvif
 
 import (
 	"bytes"
+	"encoding/xml"
+	"net/url"
 	"regexp"
 	"time"
 )
@@ -56,39 +58,58 @@ func GetRequestAction(b []byte) string {
 }
 
 func GetCapabilitiesResponse(host string) []byte {
+	return GetCapabilitiesResponseWithQuery(host, "")
+}
+
+func GetCapabilitiesResponseWithQuery(host, query string) []byte {
 	e := NewEnvelope()
 	e.Appendf(`<tds:GetCapabilitiesResponse>
 	<tds:Capabilities>
 		<tt:Device>
-			<tt:XAddr>http://%s/onvif/device_service</tt:XAddr>
+			<tt:XAddr>http://%s/onvif/device_service%s</tt:XAddr>
 		</tt:Device>
 		<tt:Media>
-			<tt:XAddr>http://%s/onvif/media_service</tt:XAddr>
+			<tt:XAddr>http://%s/onvif/media_service%s</tt:XAddr>
 			<tt:StreamingCapabilities>
 				<tt:RTPMulticast>false</tt:RTPMulticast>
 				<tt:RTP_TCP>false</tt:RTP_TCP>
 				<tt:RTP_RTSP_TCP>true</tt:RTP_RTSP_TCP>
 			</tt:StreamingCapabilities>
 		</tt:Media>
+		<tt:Events>
+			<tt:XAddr>http://%s/onvif/event%s</tt:XAddr>
+			<tt:WSSubscriptionPolicySupport>true</tt:WSSubscriptionPolicySupport>
+			<tt:WSPullPointSupport>true</tt:WSPullPointSupport>
+			<tt:WSPausableSubscriptionManagerInterfaceSupport>false</tt:WSPausableSubscriptionManagerInterfaceSupport>
+		</tt:Events>
 	</tds:Capabilities>
-</tds:GetCapabilitiesResponse>`, host, host)
+</tds:GetCapabilitiesResponse>`, host, query, host, query, host, query)
 	return e.Bytes()
 }
 
 func GetServicesResponse(host string) []byte {
+	return GetServicesResponseWithQuery(host, "")
+}
+
+func GetServicesResponseWithQuery(host, query string) []byte {
 	e := NewEnvelope()
 	e.Appendf(`<tds:GetServicesResponse>
 	<tds:Service>
 		<tds:Namespace>http://www.onvif.org/ver10/device/wsdl</tds:Namespace>
-		<tds:XAddr>http://%s/onvif/device_service</tds:XAddr>
+		<tds:XAddr>http://%s/onvif/device_service%s</tds:XAddr>
 		<tds:Version><tt:Major>2</tt:Major><tt:Minor>5</tt:Minor></tds:Version>
 	</tds:Service>
 	<tds:Service>
 		<tds:Namespace>http://www.onvif.org/ver10/media/wsdl</tds:Namespace>
-		<tds:XAddr>http://%s/onvif/media_service</tds:XAddr>
+		<tds:XAddr>http://%s/onvif/media_service%s</tds:XAddr>
 		<tds:Version><tt:Major>2</tt:Major><tt:Minor>5</tt:Minor></tds:Version>
 	</tds:Service>
-</tds:GetServicesResponse>`, host, host)
+	<tds:Service>
+		<tds:Namespace>http://www.onvif.org/ver10/events/wsdl</tds:Namespace>
+		<tds:XAddr>http://%s/onvif/event%s</tds:XAddr>
+		<tds:Version><tt:Major>2</tt:Major><tt:Minor>5</tt:Minor></tds:Version>
+	</tds:Service>
+</tds:GetServicesResponse>`, host, query, host, query, host, query)
 	return e.Bytes()
 }
 
@@ -121,16 +142,63 @@ func GetSystemDateAndTimeResponse() []byte {
 	return e.Bytes()
 }
 
-func GetDeviceInformationResponse(manuf, model, firmware, serial string) []byte {
+func GetDeviceInformationResponse(manuf, model, firmware, serial, hardware string) []byte {
 	e := NewEnvelope()
 	e.Appendf(`<tds:GetDeviceInformationResponse>
 	<tds:Manufacturer>%s</tds:Manufacturer>
 	<tds:Model>%s</tds:Model>
 	<tds:FirmwareVersion>%s</tds:FirmwareVersion>
 	<tds:SerialNumber>%s</tds:SerialNumber>
-	<tds:HardwareId>1.00</tds:HardwareId>
-</tds:GetDeviceInformationResponse>`, manuf, model, firmware, serial)
+	<tds:HardwareId>%s</tds:HardwareId>
+</tds:GetDeviceInformationResponse>`, escapeServerXML(manuf), escapeServerXML(model), escapeServerXML(firmware), escapeServerXML(serial), escapeServerXML(hardware))
 	return e.Bytes()
+}
+
+func GetScopesResponse(name, hardware string) []byte {
+	e := NewEnvelope()
+	e.Appendf(`<tds:GetScopesResponse>
+	<tds:Scopes><tt:ScopeDef>Fixed</tt:ScopeDef><tt:ScopeItem>onvif://www.onvif.org/name/%s</tt:ScopeItem></tds:Scopes>
+	<tds:Scopes><tt:ScopeDef>Fixed</tt:ScopeDef><tt:ScopeItem>onvif://www.onvif.org/hardware/%s</tt:ScopeItem></tds:Scopes>
+	<tds:Scopes><tt:ScopeDef>Fixed</tt:ScopeDef><tt:ScopeItem>onvif://www.onvif.org/location/go2rtc</tt:ScopeItem></tds:Scopes>
+	<tds:Scopes><tt:ScopeDef>Fixed</tt:ScopeDef><tt:ScopeItem>onvif://www.onvif.org/Profile/Streaming</tt:ScopeItem></tds:Scopes>
+	<tds:Scopes><tt:ScopeDef>Fixed</tt:ScopeDef><tt:ScopeItem>onvif://www.onvif.org/type/Network_Video_Transmitter</tt:ScopeItem></tds:Scopes>
+</tds:GetScopesResponse>`, url.PathEscape(name), url.PathEscape(hardware))
+	return e.Bytes()
+}
+
+type NetworkInterface struct {
+	Token        string
+	Name         string
+	HWAddress    string
+	MTU          int
+	IPv4         string
+	PrefixLength int
+}
+
+func GetNetworkInterfacesResponse(interfaces []NetworkInterface) []byte {
+	e := NewEnvelope()
+	e.Append(`<tds:GetNetworkInterfacesResponse>`)
+	for _, iface := range interfaces {
+		e.Appendf(`<tds:NetworkInterfaces token="%s"><tt:Enabled>true</tt:Enabled><tt:Info><tt:Name>%s</tt:Name><tt:HwAddress>%s</tt:HwAddress>`,
+			escapeServerXML(iface.Token), escapeServerXML(iface.Name), escapeServerXML(iface.HWAddress))
+		if iface.MTU > 0 {
+			e.Appendf(`<tt:MTU>%d</tt:MTU>`, iface.MTU)
+		}
+		e.Append(`</tt:Info>`)
+		if iface.IPv4 != "" {
+			e.Appendf(`<tt:IPv4><tt:Enabled>true</tt:Enabled><tt:Config><tt:Manual><tt:Address>%s</tt:Address><tt:PrefixLength>%d</tt:PrefixLength></tt:Manual><tt:DHCP>false</tt:DHCP></tt:Config></tt:IPv4>`,
+				escapeServerXML(iface.IPv4), iface.PrefixLength)
+		}
+		e.Append(`</tds:NetworkInterfaces>`)
+	}
+	e.Append(`</tds:GetNetworkInterfacesResponse>`)
+	return e.Bytes()
+}
+
+func escapeServerXML(value string) string {
+	var buf bytes.Buffer
+	_ = xml.EscapeText(&buf, []byte(value))
+	return buf.String()
 }
 
 func GetProfilesResponse(names []string) []byte {
@@ -273,15 +341,7 @@ var responses = map[string]string{
 	DeviceSetSystemDateAndTime:     `<tds:SetSystemDateAndTimeResponse />`,
 	DeviceSystemReboot:             `<tds:SystemRebootResponse><tds:Message>OK</tds:Message></tds:SystemRebootResponse>`,
 
-	DeviceGetNetworkInterfaces: `<tds:GetNetworkInterfacesResponse />`,
-	DeviceGetNetworkProtocols:  `<tds:GetNetworkProtocolsResponse />`,
-	DeviceGetScopes: `<tds:GetScopesResponse>
-	<tds:Scopes><tt:ScopeDef>Fixed</tt:ScopeDef><tt:ScopeItem>onvif://www.onvif.org/name/go2rtc</tt:ScopeItem></tds:Scopes>
-	<tds:Scopes><tt:ScopeDef>Fixed</tt:ScopeDef><tt:ScopeItem>onvif://www.onvif.org/location/github</tt:ScopeItem></tds:Scopes>
-	<tds:Scopes><tt:ScopeDef>Fixed</tt:ScopeDef><tt:ScopeItem>onvif://www.onvif.org/Profile/Streaming</tt:ScopeItem></tds:Scopes>
-	<tds:Scopes><tt:ScopeDef>Fixed</tt:ScopeDef><tt:ScopeItem>onvif://www.onvif.org/type/Network_Video_Transmitter</tt:ScopeItem></tds:Scopes>
-</tds:GetScopesResponse>`,
-
+	DeviceGetNetworkProtocols:          `<tds:GetNetworkProtocolsResponse />`,
 	MediaGetAudioEncoderConfigurations: `<trt:GetAudioEncoderConfigurationsResponse />`,
 	MediaGetAudioSources:               `<trt:GetAudioSourcesResponse />`,
 	MediaGetAudioSourceConfigurations:  `<trt:GetAudioSourceConfigurationsResponse />`,

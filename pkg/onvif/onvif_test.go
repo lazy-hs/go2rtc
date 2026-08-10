@@ -1,6 +1,7 @@
 package onvif
 
 import (
+	"encoding/xml"
 	"html"
 	"net/url"
 	"strings"
@@ -8,6 +9,23 @@ import (
 
 	"github.com/stretchr/testify/require"
 )
+
+func TestGetNetworkInterfacesResponse(t *testing.T) {
+	body := GetNetworkInterfacesResponse([]NetworkInterface{{
+		Token:        `eth&0`,
+		Name:         `LAN <primary>`,
+		HWAddress:    "6C:1F:F7:AA:73:FC",
+		MTU:          1500,
+		IPv4:         "192.168.73.241",
+		PrefixLength: 24,
+	}})
+
+	require.NoError(t, xml.Unmarshal(body, &struct{}{}))
+	require.Contains(t, string(body), `token="eth&amp;0"`)
+	require.Contains(t, string(body), `<tt:HwAddress>6C:1F:F7:AA:73:FC</tt:HwAddress>`)
+	require.Contains(t, string(body), `<tt:Address>192.168.73.241</tt:Address>`)
+	require.Contains(t, string(body), `<tt:PrefixLength>24</tt:PrefixLength>`)
+}
 
 func TestGetStreamUri(t *testing.T) {
 	tests := []struct {

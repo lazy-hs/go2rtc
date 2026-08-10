@@ -6,10 +6,233 @@
     <title>Go2RTC控制台</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <style>
-        main > div {
+        .log-toolbar {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
+        }
+
+        .log-settings {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: rgba(15, 23, 42, 0.62);
+            padding: 14px;
+        }
+
+        .log-settings-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .log-settings-header h1 {
+            margin: 0;
+            font-size: 16px;
+            line-height: 1.4;
+        }
+
+        .log-settings-form {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            flex-wrap: nowrap;
+            align-items: stretch;
+            gap: 14px;
+        }
+
+        .log-global-row {
+            display: grid;
+            grid-template-columns: minmax(180px, 320px) auto;
+            align-items: end;
+            gap: 12px;
+        }
+
+        .log-level-field {
+            display: grid;
+            gap: 6px;
+        }
+
+        .log-level-field span {
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .log-level-field select {
+            min-height: 38px;
+            padding: 8px 10px;
+            border-radius: 8px;
+        }
+
+        .log-settings-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-height: 38px;
+        }
+
+        .module-settings {
+            padding-top: 14px;
+            border-top: 1px solid var(--line);
+        }
+
+        .module-settings-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .module-settings-title {
+            display: grid;
+            gap: 2px;
+        }
+
+        .module-settings-header h2 {
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        #module-summary {
+            color: var(--text-faint);
+            font-size: 12px;
+        }
+
+        .module-settings-tools {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #module-search {
+            width: 210px;
+            min-height: 34px;
+            padding: 7px 10px;
+            border-radius: 8px;
+        }
+
+        #reset-module-levels {
+            min-height: 34px;
+            padding: 7px 11px;
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .module-level-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .module-level-grid:empty::after {
+            content: "暂无模块";
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .module-level-item {
+            min-width: 0;
+            min-height: 50px;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 152px;
+            align-items: center;
+            gap: 12px;
+            padding: 7px 8px 7px 12px;
+            border: 1px solid rgba(34, 50, 77, 0.76);
+            border-radius: 6px;
+            background: rgba(15, 23, 42, 0.46);
+            transition: border-color .16s ease, background .16s ease;
+        }
+
+        .module-level-item:hover {
+            border-color: rgba(51, 65, 85, 0.96);
+            background: rgba(15, 23, 42, 0.72);
+        }
+
+        .module-level-item.is-overridden {
+            border-color: rgba(34, 211, 238, 0.25);
+            background: rgba(8, 47, 73, 0.18);
+        }
+
+        .module-level-item[hidden] {
+            display: none;
+        }
+
+        .module-name {
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .module-name-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .module-state-dot {
+            width: 7px;
+            height: 7px;
+            flex: 0 0 auto;
+            border-radius: 50%;
+            background: var(--text-faint);
+            box-shadow: 0 0 0 3px rgba(100, 116, 139, 0.10);
+        }
+
+        .module-level-item.is-overridden .module-state-dot {
+            background: var(--accent);
+            box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.10);
+        }
+
+        .module-level-item[data-level="warn"] .module-state-dot {
+            background: var(--warn);
+            box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.10);
+        }
+
+        .module-level-item[data-level="error"] .module-state-dot,
+        .module-level-item[data-level="fatal"] .module-state-dot,
+        .module-level-item[data-level="panic"] .module-state-dot,
+        .module-level-item[data-level="disabled"] .module-state-dot {
+            background: var(--danger);
+            box-shadow: 0 0 0 3px rgba(251, 113, 133, 0.10);
+        }
+
+        .module-level-item select {
+            min-height: 34px;
+            padding: 7px 9px;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+
+        #save-log-levels {
+            min-height: 38px;
+            border-radius: 8px;
+            white-space: nowrap;
+        }
+
+        #log-config-status {
+            min-width: 72px;
+            color: var(--text-muted);
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        #log-config-status.is-success {
+            color: var(--ok);
+        }
+
+        #log-config-status.is-error {
+            color: var(--danger);
         }
 
         table tbody {
@@ -35,6 +258,54 @@
         .error {
             color: #DF0101 !important;
         }
+
+        @media (max-width: 860px) {
+            .log-global-row {
+                grid-template-columns: minmax(160px, 1fr) auto;
+            }
+
+            .module-level-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 560px) {
+            .log-global-row {
+                grid-template-columns: 1fr;
+            }
+
+            .log-settings-actions {
+                justify-content: space-between;
+            }
+
+            #log-config-status {
+                min-width: 0;
+                white-space: normal;
+                text-align: right;
+            }
+
+            .module-settings-header {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .module-settings-tools {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            #module-search {
+                width: 100%;
+            }
+
+            .module-level-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .module-level-item {
+                grid-template-columns: minmax(0, 1fr) 148px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -42,7 +313,37 @@
 <script src="main.js"></script>
 
 <main>
-    <div>
+    <section class="log-settings" aria-labelledby="log-settings-title">
+        <div class="log-settings-header">
+            <h1 id="log-settings-title">日志管理</h1>
+        </div>
+        <form id="log-settings-form" class="log-settings-form">
+            <div class="log-global-row">
+                <label class="log-level-field">
+                    <span>全局日志</span>
+                    <select id="log-level-global" name="level" aria-label="全局日志级别"></select>
+                </label>
+                <div class="log-settings-actions">
+                    <button id="save-log-levels" type="submit">保存并重启</button>
+                    <span id="log-config-status" role="status" aria-live="polite"></span>
+                </div>
+            </div>
+            <div class="module-settings">
+                <div class="module-settings-header">
+                    <div class="module-settings-title">
+                        <h2 id="module-settings-title">模块日志</h2>
+                        <span id="module-summary"></span>
+                    </div>
+                    <div class="module-settings-tools">
+                        <input id="module-search" type="text" placeholder="搜索模块" aria-label="搜索日志模块">
+                        <button id="reset-module-levels" type="button">全部跟随全局</button>
+                    </div>
+                </div>
+                <div id="module-log-levels" class="module-level-grid" aria-labelledby="module-settings-title"></div>
+            </div>
+        </form>
+    </section>
+    <div class="log-toolbar">
         <button id="clean">清空日志</button>
         <button id="update">自动刷新：开</button>
         <button id="reverse">倒序显示：关</button>
@@ -61,6 +362,168 @@
 </main>
 
 <script>
+    const logSettingsForm = document.getElementById('log-settings-form');
+    const globalLevel = document.getElementById('log-level-global');
+    const moduleLogLevels = document.getElementById('module-log-levels');
+    const moduleSearch = document.getElementById('module-search');
+    const moduleSummary = document.getElementById('module-summary');
+    const resetModuleLevels = document.getElementById('reset-module-levels');
+    const saveLogLevels = document.getElementById('save-log-levels');
+    const logConfigStatus = document.getElementById('log-config-status');
+
+    function setLogConfigStatus(message, type = '') {
+        logConfigStatus.textContent = message;
+        logConfigStatus.className = type ? `is-${type}` : '';
+    }
+
+    function fillLevelSelect(select, levels, allowInherit) {
+        const options = [];
+        if (allowInherit) {
+            options.push(`<option value="">跟随全局 · ${globalLevel.value || 'info'}</option>`);
+        }
+        for (const level of levels) {
+            options.push(`<option value="${level}">${level}</option>`);
+        }
+        select.innerHTML = options.join('');
+    }
+
+    function moduleDisplayName(module) {
+        const uppercase = new Set(['api', 'hls', 'mjpeg', 'mp4', 'onvif', 'rtmp', 'rtsp']);
+        if (uppercase.has(module)) return module.toUpperCase();
+        if (module === 'ffmpeg') return 'FFmpeg';
+        if (module === 'webrtc') return 'WebRTC';
+        return module;
+    }
+
+    function renderModuleLevels(modules, levels, config) {
+        moduleLogLevels.replaceChildren();
+        for (const module of modules) {
+            const item = document.createElement('div');
+            item.className = 'module-level-item';
+            item.dataset.module = module;
+
+            const name = document.createElement('label');
+            name.className = 'module-name';
+            const dot = document.createElement('span');
+            dot.className = 'module-state-dot';
+            dot.setAttribute('aria-hidden', 'true');
+            const nameText = document.createElement('span');
+            nameText.className = 'module-name-text';
+            nameText.textContent = moduleDisplayName(module);
+            const select = document.createElement('select');
+            select.id = `module-level-${module}`;
+            select.dataset.module = module;
+            select.setAttribute('aria-label', `${moduleDisplayName(module)} 日志级别`);
+            fillLevelSelect(select, levels, true);
+            select.value = config[module] || '';
+            name.htmlFor = select.id;
+            name.append(dot, nameText);
+            select.addEventListener('change', () => updateModuleLevelState(item, select));
+            item.append(name, select);
+            moduleLogLevels.append(item);
+            updateModuleLevelState(item, select, false);
+        }
+        updateModuleSummary();
+    }
+
+    function updateModuleLevelState(item, select, updateSummary = true) {
+        const level = select.value || globalLevel.value;
+        item.dataset.level = level;
+        item.classList.toggle('is-overridden', select.value !== '');
+        if (updateSummary) updateModuleSummary();
+    }
+
+    function updateInheritedLevels() {
+        for (const select of moduleLogLevels.querySelectorAll('select[data-module]')) {
+            const inheritOption = select.querySelector('option[value=""]');
+            if (inheritOption) inheritOption.textContent = `跟随全局 · ${globalLevel.value}`;
+            updateModuleLevelState(select.closest('.module-level-item'), select, false);
+        }
+        updateModuleSummary();
+    }
+
+    function updateModuleSummary() {
+        const selects = Array.from(moduleLogLevels.querySelectorAll('select[data-module]'));
+        const overrides = selects.filter(select => select.value !== '').length;
+        moduleSummary.textContent = `${selects.length} 个模块，${overrides} 个独立设置`;
+        resetModuleLevels.disabled = overrides === 0;
+    }
+
+    async function loadLogConfig() {
+        setLogConfigStatus('正在加载...');
+        try {
+            const response = await fetch('api/log/config', {cache: 'no-cache'});
+            if (!response.ok) {
+                throw new Error((await response.text()).trim() || `加载失败 (${response.status})`);
+            }
+            const data = await response.json();
+            fillLevelSelect(globalLevel, data.levels, false);
+            globalLevel.value = data.config.level;
+            renderModuleLevels(data.modules, data.levels, data.config.modules || {});
+
+            const saved = sessionStorage.getItem('log-config-saved');
+            sessionStorage.removeItem('log-config-saved');
+            setLogConfigStatus(saved || '');
+            if (saved) logConfigStatus.className = 'is-success';
+        } catch (error) {
+            setLogConfigStatus(error.message, 'error');
+            saveLogLevels.disabled = true;
+        }
+    }
+
+    moduleSearch.addEventListener('input', () => {
+        const query = moduleSearch.value.trim().toLowerCase();
+        for (const item of moduleLogLevels.children) {
+            const displayName = moduleDisplayName(item.dataset.module).toLowerCase();
+            item.hidden = query !== '' &&
+                !item.dataset.module.includes(query) &&
+                !displayName.includes(query);
+        }
+    });
+
+    globalLevel.addEventListener('change', updateInheritedLevels);
+
+    resetModuleLevels.addEventListener('click', () => {
+        for (const select of moduleLogLevels.querySelectorAll('select[data-module]')) {
+            select.value = '';
+            updateModuleLevelState(select.closest('.module-level-item'), select, false);
+        }
+        updateModuleSummary();
+    });
+
+    logSettingsForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        saveLogLevels.disabled = true;
+        setLogConfigStatus('正在保存...');
+        try {
+            const response = await fetch('api/log/config', {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    level: globalLevel.value,
+                    modules: Object.fromEntries(
+                        Array.from(moduleLogLevels.querySelectorAll('select[data-module]'))
+                            .map(select => [select.dataset.module, select.value])
+                    )
+                })
+            });
+            if (!response.ok) {
+                throw new Error((await response.text()).trim() || `保存失败 (${response.status})`);
+            }
+
+            setLogConfigStatus('正在重启...');
+            const restartResponse = await fetch('api/restart', {method: 'POST'});
+            if (!restartResponse.ok) {
+                throw new Error((await restartResponse.text()).trim() || `重启失败 (${restartResponse.status})`);
+            }
+            sessionStorage.setItem('log-config-saved', '保存成功');
+            window.setTimeout(() => location.reload(), 1500);
+        } catch (error) {
+            setLogConfigStatus(error.message, 'error');
+            saveLogLevels.disabled = false;
+        }
+    });
+
     document.getElementById('clean').addEventListener('click', async () => {
         const r = await fetch('api/log', {method: 'DELETE'});
         if (r.ok) reload();
@@ -121,6 +584,7 @@
     }
 
     reload();
+    loadLogConfig();
 
     update.textContent = `自动刷新：${autoUpdateEnabled ? '开' : '关'}`;
     update.addEventListener('click', () => {

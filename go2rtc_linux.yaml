@@ -37,22 +37,38 @@ app:
   - "onvif"
   - "exec"
   - "ffmpeg"
-# event:
+event:
   # 事件产生时间间隔
-  # interval: "1m"
+  interval: "1m"
   # 初始事件数
-  # burst: 10
+  burst: 10
   # 事件模板，每次上报随机选择一条
-#   templates:
-  # 移动检测
-#   - topic: "tns1:VideoSource/MotionAlarm"
-#     startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
-#     endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
-  # 有人出现
-#   - topic: "tns1:VideoSource/PeopleDetect"
-#     startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
-#     endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
-  # 车辆
-#   - topic: "tns1:VideoAnalytics/Vehicle"
-#     startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
-#     endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
+  templates:
+    # 移动检测
+    - topic: "tns1:VideoSource/MotionAlarm"
+      sourceData: '<tt:SimpleItem Value="analytics_video_source_audio_source" Name="VideoAnalyticsConfigurationToken"/><tt:SimpleItem Value="MyMotionDetectorRule" Name="Rule"/>'
+      startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
+      endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
+      startOperation: "Changed"
+      endOperation: "Deleted"
+    # 包裹检测
+    - topic: "tns1:RuleEngine/PackageDetector"
+      sourceData: '<tt:SimpleItem Value="analytics_video_source_audio_source" Name="VideoAnalyticsConfigurationToken"/><tt:SimpleItem Value="MyMotionDetectorRule" Name="Rule"/>'
+      startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
+      endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
+      startOperation: "Changed"
+      endOperation: "Deleted"
+    # 车辆检测
+    - topic: "tns1:RuleEngine/MyRuleDetector/VehicleDetect"
+      sourceData: '<tt:SimpleItem Value="analytics_video_source_audio_source" Name="VideoAnalyticsConfigurationToken"/><tt:SimpleItem Value="MyMotionDetectorRule" Name="Rule"/>'
+      startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
+      endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
+      startOperation: "Changed"
+      endOperation: "Deleted"
+    # 烟雾火焰
+    - topic: "tns1:RuleEngine/FlameDetector"
+      sourceData: '<tt:SimpleItem Value="analytics_video_source_audio_source" Name="VideoAnalyticsConfigurationToken"/><tt:SimpleItem Value="MyMotionDetectorRule" Name="Rule"/>'
+      startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
+      endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
+      startOperation: "Changed"
+      endOperation: "Deleted"

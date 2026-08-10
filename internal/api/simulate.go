@@ -21,6 +21,7 @@ type simulateInfo struct {
 	FilesAPI          string              `json:"files_api"`
 	Host              string              `json:"host"`
 	LogAPI            string              `json:"log_api"`
+	ONVIFConfigAPI    string              `json:"onvif_config_api"`
 	ONVIFPath         string              `json:"onvif_path"`
 	RTSPPath          string              `json:"rtsp_path"`
 	RTSPPort          string              `json:"rtsp_port"`
@@ -38,6 +39,7 @@ func simulateHandler(w http.ResponseWriter, r *http.Request) {
 		FilesAPI:          simulateEndpoint("api/simulate/files"),
 		Host:              r.Host,
 		LogAPI:            simulateEndpoint("api/log"),
+		ONVIFConfigAPI:    simulateEndpoint("api/simulate/onvif"),
 		ONVIFPath:         simulateEndpoint("onvif/device_service"),
 		RTSPPath:          "/",
 		RTSPPort:          simulateRTSPPort(app.ConfigPath),

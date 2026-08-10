@@ -62,7 +62,9 @@ func Init() {
 	HandleFunc("api/exit", exitHandler)
 	HandleFunc("api/restart", restartHandler)
 	HandleFunc("api/log", logHandler)
+	HandleFunc("api/log/config", logConfigHandler)
 	HandleFunc("api/simulate", simulateHandler)
+	HandleFunc("api/simulate/onvif", simulateONVIFConfigHandler)
 	HandleFunc("api/simulate/files", simulateFilesHandler)
 	HandleFunc("api/simulate/upload", simulateUploadHandler)
 

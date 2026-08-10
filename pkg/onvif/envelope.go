@@ -27,34 +27,43 @@ func NewEnvelope() *Envelope {
 }
 
 func NewEnvelopeWithUser(user *url.Userinfo) *Envelope {
-	if user == nil {
+	return NewEnvelopeWithHeaders(user)
+}
+
+// NewEnvelopeWithHeaders creates an ONVIF SOAP envelope with optional
+// WS-Security credentials and additional SOAP header elements.
+func NewEnvelopeWithHeaders(user *url.Userinfo, headers ...string) *Envelope {
+	if user == nil && len(headers) == 0 {
 		return NewEnvelope()
 	}
 
-	nonce := core.RandString(16, 36)
-	created := time.Now().UTC().Format(time.RFC3339Nano)
-	pass, _ := user.Password()
-
-	h := sha1.New()
-	h.Write([]byte(nonce + created + pass))
-
 	e := &Envelope{buf: make([]byte, 0, 1024)}
-	e.Append(prefix1)
-	e.Appendf(`<s:Header>
-	<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+	e.Append(prefix1, `<s:Header>`)
+
+	if user != nil {
+		nonce := core.RandString(16, 36)
+		created := time.Now().UTC().Format(time.RFC3339Nano)
+		pass, _ := user.Password()
+
+		h := sha1.New()
+		h.Write([]byte(nonce + created + pass))
+
+		e.Appendf(`<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
 		<wsse:UsernameToken>
 			<wsse:Username>%s</wsse:Username>
 			<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordDigest">%s</wsse:Password>
 			<wsse:Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary">%s</wsse:Nonce>
 			<wsu:Created xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">%s</wsu:Created>
 		</wsse:UsernameToken>
-	</wsse:Security>
-</s:Header>`,
-		user.Username(),
-		base64.StdEncoding.EncodeToString(h.Sum(nil)),
-		base64.StdEncoding.EncodeToString([]byte(nonce)),
-		created)
-	e.Append(prefix2)
+	</wsse:Security>`,
+			user.Username(),
+			base64.StdEncoding.EncodeToString(h.Sum(nil)),
+			base64.StdEncoding.EncodeToString([]byte(nonce)),
+			created)
+	}
+
+	e.Append(headers...)
+	e.Append(`</s:Header>`, prefix2)
 	return e
 }
 
