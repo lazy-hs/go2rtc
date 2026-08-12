@@ -26,6 +26,7 @@ func TestEventConfigFormats(t *testing.T) {
 		err := yaml.Unmarshal([]byte(`event:
   interval: 5s
   burst: 3
+  permanent: true
   templates:
     - topic: tns1:VideoSource/MotionAlarm
       startData: start
@@ -34,6 +35,7 @@ func TestEventConfigFormats(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "5s", cfg.Event.Interval)
 		require.Equal(t, 3, cfg.Event.Burst)
+		require.True(t, cfg.Event.Permanent)
 		require.Len(t, cfg.Event.Templates, 1)
 	})
 
@@ -105,6 +107,29 @@ func TestEventSubscriptionExpiresWhileWaiting(t *testing.T) {
 	_, _, err := manager.pull(id, 10, 2*time.Second)
 	require.ErrorIs(t, err, errSubscriptionNotFound)
 	require.Less(t, time.Since(started), 500*time.Millisecond)
+}
+
+func TestPermanentEventSubscription(t *testing.T) {
+	manager := newEventManager(eventConfig{
+		Interval:  "1h",
+		Permanent: true,
+		Templates: []eventTemplate{{
+			Topic:     "tns1:VideoSource/MotionAlarm",
+			StartData: "start",
+			EndData:   "end",
+		}},
+	})
+	defer manager.close()
+
+	sub, id := manager.create("main", time.Nanosecond)
+	require.Equal(t, permanentSubscriptionExpiration, sub.ExpiresAt)
+
+	manager.generate(time.Now().UTC().Add(24 * time.Hour))
+	require.Contains(t, manager.subscriptions, id)
+
+	expiresAt, err := manager.renew(id, time.Nanosecond)
+	require.NoError(t, err)
+	require.Equal(t, permanentSubscriptionExpiration, expiresAt)
 }
 
 func TestEventSOAPFlow(t *testing.T) {

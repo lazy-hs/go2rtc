@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os/exec"
 	"regexp"
+	"strconv"
 
 	"github.com/AlexxIT/go2rtc/internal/api"
 	"github.com/AlexxIT/go2rtc/pkg/core"
@@ -73,12 +74,18 @@ func initDevices() {
 		kind := m[2]
 
 		stream := &api.Source{
-			Name: name, URL: "ffmpeg:device?" + kind + "=" + name,
+			Name: name, URL: "ffmpeg:device?" + kind + "=" + url.QueryEscape(name),
 		}
 
 		switch kind {
 		case core.KindVideo:
 			videos = append(videos, name)
+			if size, framerate := probeMaxVideoMode(name); size != "" {
+				stream.URL += "&video_size=" + size
+				if framerate != "" {
+					stream.URL += "&framerate=" + framerate
+				}
+			}
 			stream.URL += "#video=h264#hardware"
 		case core.KindAudio:
 			audios = append(audios, name)
@@ -87,4 +94,35 @@ func initDevices() {
 
 		streams = append(streams, stream)
 	}
+}
+
+func probeMaxVideoMode(name string) (size, framerate string) {
+	cmd := exec.Command(
+		Bin, "-hide_banner", "-f", "dshow", "-list_options", "true", "-i", "video="+name,
+	)
+	b, _ := cmd.CombinedOutput()
+	return parseMaxVideoMode(b)
+}
+
+func parseMaxVideoMode(b []byte) (size, framerate string) {
+	re := regexp.MustCompile(`\bs=(\d+)x(\d+)\s+fps=([0-9]+(?:\.[0-9]+)?)`)
+	maxArea := 0
+	maxFPS := 0.0
+
+	for _, match := range re.FindAllSubmatch(b, -1) {
+		width, _ := strconv.Atoi(string(match[1]))
+		height, _ := strconv.Atoi(string(match[2]))
+		fps, _ := strconv.ParseFloat(string(match[3]), 64)
+		area := width * height
+		if area < maxArea || area == maxArea && fps <= maxFPS {
+			continue
+		}
+
+		maxArea = area
+		maxFPS = fps
+		size = string(match[1]) + "x" + string(match[2])
+		framerate = string(match[3])
+	}
+
+	return
 }

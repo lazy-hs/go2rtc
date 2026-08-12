@@ -33,7 +33,7 @@ func Init() {
 	if len(events.templates) == 0 {
 		log.Warn().Msg("[onvif] event generator disabled: event.templates is empty")
 	} else {
-		log.Info().Dur("interval", events.interval).Int("burst", events.burst).
+		log.Info().Dur("interval", events.interval).Int("burst", events.burst).Bool("permanent", events.permanent).
 			Int("templates", len(events.templates)).Msg("[onvif] event generator enabled")
 	}
 

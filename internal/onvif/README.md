@@ -62,6 +62,7 @@ ONVIF clients that use this address format.
 event:
   interval: 1m
   burst: 10
+  permanent: false
   templates:
     - topic: tns1:VideoSource/MotionAlarm
       sourceData: '<tt:SimpleItem Value="analytics_video_source_audio_source" Name="VideoAnalyticsConfigurationToken"/><tt:SimpleItem Value="MyMotionDetectorRule" Name="Rule"/>'
@@ -70,6 +71,11 @@ event:
       startOperation: Changed
       endOperation: Deleted
 ```
+
+Set `permanent: true` for simulator-style continuous delivery. In this mode,
+the server ignores short subscription lifetimes requested through
+`InitialTerminationTime` or `Renew` and advertises a far-future termination
+time, so PullPoint and push subscriptions are not removed during normal use.
 
 `sourceData`, `startOperation`, and `endOperation` are optional. When an ONVIF
 client calls `SetSynchronizationPoint`, the generated synchronization events

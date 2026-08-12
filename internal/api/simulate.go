@@ -18,6 +18,7 @@ type simulateInfo struct {
 	BasePath          string              `json:"base_path"`
 	ConfiguredOrder   []string            `json:"configured_order"`
 	ConfiguredStreams map[string][]string `json:"configured_streams"`
+	DevicesAPI        string              `json:"devices_api"`
 	FilesAPI          string              `json:"files_api"`
 	Host              string              `json:"host"`
 	LogAPI            string              `json:"log_api"`
@@ -36,6 +37,7 @@ func simulateHandler(w http.ResponseWriter, r *http.Request) {
 		BasePath:          basePath,
 		ConfiguredOrder:   configuredOrder,
 		ConfiguredStreams: configuredStreams,
+		DevicesAPI:        simulateEndpoint("api/ffmpeg/devices"),
 		FilesAPI:          simulateEndpoint("api/simulate/files"),
 		Host:              r.Host,
 		LogAPI:            simulateEndpoint("api/log"),

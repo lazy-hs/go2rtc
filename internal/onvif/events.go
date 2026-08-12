@@ -59,6 +59,7 @@ type eventTemplate struct {
 type eventConfig struct {
 	Interval  string          `yaml:"interval"`
 	Burst     int             `yaml:"burst"`
+	Permanent bool            `yaml:"permanent"`
 	Templates []eventTemplate `yaml:"templates"`
 }
 
@@ -123,6 +124,7 @@ type eventManager struct {
 	mu            sync.Mutex
 	interval      time.Duration
 	burst         int
+	permanent     bool
 	templates     []eventTemplate
 	subscriptions map[string]*eventSubscription
 	stop          chan struct{}
@@ -130,6 +132,8 @@ type eventManager struct {
 }
 
 var events = newEventManager(eventConfig{})
+
+var permanentSubscriptionExpiration = time.Date(9999, time.December, 31, 23, 59, 59, 0, time.UTC)
 
 func newEventManager(cfg eventConfig) *eventManager {
 	interval, err := time.ParseDuration(cfg.Interval)
@@ -145,6 +149,7 @@ func newEventManager(cfg eventConfig) *eventManager {
 	return &eventManager{
 		interval:      interval,
 		burst:         burst,
+		permanent:     cfg.Permanent,
 		templates:     append([]eventTemplate(nil), cfg.Templates...),
 		subscriptions: make(map[string]*eventSubscription),
 		stop:          make(chan struct{}),
@@ -202,9 +207,13 @@ func (m *eventManager) createSubscription(source, filter, consumerURL string, tt
 	}
 
 	now := time.Now().UTC()
+	expiresAt := now.Add(ttl)
+	if m.permanent {
+		expiresAt = permanentSubscriptionExpiration
+	}
 	sub := &eventSubscription{
 		ID:              pkgonvif.UUID(),
-		ExpiresAt:       now.Add(ttl),
+		ExpiresAt:       expiresAt,
 		Source:          source,
 		ConsumerURL:     consumerURL,
 		TopicFilter:     filter,
@@ -304,7 +313,11 @@ func (m *eventManager) renew(id string, ttl time.Duration) (time.Time, error) {
 	if !ok {
 		return time.Time{}, errSubscriptionNotFound
 	}
-	sub.ExpiresAt = time.Now().UTC().Add(ttl)
+	if m.permanent {
+		sub.ExpiresAt = permanentSubscriptionExpiration
+	} else {
+		sub.ExpiresAt = time.Now().UTC().Add(ttl)
+	}
 	return sub.ExpiresAt, nil
 }
 
@@ -349,16 +362,22 @@ func (m *eventManager) generate(now time.Time) {
 	defer m.mu.Unlock()
 
 	m.cleanupLocked(now)
+	generated := 0
 	for _, sub := range m.subscriptions {
-		m.enqueueLocked(sub, 1, now, "")
+		generated += m.enqueueLocked(sub, 1, now, "")
+	}
+	if generated > 0 {
+		log.Debug().Int("subscriptions", len(m.subscriptions)).Int("messages", generated).
+			Msg("[onvif] events generated")
 	}
 }
 
-func (m *eventManager) enqueueLocked(sub *eventSubscription, count int, now time.Time, operationOverride string) {
+func (m *eventManager) enqueueLocked(sub *eventSubscription, count int, now time.Time, operationOverride string) int {
 	if len(sub.TemplateIndexes) == 0 || count <= 0 {
-		return
+		return 0
 	}
 
+	generated := 0
 	for range count {
 		if len(sub.Queue) >= maxSubscriptionQueueLen {
 			sub.Queue = sub.Queue[1:]
@@ -388,12 +407,14 @@ func (m *eventManager) enqueueLocked(sub *eventSubscription, count int, now time
 			Operation:  operation,
 			Time:       now,
 		})
+		generated++
 	}
 
 	select {
 	case sub.Notify <- struct{}{}:
 	default:
 	}
+	return generated
 }
 
 func (m *eventManager) subscriptionLocked(id string, now time.Time) (*eventSubscription, bool) {
@@ -483,7 +504,7 @@ func eventResponse(r *http.Request, request []byte, operation string) ([]byte, e
 		if err != nil {
 			return nil, err
 		}
-		log.Debug().Str("subscription", id).Int("messages", len(notifications)).
+		log.Debug().Str("subscription", id).Dur("timeout", timeout).Int("messages", len(notifications)).
 			Msg("[onvif] pull messages")
 		logDeliveredEvents("pull", id, notifications)
 		return pullMessagesResponse(notifications, expiresAt, eventSubscriptionURL(r, id)), nil

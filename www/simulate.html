@@ -1093,8 +1093,10 @@
             flex: 1;
             min-height: 0;
             overflow: auto;
+            scrollbar-gutter: stable;
             padding: 14px 22px 16px;
             display: grid;
+            align-content: start;
             gap: 12px;
         }
 
@@ -1137,6 +1139,8 @@
 
         .mode-grid {
             grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-auto-rows: 42px;
+            align-items: stretch;
         }
 
         .file-actions,
@@ -1154,19 +1158,55 @@
             align-items: center;
             justify-content: center;
             width: 100%;
-            min-height: 36px;
+            height: 42px;
+            min-height: 42px;
+            max-height: 42px;
+            box-sizing: border-box;
+            padding: 0 12px;
             border-radius: 10px;
             border: 1px solid rgba(71, 85, 105, 0.65);
             background: rgba(15, 23, 42, 0.62);
             color: #94a3b8;
             font-size: 12px;
             font-weight: 600;
+            line-height: 1;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .segmented-btn:hover,
+        .segmented-btn:active,
+        .segmented-btn.is-active {
+            transform: none;
+            box-shadow: none;
+        }
+
+        .segmented-btn:focus-visible {
+            outline: none;
+            box-shadow: inset 0 0 0 2px rgba(7, 17, 31, 0.45);
         }
 
         .segmented-btn.is-active {
             border-color: #22c7df;
             background: #22c7df;
             color: #07111f;
+        }
+
+        .source-panel[hidden],
+        .source-options[hidden],
+        .toggle-row[hidden] {
+            display: none !important;
+        }
+
+        .device-state {
+            min-height: 18px;
+            color: #94a3b8;
+            font-size: 11px;
+            line-height: 1.45;
+        }
+
+        .device-state.error {
+            color: #fda4af;
         }
 
         .file-action {
@@ -1636,6 +1676,10 @@
         }
 
         @media (max-width: 520px) {
+            .mode-grid {
+                grid-template-columns: 1fr;
+            }
+
             .onvif-config-form .form-grid {
                 grid-template-columns: 1fr;
             }
@@ -1660,8 +1704,8 @@
         <div class="panel-header">
             <div class="panel-title">
                 <div class="eyebrow">流媒体总览</div>
-                <h1>本地视频模拟流发布面板</h1>
-                <p>创建测试用模拟流、本地视频回放流，并统一交给 go2rtc 发布。整体布局、卡片层级和抽屉交互按你提供的参考前端页靠拢。</p>
+                <h1>视频流模拟与转发面板</h1>
+                <p>把本地视频、电脑摄像头或其他设备的 RTSP 流统一接入 go2rtc，再通过 RTSP 与 ONVIF 对外发布。</p>
             </div>
             <div class="actions">
                 <button class="floating-action" id="open-create" type="button">＋ 新建任务</button>
@@ -1672,7 +1716,7 @@
                 <div class="hero-stat">
                     <span>已配置任务</span>
                     <strong id="summary-stream-count">0</strong>
-                    <small>当前识别到的本地文件模拟流数量。</small>
+                    <small>当前识别到的视频模拟与转发任务数量。</small>
                 </div>
                 <div class="hero-stat">
                     <span>运行中流</span>
@@ -1690,13 +1734,13 @@
                 <section class="side-card launcher-card surface-card">
                     <div class="card-head">
                         <h3>任务创建器</h3>
-                        <p>浏览器模式下可通过上传文件、选择本机文件路径，创建模拟流任务，并统一交给 go2rtc 发布。</p>
+                        <p>选择本地文件、电脑摄像头或上游 RTSP 地址，创建后由 go2rtc 统一发布。</p>
                     </div>
                     <div class="card-body">
                         <div class="launcher-grid">
                             <div class="launcher-item">
                                 <span>创建方式</span>
-                                <strong>本地文件</strong>
+                                <strong>三种视频来源</strong>
                             </div>
                             <div class="launcher-item">
                                 <span>发布协议</span>
@@ -1768,7 +1812,7 @@
         <div class="section-top">
             <div>
                 <h2>已配置任务</h2>
-                <p>仅展示 `ffmpeg:` 且包含 `#input=file` 的本地文件模拟流。支持编辑回填、地址复制与删除。</p>
+                <p>展示由本页管理的本地文件、电脑摄像头和 RTSP 转发任务。支持编辑回填、地址复制与删除。</p>
             </div>
             <div class="toolbar-pills">
                 <label class="sort-control" for="stream-sort">
@@ -1786,7 +1830,7 @@
             </div>
         </div>
         <div id="sim-list"></div>
-        <div id="empty-state" hidden>当前还没有识别到模拟流。你可以先在上方填写本地视频路径并保存，保存成功后这里会显示访问地址、编码信息、复制按钮和编辑入口。</div>
+        <div id="empty-state" hidden>当前还没有视频任务。点击“新建任务”，选择本地文件、电脑摄像头或 RTSP 输入；保存后这里会显示访问地址、来源信息和编辑入口。</div>
     </section>
 
 </main>
@@ -1796,7 +1840,7 @@
         <div class="modal-head">
             <div>
                 <h2 id="form-title">新建任务</h2>
-                <p id="form-subtitle">浏览器模式下可通过上传文件、浏览后端本机文件或 RTSP 输入创建任务，并统一交给 go2rtc 发布。</p>
+                <p id="form-subtitle">选择本地文件、电脑摄像头或 RTSP 输入创建任务，并统一交给 go2rtc 发布。</p>
             </div>
             <button id="close-modal" class="modal-close" type="button" aria-label="关闭">×</button>
         </div>
@@ -1815,12 +1859,12 @@
                 <h3>来源类型</h3>
                 <div class="mode-grid">
                     <button class="segmented-btn is-active" type="button" data-source-mode="file">本地文件</button>
-                    <button class="segmented-btn" type="button" data-source-mode="testsrc" disabled>测试图像</button>
-                    <button class="segmented-btn" type="button" data-source-mode="rtsp" disabled>RTSP 输入</button>
+                    <button class="segmented-btn" type="button" data-source-mode="camera">电脑摄像头</button>
+                    <button class="segmented-btn" type="button" data-source-mode="rtsp">RTSP 输入</button>
                 </div>
             </div>
 
-            <div class="modal-section">
+            <div class="modal-section source-panel" data-source-panel="file">
                 <h3>媒体文件</h3>
                 <div class="field wide">
                     <label for="file" class="visually-hidden">媒体文件路径</label>
@@ -1835,7 +1879,40 @@
                 <div class="helper upload-location">上传目录：<code id="upload-directory">加载中...</code></div>
             </div>
 
-            <div class="modal-section">
+            <div class="modal-section source-panel" data-source-panel="camera" hidden>
+                <h3>摄像头设备</h3>
+                <div class="form-grid">
+                    <div class="field wide">
+                        <label for="camera-device">视频采集设备</label>
+                        <select id="camera-device" name="camera_device" disabled>
+                            <option value="">切换到电脑摄像头后自动检测</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="camera-size">采集分辨率</label>
+                        <input id="camera-size" name="camera_size" type="text" inputmode="text" placeholder="自动，例如 1280x720">
+                    </div>
+                    <div class="field">
+                        <label for="camera-framerate">采集帧率</label>
+                        <input id="camera-framerate" name="camera_framerate" type="number" min="1" max="240" step="1" inputmode="numeric" placeholder="自动，例如 30">
+                    </div>
+                </div>
+                <div id="camera-device-state" class="device-state" role="status" aria-live="polite">尚未检测摄像头。</div>
+                <div class="helper">自动填入所选摄像头最高分辨率对应的最高帧率，仍可按需手动修改。</div>
+            </div>
+
+            <div class="modal-section source-panel" data-source-panel="rtsp" hidden>
+                <h3>上游 RTSP 流</h3>
+                <div class="field wide">
+                    <label for="rtsp-input">RTSP 地址</label>
+                    <input id="rtsp-input" name="rtsp_input" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="rtsp://用户名:密码@设备地址:554/stream">
+                </div>
+                <div class="helper">使用 go2rtc 直接透传上游音视频，避免重复编码并降低延迟；对外仍发布为本任务的 RTSP 和 ONVIF 通道。</div>
+            </div>
+
+            <div class="modal-section source-options" id="transcode-options">
                 <div class="form-grid">
                     <div class="field">
                         <label for="video">视频编码</label>
@@ -1871,7 +1948,7 @@
                         <input id="bufsize" name="bufsize" type="number" min="1" step="1" inputmode="numeric" placeholder="例如：12000">
                     </div>
                 </div>
-                <div class="toggle-row">
+                <div class="toggle-row" id="file-playback-options">
                     <div>
                         <label><input id="loop" name="loop" type="checkbox" checked>循环播放</label>
                         <div class="helper">当前页不直接改写 ffmpeg 模板，仅按现有 go2rtc 配置方式生成模拟流 source。</div>
@@ -2015,6 +2092,13 @@
     const saveONVIFConfigBtn = document.getElementById('save-onvif-config');
     const onvifConfigStatus = document.getElementById('onvif-config-status');
     const onvifConfigFeedback = document.getElementById('onvif-config-feedback');
+    const sourceModeButtons = [...document.querySelectorAll('[data-source-mode]')];
+    const sourcePanels = [...document.querySelectorAll('[data-source-panel]')];
+    const transcodeOptions = document.getElementById('transcode-options');
+    const filePlaybackOptions = document.getElementById('file-playback-options');
+    const cameraDeviceSelect = document.getElementById('camera-device');
+    const cameraDeviceState = document.getElementById('camera-device-state');
+    const rtspInput = document.getElementById('rtsp-input');
 
     let editingName = '';
     let highlightedStreamName = '';
@@ -2025,6 +2109,10 @@
     let currentBrowserPath = '';
     let currentBrowserParent = '';
     let uploadBusy = false;
+    let sourceMode = 'file';
+    let cameraDevices = [];
+    let cameraDevicesLoaded = false;
+    let cameraDevicesLoading = false;
     let meta = {
         host: location.host,
         base_path: '',
@@ -2039,6 +2127,7 @@
         upload_dir: 'static',
         configured_order: [],
         configured_streams: {},
+        devices_api: 'api/ffmpeg/devices',
     };
 
     function baseURL(path) {
@@ -2055,6 +2144,112 @@
         }
     }
 
+    function setCameraDeviceState(message, isError = false) {
+        cameraDeviceState.textContent = message;
+        cameraDeviceState.classList.toggle('error', isError);
+    }
+
+    function cameraDeviceDefaults(value) {
+        const preset = cameraDevices[Number(value)]?.url?.match(/^ffmpeg:device\?([^#]*)/i)?.[1] || '';
+        const query = new URLSearchParams(preset);
+        return {
+            size: query.get('video_size') || query.get('resolution') || '',
+            framerate: query.get('framerate') || '',
+        };
+    }
+
+    function applyCameraDefaults(value, overwrite = false) {
+        const defaults = cameraDeviceDefaults(value);
+        if (overwrite || !form.elements.camera_size.value.trim()) {
+            form.elements.camera_size.value = defaults.size;
+        }
+        if (overwrite || !form.elements.camera_framerate.value.trim()) {
+            form.elements.camera_framerate.value = defaults.framerate;
+        }
+        updatePreview();
+        return defaults;
+    }
+
+    function cameraDefaultsDescription(value) {
+        const defaults = cameraDeviceDefaults(value);
+        if (!defaults.size && !defaults.framerate) return '';
+        return `最高模式 ${defaults.size || '设备分辨率'}${defaults.framerate ? ` · ${defaults.framerate}fps` : ''}`;
+    }
+
+    function renderCameraDevices(selectedValue = '') {
+        cameraDeviceSelect.replaceChildren();
+        if (!cameraDevices.length) {
+            const option = new Option('未检测到可用摄像头', '');
+            cameraDeviceSelect.appendChild(option);
+            cameraDeviceSelect.disabled = true;
+            return;
+        }
+
+        cameraDevices.forEach((device, index) => {
+            cameraDeviceSelect.appendChild(new Option(device.name || `摄像头 ${index + 1}`, String(index)));
+        });
+        cameraDeviceSelect.disabled = false;
+        cameraDeviceSelect.value = cameraDevices.some((_, index) => String(index) === selectedValue)
+            ? selectedValue
+            : '0';
+        applyCameraDefaults(cameraDeviceSelect.value);
+    }
+
+    async function loadCameraDevices(selectedValue = '') {
+        if (cameraDevicesLoading) return;
+        if (cameraDevicesLoaded) {
+            renderCameraDevices(selectedValue || cameraDeviceSelect.value);
+            return;
+        }
+
+        cameraDevicesLoading = true;
+        cameraDeviceSelect.disabled = true;
+        cameraDeviceSelect.replaceChildren(new Option('正在检测摄像头...', ''));
+        setCameraDeviceState('正在读取这台电脑的视频采集设备...');
+        try {
+            const response = await fetch(baseURL(meta.devices_api), {cache: 'no-cache'});
+            if (!response.ok) throw new Error(await response.text() || '摄像头检测失败');
+            const data = await response.json();
+            cameraDevices = (Array.isArray(data.sources) ? data.sources : [])
+                .filter(device => typeof device?.url === 'string' && device.url.startsWith('ffmpeg:device?video='));
+            cameraDevicesLoaded = true;
+            renderCameraDevices(selectedValue);
+            const defaults = cameraDefaultsDescription(cameraDeviceSelect.value);
+            setCameraDeviceState(cameraDevices.length
+                ? `已检测到 ${cameraDevices.length} 个摄像头设备${defaults ? `；${defaults}` : ''}。`
+                : '未检测到摄像头，请检查设备连接、系统权限和 FFmpeg。', !cameraDevices.length);
+        } catch (error) {
+            cameraDevices = [];
+            renderCameraDevices();
+            setCameraDeviceState(error.message, true);
+        } finally {
+            cameraDevicesLoading = false;
+            updatePreview();
+        }
+    }
+
+    function setSourceMode(mode, options = {}) {
+        sourceMode = ['file', 'camera', 'rtsp'].includes(mode) ? mode : 'file';
+        for (const button of sourceModeButtons) {
+            const active = button.dataset.sourceMode === sourceMode;
+            button.classList.toggle('is-active', active);
+            button.setAttribute('aria-pressed', String(active));
+        }
+        for (const panel of sourcePanels) panel.hidden = panel.dataset.sourcePanel !== sourceMode;
+
+        form.elements.file.required = sourceMode === 'file';
+        cameraDeviceSelect.required = sourceMode === 'camera';
+        rtspInput.required = sourceMode === 'rtsp';
+        transcodeOptions.hidden = sourceMode === 'rtsp';
+        filePlaybackOptions.hidden = sourceMode !== 'file';
+        form.elements.audio.disabled = sourceMode === 'camera';
+        if (sourceMode === 'camera') {
+            form.elements.audio.value = '';
+            loadCameraDevices(options.cameraDevice || '');
+        }
+        updatePreview();
+    }
+
     function buildSource() {
         const data = new FormData(form);
         const file = (data.get('file') || '').toString().trim();
@@ -2064,12 +2259,30 @@
         const maxrate = normalizeBitrate(data.get('maxrate'));
         const bufsize = normalizeBitrate(data.get('bufsize'));
 
-        if (!file) return '';
+        if (sourceMode === 'rtsp') {
+            const rtsp = (data.get('rtsp_input') || '').toString().trim();
+            return /^rtsp:\/\//i.test(rtsp) ? rtsp : '';
+        }
 
-        const params = [`video=${video}`, 'input=file'];
+        const params = [`video=${video}`];
         if (bitrate) params.push(`bitrate=${bitrate}`);
         if (maxrate) params.push(`maxrate=${maxrate}`);
         if (bufsize) params.push(`bufsize=${bufsize}`);
+        if (sourceMode === 'camera') {
+            const device = (data.get('camera_device') || '').toString().trim();
+            if (!device) return '';
+            const preset = cameraDevices[Number(device)]?.url?.match(/^ffmpeg:device\?([^#]*)/i)?.[1] || '';
+            const query = new URLSearchParams(preset);
+            query.set('video', device);
+            const size = (data.get('camera_size') || '').toString().trim();
+            const framerate = (data.get('camera_framerate') || '').toString().trim();
+            if (size) query.set('video_size', size);
+            if (framerate) query.set('framerate', framerate);
+            return `ffmpeg:device?${query.toString()}#${params.join('#')}`;
+        }
+
+        if (!file) return '';
+        params.push('input=file');
         if (audio) params.push(`audio=${audio}`);
 
         return `ffmpeg:${file}#${params.join('#')}`;
@@ -2259,17 +2472,19 @@
             .replace(/\n/g, '<br>');
     }
 
-    function isSimulatedStream(source) {
-        return typeof source === 'string' && source.startsWith('ffmpeg:') && source.includes('#input=file');
+    function isManagedStream(source) {
+        if (typeof source !== 'string') return false;
+        return (source.startsWith('ffmpeg:') && (source.includes('#input=file') || source.startsWith('ffmpeg:device?')))
+            || /^rtsp:\/\//i.test(source);
     }
 
-    function getSimulatedSources(stream) {
+    function getManagedSources(stream) {
         const configured = Array.isArray(stream?.configured_sources) ? stream.configured_sources : [];
         const producers = Array.isArray(stream?.producers) ? stream.producers : [];
         const runtime = producers
             .map(item => item && item.url)
-            .filter(isSimulatedStream);
-        return [...new Set([...configured, ...runtime].filter(isSimulatedStream))];
+            .filter(isManagedStream);
+        return [...new Set([...configured, ...runtime].filter(isManagedStream))];
     }
 
     function mergeConfiguredStreams(runtimeData) {
@@ -2280,7 +2495,7 @@
 
         for (const [name, sources] of Object.entries(meta.configured_streams || {})) {
             const configuredSources = Array.isArray(sources) ? sources : [sources];
-            if (!configuredSources.some(isSimulatedStream)) continue;
+            if (!configuredSources.some(isManagedStream)) continue;
             merged[name] = {
                 ...(merged[name] || {}),
                 configured_sources: configuredSources,
@@ -2320,12 +2535,32 @@
     }
 
     function parseSource(source) {
+        if (/^rtsp:\/\//i.test(source)) {
+            return {
+                mode: 'rtsp', rtsp: source, file: source, video: 'copy', audio: 'copy',
+                bitrate: '', maxrate: '', bufsize: '', cameraDevice: '', cameraSize: '', cameraFramerate: '',
+            };
+        }
+
         const match = source.match(/^ffmpeg:(.*?)(?:#(.*))?$/);
         if (!match) return null;
 
         const [, file, rawParams = ''] = match;
         const params = rawParams ? rawParams.split('#') : [];
-        const result = { file, video: 'h264', audio: '', bitrate: '', maxrate: '', bufsize: '' };
+        const result = {
+            mode: file.startsWith('device?') ? 'camera' : (/^rtsp:\/\//i.test(file) ? 'rtsp' : 'file'),
+            file, rtsp: '', video: 'h264', audio: '', bitrate: '', maxrate: '', bufsize: '',
+            cameraDevice: '', cameraSize: '', cameraFramerate: '',
+        };
+
+        if (result.mode === 'camera') {
+            const query = new URLSearchParams(file.slice('device?'.length));
+            result.cameraDevice = query.get('video') || '';
+            result.cameraSize = query.get('video_size') || query.get('resolution') || '';
+            result.cameraFramerate = query.get('framerate') || '';
+        } else if (result.mode === 'rtsp') {
+            result.rtsp = file;
+        }
 
         for (const part of params) {
             const [key, value = ''] = part.split('=');
@@ -2337,6 +2572,33 @@
         }
 
         return result;
+    }
+
+    function sourceTypeLabel(mode) {
+        if (mode === 'camera') return '电脑摄像头';
+        if (mode === 'rtsp') return 'RTSP 输入';
+        return '本地文件';
+    }
+
+    function cameraDeviceLabel(value) {
+        const index = Number(value);
+        return Number.isInteger(index) && cameraDevices[index]?.name
+            ? cameraDevices[index].name
+            : `摄像头设备 ${value || '0'}`;
+    }
+
+    function redactRTSPCredentials(value) {
+        return String(value || '').replace(/^(rtsp:\/\/)([^/@]+)@/i, '$1***@');
+    }
+
+    function sourceSummary(parsed) {
+        if (parsed.mode === 'camera') {
+            const capture = [parsed.cameraSize, parsed.cameraFramerate ? `${parsed.cameraFramerate}fps` : '']
+                .filter(Boolean).join(' · ');
+            return `${cameraDeviceLabel(parsed.cameraDevice)}${capture ? ` · ${capture}` : ''}`;
+        }
+        if (parsed.mode === 'rtsp') return redactRTSPCredentials(parsed.rtsp || parsed.file);
+        return parsed.file || '未识别本地文件';
     }
 
     function rtspURL(name) {
@@ -2450,11 +2712,11 @@
         editingName = name;
         if (name) {
             formTitle.textContent = `编辑任务：${name}`;
-            formSubtitle.textContent = '已将现有模拟流配置回填到弹窗表单。修改后点击“保存修改”即可覆盖原有配置。';
+            formSubtitle.textContent = '已将现有视频来源配置回填到弹窗表单。修改后点击“保存修改”即可覆盖原有配置。';
             submitButton.textContent = '保存修改';
         } else {
             formTitle.textContent = '新建任务';
-            formSubtitle.textContent = '浏览器模式下可通过上传文件、浏览后端本机文件或 RTSP 输入创建任务，并统一交给 go2rtc 发布。';
+            formSubtitle.textContent = '选择本地文件、电脑摄像头或 RTSP 输入创建任务，并统一交给 go2rtc 发布。';
             submitButton.textContent = '创建';
         }
     }
@@ -2462,10 +2724,14 @@
     function resetFormState() {
         form.reset();
         localFileInput.value = '';
+        rtspInput.value = '';
+        form.elements.camera_size.value = '';
+        form.elements.camera_framerate.value = '';
         form.elements.video.value = 'h264';
         form.elements.audio.value = '';
         form.elements.loop.checked = true;
         if (!uploadBusy) setUploadBusy(false, 0);
+        setSourceMode('file');
         setEditingMode('');
         setStatus('');
         updatePreview();
@@ -2559,21 +2825,29 @@
     function fillFormFromStream(name, source) {
         const parsed = parseSource(source);
         if (!parsed) {
-            setStatus('无法解析该模拟流的 source，无法回填。', true);
+            setStatus('无法解析该视频来源，无法回填。', true);
             return;
         }
 
         form.elements.name.value = name;
-        form.elements.file.value = parsed.file;
-        form.elements.video.value = parsed.video;
-        form.elements.audio.value = parsed.audio;
+        form.elements.file.value = parsed.mode === 'file' ? parsed.file : '';
+        rtspInput.value = parsed.mode === 'rtsp' ? (parsed.rtsp || parsed.file) : '';
+        form.elements.camera_size.value = parsed.cameraSize;
+        form.elements.camera_framerate.value = parsed.cameraFramerate;
+        form.elements.video.value = [...form.elements.video.options].some(option => option.value === parsed.video)
+            ? parsed.video
+            : 'h264';
+        form.elements.audio.value = [...form.elements.audio.options].some(option => option.value === parsed.audio)
+            ? parsed.audio
+            : '';
         form.elements.bitrate.value = parsed.bitrate;
         form.elements.maxrate.value = parsed.maxrate;
         form.elements.bufsize.value = parsed.bufsize;
         form.elements.loop.checked = true;
+        setSourceMode(parsed.mode, {cameraDevice: parsed.cameraDevice});
         setEditingMode(name);
         highlightStream(name);
-        setStatus(`已回填模拟流 ${name}，可直接修改后保存。`);
+        setStatus(`已回填任务 ${name}，可直接修改后保存。`);
         updatePreview();
         openModal();
     }
@@ -2595,6 +2869,7 @@
         document.getElementById('log-api').textContent = meta.log_api;
         uploadDirectory.textContent = meta.upload_dir || 'static';
         uploadDirectory.title = uploadDirectory.textContent;
+        await loadCameraDevices(cameraDeviceSelect.value);
         try {
             await loadONVIFConfig();
         } catch (error) {
@@ -2608,7 +2883,7 @@
         cachedStreams = data || {};
         onvifChannels = buildONVIFChannels(cachedStreams);
         simList.innerHTML = '';
-        const entries = sortStreamEntries(Object.entries(cachedStreams).filter(([, stream]) => getSimulatedSources(stream).length > 0));
+        const entries = sortStreamEntries(Object.entries(cachedStreams).filter(([, stream]) => getManagedSources(stream).length > 0));
 
         const runningCount = entries.filter(([, stream]) => (Array.isArray(stream?.consumers) ? stream.consumers.length : 0) > 0).length;
         streamCount.textContent = String(entries.length);
@@ -2617,7 +2892,7 @@
         emptyState.hidden = entries.length > 0;
 
         for (const [name, stream] of entries) {
-            const src = getSimulatedSources(stream)[0];
+            const src = getManagedSources(stream)[0];
             const parsed = parseSource(src) || {};
             const online = Array.isArray(stream?.consumers) ? stream.consumers.length : 0;
             const rtsp = rtspURL(name);
@@ -2644,7 +2919,8 @@
                         <div class="sim-subline">${stateText}</div>
                     </div>
                     <div class="sim-badges">
-                        <span class="badge">${escapeHTML((parsed.video || '未指定').toUpperCase())}</span>
+                        <span class="badge">${escapeHTML(sourceTypeLabel(parsed.mode))}</span>
+                        <span class="badge">${escapeHTML(parsed.mode === 'rtsp' ? '透传' : (parsed.video || '未指定').toUpperCase())}</span>
                     </div>
                 </div>
 
@@ -2655,16 +2931,20 @@
                     </button>
                 </div>
 
-                <div class="sim-summary">来源：${escapeHTML(parsed.file || '未识别本地文件')}</div>
+                <div class="sim-summary">来源：${escapeHTML(sourceSummary(parsed))}</div>
 
                 <div class="task-cards">
                     <div class="task-card">
                         <strong>编码与音频</strong>
-                        <div class="helper">${escapeHTML((parsed.video || '未指定').toUpperCase())} / ${escapeHTML(audioLabel(parsed.audio))}</div>
+                        <div class="helper">${parsed.mode === 'rtsp'
+                            ? '保持上游视频 / 保持上游音频'
+                            : `${escapeHTML((parsed.video || '未指定').toUpperCase())} / ${escapeHTML(audioLabel(parsed.audio))}`}</div>
                     </div>
                     <div class="task-card">
                         <strong>码率控制</strong>
-                        <div class="helper">目标 ${escapeHTML(parsed.bitrate ? `${parsed.bitrate} kbps` : '默认')} / 最大 ${escapeHTML(parsed.maxrate ? `${parsed.maxrate} kbps` : '跟随目标')} / 缓冲 ${escapeHTML(parsed.bufsize ? `${parsed.bufsize} kbps` : '跟随目标')}</div>
+                        <div class="helper">${parsed.mode === 'rtsp'
+                            ? '直接转发，不进行重复编码'
+                            : `目标 ${escapeHTML(parsed.bitrate ? `${parsed.bitrate} kbps` : '默认')} / 最大 ${escapeHTML(parsed.maxrate ? `${parsed.maxrate} kbps` : '跟随目标')} / 缓冲 ${escapeHTML(parsed.bufsize ? `${parsed.bufsize} kbps` : '跟随目标')}`}</div>
                     </div>
                     <div class="task-card">
                         <div class="task-card-top">
@@ -2729,12 +3009,22 @@
             updateHighlightLabel('');
         }
 
-        setStatus(`已删除模拟流 ${name}`);
+        setStatus(`已删除视频任务 ${name}`);
         await loadMeta();
         await loadStreams();
     }
 
     form.addEventListener('input', updatePreview);
+
+    cameraDeviceSelect.addEventListener('change', () => {
+        applyCameraDefaults(cameraDeviceSelect.value, true);
+        const defaults = cameraDefaultsDescription(cameraDeviceSelect.value);
+        setCameraDeviceState(`已选择 ${cameraDeviceLabel(cameraDeviceSelect.value)}${defaults ? `；${defaults}` : ''}。`);
+    });
+
+    for (const button of sourceModeButtons) {
+        button.addEventListener('click', () => setSourceMode(button.dataset.sourceMode));
+    }
 
     openCreateBtn.addEventListener('click', () => {
         resetFormState();
@@ -2837,7 +3127,7 @@
         try {
             await loadMeta();
             await loadStreams();
-            setStatus('模拟流列表已刷新');
+            setStatus('视频任务列表已刷新');
         } catch (error) {
             setStatus(error.message, true);
         }
@@ -2859,7 +3149,11 @@
         const source = buildSource();
 
         if (!name) return setStatus('请填写流名称。', true);
-        if (!source) return setStatus('请填写本地视频路径。', true);
+        if (!source) {
+            if (sourceMode === 'camera') return setStatus('请选择可用的电脑摄像头。', true);
+            if (sourceMode === 'rtsp') return setStatus('请填写以 rtsp:// 开头的有效地址。', true);
+            return setStatus('请填写本地视频路径。', true);
+        }
 
         const url = new URL(baseURL(meta.streams_api));
         url.searchParams.set('name', name);
@@ -2868,7 +3162,7 @@
         try {
             const response = await fetch(url, {method: 'PUT'});
             if (!response.ok) throw new Error(await response.text() || '保存失败');
-            setStatus(editingName ? `模拟流 ${name} 已更新，并已高亮当前流。` : `模拟流 ${name} 已保存，并已高亮当前流。`);
+            setStatus(editingName ? `视频任务 ${name} 已更新。` : `视频任务 ${name} 已创建。`);
             setEditingMode(name);
             highlightedStreamName = name;
             updateHighlightLabel(name);
@@ -2898,7 +3192,7 @@
         if (editButton) {
             const name = decodeURIComponent(editButton.dataset.edit);
             const stream = cachedStreams[name];
-            const source = getSimulatedSources(stream)[0];
+            const source = getManagedSources(stream)[0];
             if (source) {
                 fillFormFromStream(name, source);
             }
