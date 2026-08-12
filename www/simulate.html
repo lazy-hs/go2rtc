@@ -217,6 +217,115 @@
             line-height: 1.5;
         }
 
+        .ops-overview {
+            display: grid;
+            grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
+            gap: 12px;
+            align-items: stretch;
+        }
+
+        .ops-card {
+            min-width: 0;
+            border: 1px solid rgba(34, 211, 238, 0.14);
+            border-radius: 18px;
+            background: rgba(15, 23, 42, 0.66);
+            padding: 16px;
+        }
+
+        .ops-card h3 {
+            margin: 0;
+            color: white;
+            font-size: 14px;
+            line-height: 1.35;
+        }
+
+        .ops-card p {
+            margin: 6px 0 0;
+            color: rgba(219, 234, 254, 0.78);
+            font-size: 12px;
+            line-height: 1.55;
+        }
+
+        .ops-status-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .ops-status-main {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .ops-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            background: var(--text-faint);
+            box-shadow: 0 0 0 4px rgba(148, 163, 184, 0.12);
+            flex: 0 0 auto;
+        }
+
+        .ops-dot.is-ready {
+            background: var(--ok);
+            box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.16);
+        }
+
+        .ops-dot.is-busy {
+            background: var(--warn);
+            box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.16);
+        }
+
+        .ops-dot.is-error {
+            background: var(--danger);
+            box-shadow: 0 0 0 4px rgba(251, 113, 133, 0.16);
+        }
+
+        .ops-refresh {
+            color: rgba(219, 234, 254, 0.78);
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .ops-metrics {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .ops-metric {
+            min-width: 0;
+            border: 1px solid rgba(34, 211, 238, 0.10);
+            border-radius: 14px;
+            background: rgba(2, 6, 23, 0.28);
+            padding: 12px;
+        }
+
+        .ops-metric span {
+            display: block;
+            color: rgba(191, 219, 254, 0.74);
+            font-size: 11px;
+        }
+
+        .ops-metric strong {
+            display: block;
+            margin-top: 6px;
+            color: white;
+            font-size: 18px;
+            line-height: 1.2;
+        }
+
+        .ops-metric small {
+            display: block;
+            margin-top: 4px;
+            color: rgba(219, 234, 254, 0.64);
+            font-size: 10px;
+            line-height: 1.35;
+        }
+
         .panel-body {
             padding: 0 28px 28px;
         }
@@ -1552,6 +1661,7 @@
         @media (max-width: 1180px) {
             .panel-header,
             .dashboard,
+            .ops-overview,
             .hero-stats,
             .sim-meta {
                 grid-template-columns: 1fr;
@@ -1628,9 +1738,14 @@
 
             .form-grid,
             .hero-stats,
+            .ops-overview,
             .sim-meta,
             .dashboard {
                 grid-template-columns: 1fr;
+            }
+
+            .ops-metrics {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
             }
 
             .modal-form .form-grid {
@@ -1730,6 +1845,61 @@
                 </div>
             </div>
 
+            <div class="ops-overview" aria-label="运行态概览">
+                <div class="ops-card">
+                    <div class="ops-status-row">
+                        <div class="ops-status-main">
+                            <span class="ops-dot" id="ops-status-dot"></span>
+                            <div>
+                                <h3 id="ops-status-title">等待加载流状态</h3>
+                                <p id="ops-status-detail">页面会自动刷新任务状态，便于观察拉流是否已经接入。</p>
+                            </div>
+                        </div>
+                        <span class="ops-refresh" id="summary-refresh-time">未刷新</span>
+                    </div>
+                </div>
+                <div class="ops-card">
+                    <div class="ops-metrics">
+                        <div class="ops-metric">
+                            <span>本地文件</span>
+                            <strong id="summary-file-count">0</strong>
+                        </div>
+                        <div class="ops-metric">
+                            <span>电脑摄像头</span>
+                            <strong id="summary-camera-count">0</strong>
+                        </div>
+                        <div class="ops-metric">
+                            <span>RTSP 输入</span>
+                            <strong id="summary-rtsp-count">0</strong>
+                        </div>
+                        <div class="ops-metric">
+                            <span>消费者</span>
+                            <strong id="summary-consumer-count">0</strong>
+                        </div>
+                        <div class="ops-metric">
+                            <span>CPU</span>
+                            <strong id="summary-cpu">0%</strong>
+                            <small id="summary-cpu-note">go2rtc 进程</small>
+                        </div>
+                        <div class="ops-metric">
+                            <span>内存</span>
+                            <strong id="summary-memory">0 MB</strong>
+                            <small id="summary-memory-note">当前分配</small>
+                        </div>
+                        <div class="ops-metric">
+                            <span>协程</span>
+                            <strong id="summary-goroutines">0</strong>
+                            <small>运行中的 Go 协程</small>
+                        </div>
+                        <div class="ops-metric">
+                            <span>运行时长</span>
+                            <strong id="summary-uptime">00:00:00</strong>
+                            <small id="summary-process-id">PID --</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="dashboard">
                 <section class="side-card launcher-card surface-card">
                     <div class="card-head">
@@ -1826,6 +1996,7 @@
                     </select>
                 </label>
                 <div class="toolbar-pill">当前识别 <strong id="stream-count">0</strong></div>
+                <div class="toolbar-pill">最近刷新 <strong id="stream-refresh-label">未刷新</strong></div>
                 <div class="toolbar-pill">最近操作 <strong id="current-highlight-label">无</strong></div>
             </div>
         </div>
@@ -2065,6 +2236,11 @@
     const formSubtitle = document.getElementById('form-subtitle');
     const streamCount = document.getElementById('stream-count');
     const highlightLabel = document.getElementById('current-highlight-label');
+    const streamRefreshLabel = document.getElementById('stream-refresh-label');
+    const summaryRefreshTime = document.getElementById('summary-refresh-time');
+    const opsStatusDot = document.getElementById('ops-status-dot');
+    const opsStatusTitle = document.getElementById('ops-status-title');
+    const opsStatusDetail = document.getElementById('ops-status-detail');
     const streamSort = document.getElementById('stream-sort');
     const modal = document.getElementById('task-modal');
     const openCreateBtn = document.getElementById('open-create');
@@ -2113,6 +2289,7 @@
     let cameraDevices = [];
     let cameraDevicesLoaded = false;
     let cameraDevicesLoading = false;
+    let streamRefreshTimer = 0;
     let meta = {
         host: location.host,
         base_path: '',
@@ -2120,6 +2297,7 @@
         rtsp_path: '/',
         onvif_path: '/onvif/device_service',
         onvif_config_api: 'api/simulate/onvif',
+        metrics_api: 'api/simulate/metrics',
         streams_api: 'api/streams',
         log_api: 'api/log',
         files_api: 'api/simulate/files',
@@ -2580,6 +2758,79 @@
         return '本地文件';
     }
 
+    function shortTime(date = new Date()) {
+        return date.toLocaleTimeString('zh-CN', {hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit'});
+    }
+
+    function formatBytes(value) {
+        const bytes = Number(value) || 0;
+        if (bytes >= 1024 ** 3) return `${(bytes / 1024 ** 3).toFixed(1)} GB`;
+        if (bytes >= 1024 ** 2) return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
+        if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${bytes} B`;
+    }
+
+    function formatPercent(value) {
+        const percent = Number(value) || 0;
+        return `${percent.toFixed(percent >= 10 ? 0 : 1)}%`;
+    }
+
+    function formatDuration(seconds) {
+        const total = Math.max(0, Math.floor(Number(seconds) || 0));
+        const hours = Math.floor(total / 3600);
+        const minutes = Math.floor((total % 3600) / 60);
+        const secs = total % 60;
+        return [hours, minutes, secs].map(value => String(value).padStart(2, '0')).join(':');
+    }
+
+    function setOpsStatus(kind, title, detail) {
+        opsStatusDot.className = `ops-dot ${kind ? `is-${kind}` : ''}`.trim();
+        opsStatusTitle.textContent = title;
+        opsStatusDetail.textContent = detail;
+    }
+
+    function renderMetrics(data) {
+        document.getElementById('summary-cpu').textContent = formatPercent(data?.cpu_percent);
+        document.getElementById('summary-memory').textContent = formatBytes(data?.memory_alloc);
+        document.getElementById('summary-goroutines').textContent = String(data?.goroutines ?? 0);
+        document.getElementById('summary-uptime').textContent = formatDuration(data?.uptime_seconds);
+        document.getElementById('summary-memory-note').textContent = `系统占用 ${formatBytes(data?.memory_sys)}`;
+        document.getElementById('summary-process-id').textContent = data?.process_id ? `PID ${data.process_id}` : 'PID --';
+    }
+
+    function updateOpsOverview(entries, parsedByName) {
+        const counts = {file: 0, camera: 0, rtsp: 0};
+        let consumerCount = 0;
+        let runtimeMissing = 0;
+        let errorCount = 0;
+
+        for (const [name, stream] of entries) {
+            const parsed = parsedByName.get(name) || {};
+            counts[parsed.mode] = (counts[parsed.mode] || 0) + 1;
+            consumerCount += Array.isArray(stream?.consumers) ? stream.consumers.length : 0;
+            if (stream?.runtime_present === false) runtimeMissing += 1;
+            const src = getManagedSources(stream)[0] || '';
+            if (src.includes('#error=') || src.includes('error=')) errorCount += 1;
+        }
+
+        document.getElementById('summary-file-count').textContent = String(counts.file || 0);
+        document.getElementById('summary-camera-count').textContent = String(counts.camera || 0);
+        document.getElementById('summary-rtsp-count').textContent = String(counts.rtsp || 0);
+        document.getElementById('summary-consumer-count').textContent = String(consumerCount);
+
+        if (errorCount > 0) {
+            setOpsStatus('error', `发现 ${errorCount} 路异常来源`, '请检查任务卡片里的 Source、上游地址或 FFmpeg 参数。');
+        } else if (runtimeMissing > 0) {
+            setOpsStatus('busy', `${runtimeMissing} 路配置待重载`, '配置文件里已存在任务，但当前运行状态还没有同步到进程。');
+        } else if (entries.length === 0) {
+            setOpsStatus('', '暂无视频任务', '新建本地文件、电脑摄像头或 RTSP 输入后，这里会显示实时接入状态。');
+        } else if (consumerCount > 0) {
+            setOpsStatus('ready', `${consumerCount} 个消费者正在拉流`, 'RTSP / ONVIF 接入已产生活动消费者，状态会持续自动刷新。');
+        } else {
+            setOpsStatus('ready', '服务就绪，等待拉流', '任务已发布，第三方平台或播放器接入后会在这里显示消费者数量。');
+        }
+    }
+
     function cameraDeviceLabel(value) {
         const index = Number(value);
         return Number.isInteger(index) && cameraDevices[index]?.name
@@ -2884,16 +3135,18 @@
         onvifChannels = buildONVIFChannels(cachedStreams);
         simList.innerHTML = '';
         const entries = sortStreamEntries(Object.entries(cachedStreams).filter(([, stream]) => getManagedSources(stream).length > 0));
+        const parsedByName = new Map(entries.map(([name, stream]) => [name, parseSource(getManagedSources(stream)[0]) || {}]));
 
         const runningCount = entries.filter(([, stream]) => (Array.isArray(stream?.consumers) ? stream.consumers.length : 0) > 0).length;
         streamCount.textContent = String(entries.length);
         document.getElementById('summary-stream-count').textContent = String(entries.length);
         document.getElementById('summary-running-count').textContent = String(runningCount);
         emptyState.hidden = entries.length > 0;
+        updateOpsOverview(entries, parsedByName);
 
         for (const [name, stream] of entries) {
             const src = getManagedSources(stream)[0];
-            const parsed = parseSource(src) || {};
+            const parsed = parsedByName.get(name) || {};
             const online = Array.isArray(stream?.consumers) ? stream.consumers.length : 0;
             const rtsp = rtspURL(name);
             const onvifChannel = onvifChannels.get(name) || 0;
@@ -2993,6 +3246,42 @@
         const response = await fetch(baseURL(meta.streams_api), {cache: 'no-cache'});
         if (!response.ok) throw new Error(await response.text() || '加载流列表失败');
         renderStreams(mergeConfiguredStreams(await response.json()));
+        const label = shortTime();
+        streamRefreshLabel.textContent = label;
+        summaryRefreshTime.textContent = label;
+    }
+
+    async function loadMetrics() {
+        const response = await fetch(baseURL(meta.metrics_api), {cache: 'no-cache'});
+        if (!response.ok) throw new Error(await response.text() || '加载资源指标失败');
+        renderMetrics(await response.json());
+    }
+
+    async function refreshRuntimeState() {
+        await loadStreams();
+        try {
+            await loadMetrics();
+        } catch (error) {
+            document.getElementById('summary-cpu').textContent = '--';
+            document.getElementById('summary-memory').textContent = '--';
+            document.getElementById('summary-goroutines').textContent = '--';
+            document.getElementById('summary-uptime').textContent = '--';
+            document.getElementById('summary-memory-note').textContent = error.message;
+        }
+    }
+
+    function startStreamAutoRefresh() {
+        if (streamRefreshTimer) window.clearInterval(streamRefreshTimer);
+        streamRefreshTimer = window.setInterval(async () => {
+            if (document.hidden) return;
+            try {
+                await refreshRuntimeState();
+            } catch (error) {
+                setOpsStatus('error', '刷新流状态失败', error.message);
+                streamRefreshLabel.textContent = '失败';
+                summaryRefreshTime.textContent = '刷新失败';
+            }
+        }, 5000);
     }
 
     async function removeStream(name) {
@@ -3011,7 +3300,7 @@
 
         setStatus(`已删除视频任务 ${name}`);
         await loadMeta();
-        await loadStreams();
+        await refreshRuntimeState();
     }
 
     form.addEventListener('input', updatePreview);
@@ -3126,7 +3415,7 @@
     refreshStateBtn?.addEventListener('click', async () => {
         try {
             await loadMeta();
-            await loadStreams();
+            await refreshRuntimeState();
             setStatus('视频任务列表已刷新');
         } catch (error) {
             setStatus(error.message, true);
@@ -3167,7 +3456,7 @@
             highlightedStreamName = name;
             updateHighlightLabel(name);
             await loadMeta();
-            await loadStreams();
+            await refreshRuntimeState();
             highlightStream(name, true);
             closeModal();
         } catch (error) {
@@ -3218,11 +3507,17 @@
             streamSort.value = savedSort;
         }
         await loadMeta();
-        await loadStreams();
+        await refreshRuntimeState();
+        startStreamAutoRefresh();
     }
+
+    window.addEventListener('beforeunload', () => {
+        if (streamRefreshTimer) window.clearInterval(streamRefreshTimer);
+    });
 
     init().catch(error => {
         setStatus(error.message, true);
+        setOpsStatus('error', '初始化失败', error.message);
     });
 </script>
 
