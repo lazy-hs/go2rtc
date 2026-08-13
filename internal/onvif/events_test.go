@@ -95,6 +95,50 @@ func TestEventManagerLifecycle(t *testing.T) {
 	require.ErrorIs(t, err, errSubscriptionNotFound)
 }
 
+func TestEventManagerDisabledDoesNotQueueNotifications(t *testing.T) {
+	disabled := false
+	manager := newEventManager(eventConfig{
+		Enabled:  &disabled,
+		Interval: "1h",
+		Burst:    2,
+		Templates: []eventTemplate{{
+			Topic:     "tns1:VideoSource/MotionAlarm",
+			StartData: `<tt:SimpleItem Value="true" Name="IsMotion"/>`,
+		}},
+	})
+	defer manager.close()
+
+	_, id := manager.create("main", time.Minute)
+	notifications, _, err := manager.pull(id, 10, 0)
+	require.NoError(t, err)
+	require.Empty(t, notifications)
+
+	require.NoError(t, manager.synchronize(id))
+	notifications, _, err = manager.pull(id, 10, 0)
+	require.NoError(t, err)
+	require.Empty(t, notifications)
+}
+
+func TestDisabledEventTemplateIsFiltered(t *testing.T) {
+	disabled := false
+	manager := newEventManager(eventConfig{
+		Interval: "1h",
+		Burst:    1,
+		Templates: []eventTemplate{
+			{Enabled: &disabled, Topic: "tns1:VideoSource/MotionAlarm"},
+			{Topic: "tns1:VideoAnalytics/Vehicle"},
+		},
+	})
+	defer manager.close()
+
+	sub, id := manager.createPull("main", "", time.Minute)
+	require.Equal(t, []int{1}, sub.TemplateIndexes)
+	notifications, _, err := manager.pull(id, 10, 0)
+	require.NoError(t, err)
+	require.Len(t, notifications, 1)
+	require.Equal(t, "tns1:VideoAnalytics/Vehicle", notifications[0].Topic)
+}
+
 func TestEventSubscriptionExpiresWhileWaiting(t *testing.T) {
 	manager := newEventManager(eventConfig{
 		Interval:  "1h",

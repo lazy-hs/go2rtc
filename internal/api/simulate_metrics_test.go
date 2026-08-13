@@ -18,8 +18,12 @@ func TestSimulateMetricsHandler(t *testing.T) {
 	require.NoError(t, json.Unmarshal(res.Body.Bytes(), &info))
 	require.Greater(t, info.MemoryAlloc, uint64(0))
 	require.Greater(t, info.MemorySys, uint64(0))
+	require.Greater(t, info.GoMemoryAlloc, uint64(0))
+	require.Greater(t, info.GoMemorySys, uint64(0))
 	require.Greater(t, info.Goroutines, 0)
 	require.Greater(t, info.ProcessID, 0)
+	require.Greater(t, info.ProcessCount, 0)
+	require.NotEmpty(t, info.Processes)
 	require.NotEmpty(t, info.Timestamp)
 	require.GreaterOrEqual(t, info.CPUPercent, 0.0)
 }

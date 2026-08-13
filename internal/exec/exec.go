@@ -15,6 +15,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/AlexxIT/go2rtc/internal/api"
 	"github.com/AlexxIT/go2rtc/internal/app"
 	"github.com/AlexxIT/go2rtc/internal/rtsp"
 	"github.com/AlexxIT/go2rtc/internal/streams"
@@ -151,6 +152,17 @@ func handlePipe(source string, cmd *shell.Command) (core.Producer, error) {
 	if err = cmd.Start(); err != nil {
 		return nil, err
 	}
+	pid := cmd.Process.Pid
+	api.RegisterSimulateProcess(pid, source)
+	go func() {
+		<-cmd.Done()
+		api.UnregisterSimulateProcess(pid)
+	}()
+	defer func() {
+		if err != nil {
+			api.UnregisterSimulateProcess(pid)
+		}
+	}()
 
 	prod, err := magic.Open(rd)
 	if err != nil {
@@ -192,6 +204,12 @@ func handleRTSP(source string, cmd *shell.Command, path string, timeout time.Dur
 		log.Error().Err(err).Str("source", source).Msg("[exec]")
 		return nil, err
 	}
+	pid := cmd.Process.Pid
+	api.RegisterSimulateProcess(pid, source)
+	go func() {
+		<-cmd.Done()
+		api.UnregisterSimulateProcess(pid)
+	}()
 
 	timer := time.NewTimer(timeout)
 	defer timer.Stop()
@@ -200,15 +218,20 @@ func handleRTSP(source string, cmd *shell.Command, path string, timeout time.Dur
 	case <-timer.C:
 		// haven't received data from app in timeout
 		log.Error().Str("source", source).Msg("[exec] timeout")
+		api.UnregisterSimulateProcess(pid)
 		return nil, errors.New("exec: timeout")
 	case <-cmd.Done():
 		// app fail before we receive any data
+		api.UnregisterSimulateProcess(pid)
 		return nil, fmt.Errorf("exec/rtsp\n%s", cmd.Stderr)
 	case prod := <-waiter:
 		// app started successfully
 		log.Debug().Stringer("launch", time.Since(ts)).Msg("[exec] run rtsp")
 		setRemoteInfo(prod, source, cmd.Args)
-		prod.OnClose = cmd.Close
+		prod.OnClose = func() error {
+			api.UnregisterSimulateProcess(pid)
+			return cmd.Close()
+		}
 		return prod, nil
 	}
 }

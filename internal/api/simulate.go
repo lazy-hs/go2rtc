@@ -27,6 +27,9 @@ type simulateInfo struct {
 	ONVIFPath         string              `json:"onvif_path"`
 	RTSPPath          string              `json:"rtsp_path"`
 	RTSPPort          string              `json:"rtsp_port"`
+	StreamStateAPI    string              `json:"stream_state_api"`
+	EventsAPI         string              `json:"events_api"`
+	DisabledStreams   []string            `json:"disabled_streams"`
 	StreamsAPI        string              `json:"streams_api"`
 	UploadAPI         string              `json:"upload_api"`
 	UploadDir         string              `json:"upload_dir"`
@@ -47,10 +50,35 @@ func simulateHandler(w http.ResponseWriter, r *http.Request) {
 		ONVIFPath:         simulateEndpoint("onvif/device_service"),
 		RTSPPath:          "/",
 		RTSPPort:          simulateRTSPPort(app.ConfigPath),
+		StreamStateAPI:    simulateEndpoint("api/streams/state"),
+		EventsAPI:         simulateEndpoint("api/simulate/events"),
+		DisabledStreams:   configuredDisabledStreamsFromFile(app.ConfigPath),
 		StreamsAPI:        simulateEndpoint("api/streams"),
 		UploadAPI:         simulateEndpoint("api/simulate/upload"),
 		UploadDir:         filepath.ToSlash(simulateUploadDir),
 	})
+}
+
+func configuredDisabledStreamsFromFile(configPath string) []string {
+	if configPath == "" {
+		return nil
+	}
+
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		return nil
+	}
+
+	var cfg struct {
+		Simulate struct {
+			DisabledStreams []string `yaml:"disabled_streams"`
+		} `yaml:"simulate"`
+	}
+	if yaml.Unmarshal(data, &cfg) != nil {
+		return nil
+	}
+
+	return cfg.Simulate.DisabledStreams
 }
 
 func simulateRTSPPort(configPath string) string {

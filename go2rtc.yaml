@@ -9,26 +9,26 @@ streams:
   # - ffmpeg:device?video=0&video_size=1280x720&framerate=30#video=h264
   main:
   - ffmpeg:C:/Users/8054/Videos/2026.06.21-第12期下-4K.高码率.mp4#video=h264#audio=aac#input=file
-  car:
-  - ffmpeg:C:/Users/8054/Videos/监控中心二期算法测试数据/监控中心二期算法测试数据/人脸/光线充足/car.mp4#video=h264#audio=aac#input=file
-  package:
-  - ffmpeg:C:/Users/8054/Videos/监控中心二期算法测试数据/监控中心二期算法测试数据/包裹/光线充足/包裹被取走消失.mp4#video=h264#audio=aac#input=file
-  normal:
-  - ffmpeg:C:/Users/8054/Videos/监控中心二期算法测试数据/监控中心二期算法测试数据/宠物/宠物监控录像/normal_video.mp4#video=h264#audio=aac#input=file
-  people:
-  - ffmpeg:C:/Users/8054/Videos/监控中心二期算法测试数据/监控中心二期算法测试数据/未分类/盘点监控下的倒霉人类.mp4#video=h264#audio=aac#input=file
-  animal:
-  - ffmpeg:C:/Users/8054/Videos/监控中心二期算法测试数据/监控中心二期算法测试数据/宠物/光线充足/小狗照镜子.mp4#video=h264#audio=aac#input=file
-  person1:
-    - ffmpeg:D:/huangsheng/project/go2rtc/static/F-001_正脸后侧脸_1.5米高1米远_光线充足.MP4#video=h264#input=file
-  person2:
-    - ffmpeg:D:/huangsheng/project/go2rtc/static/F-001_正脸后侧脸_1.5米高3米远_光线充足.MP4#video=h264#input=file
+  # car:
+  # - ffmpeg:C:/Users/8054/Videos/监控中心二期算法测试数据/监控中心二期算法测试数据/人脸/光线充足/car.mp4#video=h264#audio=aac#input=file
+  # package:
+  # - ffmpeg:C:/Users/8054/Videos/监控中心二期算法测试数据/监控中心二期算法测试数据/包裹/光线充足/包裹被取走消失.mp4#video=h264#audio=aac#input=file
+  # normal:
+  # - ffmpeg:C:/Users/8054/Videos/监控中心二期算法测试数据/监控中心二期算法测试数据/宠物/宠物监控录像/normal_video.mp4#video=h264#audio=aac#input=file
+  # people:
+  # - ffmpeg:C:/Users/8054/Videos/监控中心二期算法测试数据/监控中心二期算法测试数据/未分类/盘点监控下的倒霉人类.mp4#video=h264#audio=aac#input=file
+  # animal:
+  # - ffmpeg:C:/Users/8054/Videos/监控中心二期算法测试数据/监控中心二期算法测试数据/宠物/光线充足/小狗照镜子.mp4#video=h264#audio=aac#input=file
+  # person1:
+  #   - ffmpeg:D:/huangsheng/project/go2rtc/static/F-001_正脸后侧脸_1.5米高1米远_光线充足.MP4#video=h264#input=file
+  # person2:
+  #   - ffmpeg:D:/huangsheng/project/go2rtc/static/F-001_正脸后侧脸_1.5米高3米远_光线充足.MP4#video=h264#input=file
 api:
   # ONVIF 协议以及 Web UI 监听地址
   listen: ":2984"
 
 onvif:
-  name: "仓库模拟摄像机"
+  name: "模拟摄像机"
   manufacturer: "HuangSheng"
   model: "Virtual IPC-9000"
   firmware: "2.1.0"
@@ -71,21 +71,21 @@ event:
     #   endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
     #   startOperation: "Changed"
     #   endOperation: "Deleted"
-    # #包裹检测
-    # - topic: "tns1:RuleEngine/PackageDetector"
-    #   sourceData: '<tt:SimpleItem Value="analytics_video_source_audio_source" Name="VideoAnalyticsConfigurationToken"/><tt:SimpleItem Value="MyMotionDetectorRule" Name="Rule"/>'
-    #   startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
-    #   endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
-    #   startOperation: "Changed"
-    #   endOperation: "Deleted"
+    #包裹检测
+    - topic: "tns1:RuleEngine/PackageDetector"
+      sourceData: '<tt:SimpleItem Value="analytics_video_source_audio_source" Name="VideoAnalyticsConfigurationToken"/><tt:SimpleItem Value="MyMotionDetectorRule" Name="Rule"/>'
+      startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
+      endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
+      startOperation: "Changed"
+      endOperation: "Deleted"
 
     # #车辆检测
-    # - topic: "tns1:RuleEngine/MyRuleDetector/VehicleDetect"
-    #   sourceData: '<tt:SimpleItem Value="analytics_video_source_audio_source" Name="VideoAnalyticsConfigurationToken"/><tt:SimpleItem Value="MyMotionDetectorRule" Name="Rule"/>'
-    #   startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
-    #   endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
-    #   startOperation: "Changed"
-    #   endOperation: "Deleted"
+    - topic: "tns1:RuleEngine/MyRuleDetector/VehicleDetect"
+      sourceData: '<tt:SimpleItem Value="analytics_video_source_audio_source" Name="VideoAnalyticsConfigurationToken"/><tt:SimpleItem Value="MyMotionDetectorRule" Name="Rule"/>'
+      startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
+      endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
+      startOperation: "Changed"
+      endOperation: "Deleted"
     #火焰检测
     - topic: "tns1:RuleEngine/FlameDetector"
       sourceData: '<tt:SimpleItem Value="analytics_video_source_audio_source" Name="VideoAnalyticsConfigurationToken"/><tt:SimpleItem Value="MyMotionDetectorRule" Name="Rule"/>'

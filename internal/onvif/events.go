@@ -48,6 +48,7 @@ const (
 var errSubscriptionNotFound = errors.New("onvif event subscription not found")
 
 type eventTemplate struct {
+	Enabled        *bool  `yaml:"enabled"`
 	Topic          string `yaml:"topic"`
 	SourceData     string `yaml:"sourceData"`
 	StartData      string `yaml:"startData"`
@@ -57,6 +58,7 @@ type eventTemplate struct {
 }
 
 type eventConfig struct {
+	Enabled   *bool           `yaml:"enabled"`
 	Interval  string          `yaml:"interval"`
 	Burst     int             `yaml:"burst"`
 	Permanent bool            `yaml:"permanent"`
@@ -125,6 +127,7 @@ type eventManager struct {
 	interval      time.Duration
 	burst         int
 	permanent     bool
+	enabled       bool
 	templates     []eventTemplate
 	subscriptions map[string]*eventSubscription
 	stop          chan struct{}
@@ -150,6 +153,7 @@ func newEventManager(cfg eventConfig) *eventManager {
 		interval:      interval,
 		burst:         burst,
 		permanent:     cfg.Permanent,
+		enabled:       cfg.Enabled == nil || *cfg.Enabled,
 		templates:     append([]eventTemplate(nil), cfg.Templates...),
 		subscriptions: make(map[string]*eventSubscription),
 		stop:          make(chan struct{}),
@@ -157,7 +161,7 @@ func newEventManager(cfg eventConfig) *eventManager {
 }
 
 func (m *eventManager) start() {
-	if len(m.templates) == 0 {
+	if !m.enabled || len(m.templates) == 0 {
 		return
 	}
 
@@ -373,7 +377,7 @@ func (m *eventManager) generate(now time.Time) {
 }
 
 func (m *eventManager) enqueueLocked(sub *eventSubscription, count int, now time.Time, operationOverride string) int {
-	if len(sub.TemplateIndexes) == 0 || count <= 0 {
+	if !m.enabled || len(sub.TemplateIndexes) == 0 || count <= 0 {
 		return 0
 	}
 
@@ -442,6 +446,9 @@ func (m *eventManager) cleanupLocked(now time.Time) {
 func (m *eventManager) matchingTemplateIndexes(filter string) []int {
 	indexes := make([]int, 0, len(m.templates))
 	for i, template := range m.templates {
+		if template.Enabled != nil && !*template.Enabled {
+			continue
+		}
 		if eventTopicMatches(filter, template.Topic) {
 			indexes = append(indexes, i)
 		}

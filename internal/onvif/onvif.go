@@ -32,6 +32,8 @@ func Init() {
 	events.start()
 	if len(events.templates) == 0 {
 		log.Warn().Msg("[onvif] event generator disabled: event.templates is empty")
+	} else if !events.enabled {
+		log.Info().Int("templates", len(events.templates)).Msg("[onvif] event generator disabled by config")
 	} else {
 		log.Info().Dur("interval", events.interval).Int("burst", events.burst).Bool("permanent", events.permanent).
 			Int("templates", len(events.templates)).Msg("[onvif] event generator enabled")
@@ -41,6 +43,7 @@ func Init() {
 
 	// ONVIF server on all suburls
 	api.HandleFunc("/onvif/", onvifDeviceService)
+	api.HandleFunc("api/simulate/events", apiSimulateEvents)
 	startDiscovery(api.Port)
 
 	// ONVIF client autodiscovery

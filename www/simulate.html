@@ -239,28 +239,83 @@
             line-height: 1.35;
         }
 
-        .ops-card p {
-            margin: 6px 0 0;
+        .ops-status-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            height: 100%;
+        }
+
+        .ops-status-main {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            min-width: 0;
+            flex: 1 1 auto;
+            overflow: hidden;
+        }
+
+        .ops-status-content {
+            min-width: 0;
+            flex: 1 1 auto;
+            overflow: hidden;
+        }
+
+        .ops-status-detail {
+            margin-top: 6px;
             color: rgba(219, 234, 254, 0.78);
             font-size: 12px;
             line-height: 1.55;
         }
 
-        .ops-status-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
+        .ops-consumer-list {
+            display: grid;
+            gap: 5px;
+            max-height: 122px;
+            overflow-y: auto;
+            padding-right: 4px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(34, 211, 238, 0.48) rgba(15, 23, 42, 0.7);
         }
 
-        .ops-status-main {
-            display: flex;
-            align-items: center;
+        .ops-consumer-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .ops-consumer-list::-webkit-scrollbar-thumb {
+            border-radius: 999px;
+            background: rgba(34, 211, 238, 0.42);
+        }
+
+        .ops-consumer-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
             gap: 10px;
+            align-items: center;
             min-width: 0;
+            color: rgba(219, 234, 254, 0.82);
+        }
+
+        .ops-consumer-row code {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: rgba(219, 234, 254, 0.86);
+            font-family: Consolas, Monaco, monospace;
+            font-size: 12px;
+        }
+
+        .ops-consumer-row span {
+            color: rgba(34, 211, 238, 0.92);
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
         }
 
         .ops-dot {
+            margin-top: 4px;
             width: 10px;
             height: 10px;
             border-radius: 999px;
@@ -304,6 +359,26 @@
             padding: 12px;
         }
 
+        button.ops-metric {
+            display: block;
+            width: 100%;
+            color: inherit;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        button.ops-metric:hover {
+            border-color: rgba(34, 211, 238, 0.28);
+            background: rgba(34, 211, 238, 0.08);
+            transform: none;
+            box-shadow: none;
+        }
+
+        button.ops-metric:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.14);
+        }
+
         .ops-metric span {
             display: block;
             color: rgba(191, 219, 254, 0.74);
@@ -324,6 +399,180 @@
             color: rgba(219, 234, 254, 0.64);
             font-size: 10px;
             line-height: 1.35;
+        }
+
+        .consumer-popover,
+        .resource-popover {
+            position: fixed;
+            z-index: 30;
+            width: min(320px, calc(100vw - 32px));
+            border: 1px solid rgba(34, 211, 238, 0.22);
+            border-radius: 16px;
+            background: rgba(15, 23, 42, 0.98);
+            box-shadow: 0 24px 60px rgba(2, 6, 23, 0.42);
+            padding: 14px;
+        }
+
+        .consumer-popover[hidden],
+        .resource-popover[hidden] {
+            display: none;
+        }
+
+        .consumer-popover-head,
+        .resource-popover-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .consumer-popover-title,
+        .resource-popover-title {
+            min-width: 0;
+        }
+
+        .consumer-popover-title strong,
+        .resource-popover-title strong {
+            display: block;
+            color: white;
+            font-size: 14px;
+            line-height: 1.35;
+        }
+
+        .consumer-popover-title span,
+        .resource-popover-title span {
+            display: block;
+            margin-top: 3px;
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+
+        .consumer-popover-close,
+        .resource-popover-close {
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            border-radius: 9px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .consumer-ip-list,
+        .resource-process-list {
+            display: grid;
+            gap: 6px;
+            max-height: 220px;
+            overflow: auto;
+        }
+
+        .consumer-ip-row,
+        .resource-process-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 10px;
+            align-items: center;
+            padding: 8px 10px;
+            border: 1px solid rgba(34, 211, 238, 0.10);
+            border-radius: 10px;
+            background: rgba(2, 6, 23, 0.26);
+        }
+
+        .consumer-ip-row code,
+        .resource-process-row code {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: #dbeafe;
+            font-family: Consolas, Monaco, monospace;
+            font-size: 12px;
+        }
+
+        .consumer-ip-row span,
+        .resource-process-row span {
+            color: var(--accent-strong);
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .switch-control {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            min-width: 0;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .switch-control input {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .switch-track {
+            position: relative;
+            width: 32px;
+            height: 18px;
+            flex: 0 0 auto;
+            border: 1px solid rgba(71, 85, 105, 0.78);
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.82);
+            transition: background .18s ease, border-color .18s ease;
+        }
+
+        .switch-track::after {
+            content: "";
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 12px;
+            height: 12px;
+            border-radius: 999px;
+            background: #94a3b8;
+            transition: transform .18s ease, background .18s ease;
+        }
+
+        .switch-control input:checked + .switch-track {
+            border-color: rgba(34, 211, 238, 0.72);
+            background: rgba(34, 211, 238, 0.24);
+        }
+
+        .switch-control input:checked + .switch-track::after {
+            transform: translateX(14px);
+            background: var(--accent-strong);
+        }
+
+        .switch-control input:focus-visible + .switch-track {
+            box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.14);
+        }
+
+        .switch-control input:disabled + .switch-track {
+            opacity: .58;
+        }
+
+        .resource-process-row small {
+            display: block;
+            margin-top: 2px;
+            color: rgba(219, 234, 254, 0.58);
+            font-size: 10px;
+            line-height: 1.25;
+        }
+
+        .consumer-popover-empty,
+        .resource-popover-empty {
+            color: var(--text-muted);
+            font-size: 12px;
+            line-height: 1.5;
         }
 
         .panel-body {
@@ -796,6 +1045,17 @@
             box-shadow: 0 22px 44px rgba(2, 6, 23, 0.34);
         }
 
+        .sim-card.is-disabled {
+            border-color: rgba(148, 163, 184, 0.24);
+            background: rgba(15, 23, 42, 0.78);
+        }
+
+        .sim-card.is-disabled .rtsp-inline,
+        .sim-card.is-disabled .task-card,
+        .sim-card.is-disabled .sim-link {
+            opacity: .72;
+        }
+
         .task-cards {
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 8px;
@@ -909,6 +1169,11 @@
             box-shadow: 0 0 0 4px rgba(251, 113, 133, 0.14);
         }
 
+        .status-dot.is-disabled {
+            background: rgba(100, 116, 139, 0.9);
+            box-shadow: 0 0 0 4px rgba(100, 116, 139, 0.13);
+        }
+
         .sim-title-row h3 {
             min-width: 0;
             font-size: 16px;
@@ -1011,6 +1276,12 @@
             max-width: 100%;
         }
 
+        .stream-toggle {
+            margin-right: auto;
+            min-height: 34px;
+            padding: 0 6px 0 0;
+        }
+
         .icon-btn {
             width: 34px;
             height: 34px;
@@ -1085,6 +1356,56 @@
             border-bottom: 1px solid rgba(34, 50, 77, 0.82);
         }
 
+        .event-summary-card {
+            width: 100%;
+            min-width: 0;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 12px;
+            align-items: center;
+            padding: 12px 14px;
+            border: 1px solid rgba(34, 211, 238, 0.16);
+            border-radius: 15px;
+            background: rgba(2, 6, 23, 0.30);
+            color: inherit;
+            text-align: left;
+            box-shadow: none;
+        }
+
+        .event-summary-card:hover {
+            border-color: rgba(34, 211, 238, 0.32);
+            background: rgba(34, 211, 238, 0.08);
+            transform: none;
+            box-shadow: none;
+        }
+
+        .event-summary-copy {
+            min-width: 0;
+            display: grid;
+            gap: 2px;
+        }
+
+        .event-summary-copy span {
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+
+        .event-summary-copy strong {
+            overflow: hidden;
+            color: var(--text);
+            font-size: 13px;
+            line-height: 1.35;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .event-summary-copy small,
+        .event-summary-card > small {
+            color: rgba(219, 234, 254, 0.62);
+            font-size: 11px;
+            white-space: nowrap;
+        }
+
         .onvif-identity-copy {
             min-width: 0;
             display: grid;
@@ -1138,6 +1459,10 @@
 
         .onvif-config-panel {
             width: min(560px, 100%);
+        }
+
+        .event-config-panel {
+            width: min(620px, 100%);
         }
 
         .onvif-config-form .modal-form-scroll {
@@ -1387,6 +1712,7 @@
         }
 
         .modal-form input[type="text"],
+        .modal-form input[type="number"],
         .modal-form textarea,
         .modal-form select {
             background: rgba(15, 23, 42, 0.72);
@@ -1399,11 +1725,13 @@
         }
 
         .modal-form input[type="text"]::placeholder,
+        .modal-form input[type="number"]::placeholder,
         .modal-form textarea::placeholder {
             color: #64748b;
         }
 
         .modal-form input[type="text"]:focus,
+        .modal-form input[type="number"]:focus,
         .modal-form textarea:focus,
         .modal-form select:focus {
             border-color: rgba(34, 211, 238, 0.55);
@@ -1417,6 +1745,52 @@
             background: rgba(15, 23, 42, 0.44);
             padding: 10px 12px;
             border-radius: 12px;
+        }
+
+        .event-template-list {
+            display: grid;
+            gap: 8px;
+            max-height: 330px;
+            overflow: auto;
+            padding-right: 3px;
+        }
+
+        .event-template-row {
+            min-width: 0;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 12px;
+            align-items: center;
+            padding: 10px 12px;
+            border: 1px solid rgba(71, 85, 105, 0.52);
+            border-radius: 12px;
+            background: rgba(15, 23, 42, 0.44);
+        }
+
+        .event-template-row code {
+            display: block;
+            min-width: 0;
+            overflow: hidden;
+            color: #dbeafe;
+            font-family: Consolas, Monaco, monospace;
+            font-size: 11px;
+            line-height: 1.45;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .event-template-row small {
+            display: block;
+            margin-top: 2px;
+            color: var(--text-muted);
+            font-size: 10px;
+        }
+
+        .event-template-empty {
+            padding: 18px 12px;
+            color: var(--text-muted);
+            text-align: center;
+            font-size: 12px;
         }
 
         .modal-preview {
@@ -1775,6 +2149,10 @@
                 align-items: stretch;
             }
 
+            .stream-toggle {
+                margin-right: 0;
+            }
+
             .panel-header .actions,
             .panel-header .actions button {
                 width: 100%;
@@ -1850,9 +2228,9 @@
                     <div class="ops-status-row">
                         <div class="ops-status-main">
                             <span class="ops-dot" id="ops-status-dot"></span>
-                            <div>
+                            <div class="ops-status-content">
                                 <h3 id="ops-status-title">等待加载流状态</h3>
-                                <p id="ops-status-detail">页面会自动刷新任务状态，便于观察拉流是否已经接入。</p>
+                                <div class="ops-status-detail" id="ops-status-detail">页面会自动刷新任务状态，便于观察拉流是否已经接入。</div>
                             </div>
                         </div>
                         <span class="ops-refresh" id="summary-refresh-time">未刷新</span>
@@ -1872,20 +2250,20 @@
                             <span>RTSP 输入</span>
                             <strong id="summary-rtsp-count">0</strong>
                         </div>
-                        <div class="ops-metric">
+                        <button class="ops-metric" id="consumer-summary-card" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="consumer-popover">
                             <span>消费者</span>
                             <strong id="summary-consumer-count">0</strong>
-                        </div>
-                        <div class="ops-metric">
+                        </button>
+                        <button class="ops-metric" id="cpu-summary-card" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="resource-popover" data-resource-kind="cpu">
                             <span>CPU</span>
                             <strong id="summary-cpu">0%</strong>
-                            <small id="summary-cpu-note">go2rtc 进程</small>
-                        </div>
-                        <div class="ops-metric">
+                            <small id="summary-cpu-note">进程树总计</small>
+                        </button>
+                        <button class="ops-metric" id="memory-summary-card" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="resource-popover" data-resource-kind="memory">
                             <span>内存</span>
                             <strong id="summary-memory">0 MB</strong>
-                            <small id="summary-memory-note">当前分配</small>
-                        </div>
+                            <small id="summary-memory-note">进程树总计</small>
+                        </button>
                         <div class="ops-metric">
                             <span>协程</span>
                             <strong id="summary-goroutines">0</strong>
@@ -1898,6 +2276,28 @@
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <div class="consumer-popover" id="consumer-popover" role="dialog" aria-label="消费者 IP 明细" hidden>
+                <div class="consumer-popover-head">
+                    <div class="consumer-popover-title">
+                        <strong id="consumer-popover-title">消费者 IP 明细</strong>
+                        <span id="consumer-popover-subtitle">暂无消费者</span>
+                    </div>
+                    <button class="consumer-popover-close ghost" id="consumer-popover-close" type="button" aria-label="关闭消费者 IP 明细">×</button>
+                </div>
+                <div class="consumer-ip-list" id="consumer-ip-list"></div>
+            </div>
+
+            <div class="resource-popover" id="resource-popover" role="dialog" aria-label="资源占用明细" hidden>
+                <div class="resource-popover-head">
+                    <div class="resource-popover-title">
+                        <strong id="resource-popover-title">资源占用明细</strong>
+                        <span id="resource-popover-subtitle">暂无进程明细</span>
+                    </div>
+                    <button class="resource-popover-close ghost" id="resource-popover-close" type="button" aria-label="关闭资源占用明细">×</button>
+                </div>
+                <div class="resource-process-list" id="resource-process-list"></div>
             </div>
 
             <div class="dashboard">
@@ -1972,6 +2372,13 @@
                                 <div class="value" id="log-api">加载中...</div>
                             </div>
                         </div>
+                        <button class="event-summary-card" id="open-event-config" type="button" aria-haspopup="dialog" aria-controls="event-config-modal">
+                            <span class="event-summary-copy">
+                                <span>事件推送</span>
+                                <strong id="event-summary-title">加载中...</strong>
+                            </span>
+                            <small id="event-summary-detail">频率 --</small>
+                        </button>
                     </div>
                 </aside>
             </div>
@@ -2206,6 +2613,66 @@
     </section>
 </div>
 
+<div id="event-config-modal" class="modal-shell" aria-hidden="true" inert>
+    <section class="modal-panel event-config-panel" role="dialog" aria-modal="true" aria-labelledby="event-config-title">
+        <div class="modal-head">
+            <div>
+                <h2 id="event-config-title">事件推送配置</h2>
+                <p>控制 ONVIF 事件整体推送状态和每个事件模板的启停；保存后重启服务生效。</p>
+            </div>
+            <button id="close-event-config" class="modal-close" type="button" aria-label="关闭">×</button>
+        </div>
+        <form id="event-config-form" class="modal-form event-config-form">
+            <div class="modal-form-scroll">
+                <div class="modal-section">
+                    <div class="toggle-row">
+                        <div>
+                            <label class="switch-control">
+                                <input id="event-enabled" name="enabled" type="checkbox">
+                                <span class="switch-track" aria-hidden="true"></span>
+                                <span>启用事件推送</span>
+                            </label>
+                            <div class="helper">关闭后保留事件模板配置，但不再生成 Pull / Push 通知。</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-section">
+                    <h3>推送节奏</h3>
+                    <div class="form-grid">
+                        <div class="field">
+                            <label for="event-interval">推送频率</label>
+                            <input id="event-interval" name="interval" type="text" placeholder="例如：1m、30s、PT1M">
+                        </div>
+                        <div class="field">
+                            <label for="event-burst">初始事件数</label>
+                            <input id="event-burst" name="burst" type="number" min="0" max="100" step="1" inputmode="numeric" placeholder="例如：10">
+                        </div>
+                    </div>
+                    <div class="toggle-row">
+                        <div>
+                            <label class="switch-control">
+                                <input id="event-permanent" name="permanent" type="checkbox">
+                                <span class="switch-track" aria-hidden="true"></span>
+                                <span>订阅永久有效</span>
+                            </label>
+                            <div class="helper">适合长期稳定压测；关闭时按 ONVIF 客户端请求的 TTL 过期。</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-section">
+                    <h3>事件模板</h3>
+                    <div class="event-template-list" id="event-template-list"></div>
+                </div>
+                <div id="event-config-status" class="status" role="status" aria-live="polite"></div>
+            </div>
+            <div class="modal-actions">
+                <button class="ghost" id="cancel-event-config" type="button">取消</button>
+                <button class="floating-action" id="save-event-config" type="submit">保存并重启</button>
+            </div>
+        </form>
+    </section>
+</div>
+
 <div id="file-browser" class="file-browser-shell" aria-hidden="true">
     <section class="file-browser-panel" role="dialog" aria-modal="true" aria-labelledby="file-browser-title">
         <div class="file-browser-head">
@@ -2241,6 +2708,20 @@
     const opsStatusDot = document.getElementById('ops-status-dot');
     const opsStatusTitle = document.getElementById('ops-status-title');
     const opsStatusDetail = document.getElementById('ops-status-detail');
+    const consumerSummaryCard = document.getElementById('consumer-summary-card');
+    const consumerPopover = document.getElementById('consumer-popover');
+    const consumerPopoverClose = document.getElementById('consumer-popover-close');
+    const consumerPopoverTitle = document.getElementById('consumer-popover-title');
+    const consumerPopoverSubtitle = document.getElementById('consumer-popover-subtitle');
+    const consumerIPList = document.getElementById('consumer-ip-list');
+    const cpuSummaryCard = document.getElementById('cpu-summary-card');
+    const memorySummaryCard = document.getElementById('memory-summary-card');
+    const resourcePopover = document.getElementById('resource-popover');
+    const resourcePopoverClose = document.getElementById('resource-popover-close');
+    const resourcePopoverTitle = document.getElementById('resource-popover-title');
+    const resourcePopoverSubtitle = document.getElementById('resource-popover-subtitle');
+    const resourceProcessList = document.getElementById('resource-process-list');
+    document.body.append(consumerPopover, resourcePopover);
     const streamSort = document.getElementById('stream-sort');
     const modal = document.getElementById('task-modal');
     const openCreateBtn = document.getElementById('open-create');
@@ -2268,6 +2749,16 @@
     const saveONVIFConfigBtn = document.getElementById('save-onvif-config');
     const onvifConfigStatus = document.getElementById('onvif-config-status');
     const onvifConfigFeedback = document.getElementById('onvif-config-feedback');
+    const openEventConfigBtn = document.getElementById('open-event-config');
+    const eventSummaryTitle = document.getElementById('event-summary-title');
+    const eventSummaryDetail = document.getElementById('event-summary-detail');
+    const eventConfigModal = document.getElementById('event-config-modal');
+    const eventConfigForm = document.getElementById('event-config-form');
+    const closeEventConfigBtn = document.getElementById('close-event-config');
+    const cancelEventConfigBtn = document.getElementById('cancel-event-config');
+    const saveEventConfigBtn = document.getElementById('save-event-config');
+    const eventConfigStatus = document.getElementById('event-config-status');
+    const eventTemplateList = document.getElementById('event-template-list');
     const sourceModeButtons = [...document.querySelectorAll('[data-source-mode]')];
     const sourcePanels = [...document.querySelectorAll('[data-source-panel]')];
     const transcodeOptions = document.getElementById('transcode-options');
@@ -2280,6 +2771,7 @@
     let highlightedStreamName = '';
     let modalReturnFocus = null;
     let onvifConfigReturnFocus = null;
+    let eventConfigReturnFocus = null;
     let cachedStreams = {};
     let onvifChannels = new Map();
     let currentBrowserPath = '';
@@ -2290,6 +2782,11 @@
     let cameraDevicesLoaded = false;
     let cameraDevicesLoading = false;
     let streamRefreshTimer = 0;
+    let latestConsumerSummary = {consumers: 0, ipCount: 0, ipEntries: [], topIPs: []};
+    let latestResourceMetrics = {cpu_percent: 0, memory_alloc: 0, process_count: 0, processes: []};
+    let activeResourceKind = 'cpu';
+    let processSourceIndex = new Map();
+    let eventConfig = {enabled: true, interval: '1m', burst: 10, permanent: true, templates: []};
     let meta = {
         host: location.host,
         base_path: '',
@@ -2297,6 +2794,9 @@
         rtsp_path: '/',
         onvif_path: '/onvif/device_service',
         onvif_config_api: 'api/simulate/onvif',
+        stream_state_api: 'api/streams/state',
+        events_api: 'api/simulate/events',
+        disabled_streams: [],
         metrics_api: 'api/simulate/metrics',
         streams_api: 'api/streams',
         log_api: 'api/log',
@@ -2665,10 +3165,33 @@
         return [...new Set([...configured, ...runtime].filter(isManagedStream))];
     }
 
+    function normalizeProcessSource(source) {
+        return String(source || '').replace(/\s+/g, ' ').trim();
+    }
+
+    function buildProcessSourceIndex(streamsData) {
+        const index = new Map();
+        for (const [name, stream] of Object.entries(streamsData || {})) {
+            for (const producer of Array.isArray(stream?.producers) ? stream.producers : []) {
+                for (const key of ['source', 'url']) {
+                    const source = normalizeProcessSource(producer?.[key]);
+                    if (source) index.set(source, name);
+                }
+            }
+        }
+        return index;
+    }
+
+    function processStreamName(process) {
+        const source = normalizeProcessSource(process?.source);
+        return source ? processSourceIndex.get(source) || '' : '';
+    }
+
     function mergeConfiguredStreams(runtimeData) {
         const merged = {};
+        const disabled = disabledStreamSet();
         for (const [name, stream] of Object.entries(runtimeData || {})) {
-            merged[name] = {...(stream || {}), runtime_present: true};
+            merged[name] = {...(stream || {}), runtime_present: true, disabled: disabled.has(name)};
         }
 
         for (const [name, sources] of Object.entries(meta.configured_streams || {})) {
@@ -2678,10 +3201,19 @@
                 ...(merged[name] || {}),
                 configured_sources: configuredSources,
                 runtime_present: Boolean(merged[name]?.runtime_present),
+                disabled: disabled.has(name),
             };
         }
 
         return merged;
+    }
+
+    function disabledStreamSet() {
+        return new Set(Array.isArray(meta.disabled_streams) ? meta.disabled_streams : []);
+    }
+
+    function isStreamDisabled(name) {
+        return disabledStreamSet().has(name);
     }
 
     function sortStreamEntries(entries) {
@@ -2787,45 +3319,369 @@
         opsStatusDot.className = `ops-dot ${kind ? `is-${kind}` : ''}`.trim();
         opsStatusTitle.textContent = title;
         opsStatusDetail.textContent = detail;
+        opsStatusDetail.className = 'ops-status-detail';
+    }
+
+    function normalizeEventConfig(config = {}) {
+        const templates = Array.isArray(config.templates) ? config.templates : [];
+        return {
+            enabled: config.enabled !== false,
+            interval: String(config.interval || '1m'),
+            burst: Math.max(0, Number(config.burst) || 0),
+            permanent: Boolean(config.permanent),
+            templates: templates.map(template => ({
+                enabled: template?.enabled !== false,
+                topic: String(template?.topic || ''),
+                sourceData: String(template?.sourceData || ''),
+                startData: String(template?.startData || ''),
+                endData: String(template?.endData || ''),
+                startOperation: String(template?.startOperation || ''),
+                endOperation: String(template?.endOperation || ''),
+            })),
+        };
+    }
+
+    function updateEventSummary(config = eventConfig) {
+        const templates = Array.isArray(config.templates) ? config.templates : [];
+        const enabledCount = templates.filter(template => template.enabled !== false).length;
+        const total = templates.length;
+        eventSummaryTitle.textContent = `${config.enabled === false ? '已停用' : '已启用'} ${enabledCount}/${total} 个事件`;
+        eventSummaryDetail.textContent = `频率 ${config.interval || '--'}`;
+        openEventConfigBtn.title = `${enabledCount} 个事件启用，推送频率 ${config.interval || '--'}`;
+    }
+
+    function setEventConfigStatus(message, isError = false) {
+        eventConfigStatus.textContent = message;
+        eventConfigStatus.classList.toggle('error', isError);
+    }
+
+    function renderEventTemplates() {
+        eventTemplateList.replaceChildren();
+        const templates = Array.isArray(eventConfig.templates) ? eventConfig.templates : [];
+        if (!templates.length) {
+            const empty = document.createElement('div');
+            empty.className = 'event-template-empty';
+            empty.textContent = '当前配置里还没有事件模板。';
+            eventTemplateList.appendChild(empty);
+            return;
+        }
+
+        templates.forEach((template, index) => {
+            const row = document.createElement('div');
+            row.className = 'event-template-row';
+            const topic = template.topic || `事件模板 ${index + 1}`;
+            row.innerHTML = `
+                <div>
+                    <code title="${escapeHTML(topic)}">${escapeHTML(topic)}</code>
+                    <small>${escapeHTML([template.startOperation || 'Changed', template.endOperation || ''].filter(Boolean).join(' / '))}</small>
+                </div>
+                <label class="switch-control" title="启用 / 停用该事件">
+                    <input type="checkbox" data-event-template-index="${index}" ${template.enabled !== false ? 'checked' : ''}>
+                    <span class="switch-track" aria-hidden="true"></span>
+                    <span class="visually-hidden">启用该事件</span>
+                </label>
+            `;
+            eventTemplateList.appendChild(row);
+        });
+    }
+
+    function fillEventConfigForm() {
+        eventConfigForm.elements.enabled.checked = eventConfig.enabled !== false;
+        eventConfigForm.elements.interval.value = eventConfig.interval || '1m';
+        eventConfigForm.elements.burst.value = String(eventConfig.burst ?? 0);
+        eventConfigForm.elements.permanent.checked = Boolean(eventConfig.permanent);
+        renderEventTemplates();
+    }
+
+    async function loadEventConfig() {
+        const response = await fetch(baseURL(meta.events_api), {cache: 'no-cache'});
+        if (!response.ok) throw new Error(await response.text() || '加载事件配置失败');
+        eventConfig = normalizeEventConfig(await response.json());
+        updateEventSummary(eventConfig);
+        const savedMessage = sessionStorage.getItem('event-config-saved');
+        sessionStorage.removeItem('event-config-saved');
+        if (savedMessage) setEventConfigStatus(savedMessage);
+        return eventConfig;
+    }
+
+    function setOpsConsumerStatus(consumerCount, ipEntries) {
+        opsStatusDot.className = 'ops-dot is-ready';
+        opsStatusTitle.textContent = `${consumerCount} 个消费者`;
+        opsStatusDetail.className = 'ops-status-detail ops-consumer-list';
+        opsStatusDetail.replaceChildren();
+
+        for (const [ip, count] of ipEntries) {
+            const row = document.createElement('div');
+            row.className = 'ops-consumer-row';
+            row.innerHTML = `<code title="${escapeHTML(ip)}">${escapeHTML(ip)}</code><span>${count} 个连接</span>`;
+            opsStatusDetail.appendChild(row);
+        }
     }
 
     function renderMetrics(data) {
+        const processes = Array.isArray(data?.processes)
+            ? data.processes.map(process => ({...process, stream_name: processStreamName(process)}))
+            : [];
+        latestResourceMetrics = {
+            cpu_percent: Number(data?.cpu_percent) || 0,
+            memory_alloc: Number(data?.memory_alloc) || 0,
+            process_count: Number(data?.process_count) || 0,
+            processes,
+        };
         document.getElementById('summary-cpu').textContent = formatPercent(data?.cpu_percent);
         document.getElementById('summary-memory').textContent = formatBytes(data?.memory_alloc);
         document.getElementById('summary-goroutines').textContent = String(data?.goroutines ?? 0);
         document.getElementById('summary-uptime').textContent = formatDuration(data?.uptime_seconds);
-        document.getElementById('summary-memory-note').textContent = `系统占用 ${formatBytes(data?.memory_sys)}`;
+        const processCount = latestResourceMetrics.process_count || latestResourceMetrics.processes.length;
+        document.getElementById('summary-cpu-note').textContent = `${processCount || 1} 个进程总计`;
+        document.getElementById('summary-memory-note').textContent = `${processCount || 1} 个进程总计`;
         document.getElementById('summary-process-id').textContent = data?.process_id ? `PID ${data.process_id}` : 'PID --';
+        if (!resourcePopover.hidden) {
+            renderResourcePopover(activeResourceKind);
+            positionResourcePopover(activeResourceKind);
+        }
+    }
+
+    function consumerIP(remoteAddr) {
+        const value = String(remoteAddr || '').trim();
+        if (!value) return '';
+        if (value.startsWith('[')) {
+            const end = value.indexOf(']');
+            return end > 0 ? value.slice(1, end) : value;
+        }
+        const colon = value.lastIndexOf(':');
+        if (colon > 0 && value.indexOf(':') === colon) return value.slice(0, colon);
+        return value;
+    }
+
+    function consumerStats(stream) {
+        const consumers = Array.isArray(stream?.consumers) ? stream.consumers : [];
+        const ips = new Map();
+        for (const consumer of consumers) {
+            const ip = consumerIP(consumer?.remote_addr);
+            if (!ip) continue;
+            ips.set(ip, (ips.get(ip) || 0) + 1);
+        }
+        const ipEntries = [...ips.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'zh-CN', {numeric: true}));
+        return {consumers: consumers.length, ipCount: ips.size, ipEntries, topIPs: ipEntries.slice(0, 3)};
+    }
+
+    function consumerIPSummary(stats) {
+        if (!stats.ipCount) return '来自 0 个 IP';
+        const topText = stats.topIPs.map(([ip, count]) => `${ip}×${count}`).join('，');
+        return `来自 ${stats.ipCount} 个 IP${topText ? `：${topText}` : ''}`;
+    }
+
+    function renderConsumerPopover() {
+        consumerPopoverTitle.textContent = `${latestConsumerSummary.consumers} 个消费者`;
+        consumerPopoverSubtitle.textContent = latestConsumerSummary.ipCount
+            ? `来自 ${latestConsumerSummary.ipCount} 个 IP`
+            : '暂无消费者 IP';
+        consumerIPList.replaceChildren();
+
+        if (!latestConsumerSummary.ipEntries.length) {
+            const empty = document.createElement('div');
+            empty.className = 'consumer-popover-empty';
+            empty.textContent = '当前还没有客户端在拉流。';
+            consumerIPList.appendChild(empty);
+            return;
+        }
+
+        for (const [ip, count] of latestConsumerSummary.ipEntries) {
+            const row = document.createElement('div');
+            row.className = 'consumer-ip-row';
+            row.innerHTML = `<code title="${escapeHTML(ip)}">${escapeHTML(ip)}</code><span>${count} 个连接</span>`;
+            consumerIPList.appendChild(row);
+        }
+    }
+
+    function positionAnchoredPopover(popover, target) {
+        const targetRect = target.getBoundingClientRect();
+        const margin = 12;
+        const gap = 8;
+        const rect = popover.getBoundingClientRect();
+        const width = Math.min(rect.width || 320, window.innerWidth - margin * 2);
+        const height = rect.height || 260;
+        const maxLeft = window.innerWidth - width - margin;
+        const alignRight = targetRect.right - width;
+        const preferredLeft = targetRect.left + width > window.innerWidth - margin ? alignRight : targetRect.left;
+        const left = Math.min(Math.max(margin, preferredLeft), Math.max(margin, maxLeft));
+
+        const belowTop = targetRect.bottom + gap;
+        const aboveTop = targetRect.top - height - gap;
+        const top = belowTop + height <= window.innerHeight - margin
+            ? belowTop
+            : Math.max(margin, aboveTop);
+
+        popover.style.left = `${left}px`;
+        popover.style.top = `${top}px`;
+    }
+
+    function positionConsumerPopover() {
+        positionAnchoredPopover(consumerPopover, consumerSummaryCard);
+    }
+
+    function openConsumerPopover() {
+        closeResourcePopover();
+        renderConsumerPopover();
+        consumerPopover.hidden = false;
+        consumerSummaryCard.setAttribute('aria-expanded', 'true');
+        positionConsumerPopover();
+    }
+
+    function closeConsumerPopover() {
+        consumerPopover.hidden = true;
+        consumerSummaryCard.setAttribute('aria-expanded', 'false');
+    }
+
+    function toggleConsumerPopover() {
+        if (consumerPopover.hidden) {
+            openConsumerPopover();
+        } else {
+            closeConsumerPopover();
+        }
+    }
+
+    function resourceMetricLabel(kind, process) {
+        return kind === 'memory'
+            ? formatBytes(process?.memory_bytes)
+            : formatPercent(process?.cpu_percent);
+    }
+
+    function resourceProcessName(process) {
+        const role = process?.role ? `${process.role} · ` : '';
+        const name = process?.name || '未知进程';
+        return `${role}${name}`;
+    }
+
+    function resourceProcessMeta(process, pid) {
+        const parts = [];
+        if (process?.stream_name) parts.push(`所属流 ${process.stream_name}`);
+        parts.push(`PID ${pid}`);
+        if (process?.parent_pid) parts.push(`PPID ${process.parent_pid}`);
+        return parts.join(' · ');
+    }
+
+    function renderResourcePopover(kind = activeResourceKind) {
+        activeResourceKind = kind;
+        const isMemory = kind === 'memory';
+        const processes = [...(latestResourceMetrics.processes || [])].sort((a, b) => {
+            const av = Number(isMemory ? a.memory_bytes : a.cpu_percent) || 0;
+            const bv = Number(isMemory ? b.memory_bytes : b.cpu_percent) || 0;
+            return bv - av || (Number(a.pid) || 0) - (Number(b.pid) || 0);
+        });
+        const total = isMemory
+            ? formatBytes(latestResourceMetrics.memory_alloc)
+            : formatPercent(latestResourceMetrics.cpu_percent);
+
+        resourcePopoverTitle.textContent = `${isMemory ? '内存' : 'CPU'} 总占用 ${total}`;
+        resourcePopoverSubtitle.textContent = processes.length
+            ? `${processes.length} 个进程（go2rtc 与子进程）`
+            : '暂无进程明细';
+        resourceProcessList.replaceChildren();
+
+        if (!processes.length) {
+            const empty = document.createElement('div');
+            empty.className = 'resource-popover-empty';
+            empty.textContent = '当前没有可展示的子进程资源数据。';
+            resourceProcessList.appendChild(empty);
+            return;
+        }
+
+        for (const process of processes) {
+            const pid = Number(process?.pid) || 0;
+            const row = document.createElement('div');
+            row.className = 'resource-process-row';
+            const metaText = resourceProcessMeta(process, pid);
+            row.innerHTML = `
+                <div>
+                    <code title="${escapeHTML(resourceProcessName(process))}">${escapeHTML(resourceProcessName(process))}</code>
+                    <small title="${escapeHTML(metaText)}">${escapeHTML(metaText)}</small>
+                </div>
+                <span>${resourceMetricLabel(kind, process)}</span>
+            `;
+            resourceProcessList.appendChild(row);
+        }
+    }
+
+    function resourceTarget(kind = activeResourceKind) {
+        return kind === 'memory' ? memorySummaryCard : cpuSummaryCard;
+    }
+
+    function positionResourcePopover(kind = activeResourceKind) {
+        positionAnchoredPopover(resourcePopover, resourceTarget(kind));
+    }
+
+    function openResourcePopover(kind) {
+        closeConsumerPopover();
+        activeResourceKind = kind;
+        renderResourcePopover(kind);
+        resourcePopover.hidden = false;
+        cpuSummaryCard.setAttribute('aria-expanded', String(kind === 'cpu'));
+        memorySummaryCard.setAttribute('aria-expanded', String(kind === 'memory'));
+        positionResourcePopover(kind);
+    }
+
+    function closeResourcePopover() {
+        resourcePopover.hidden = true;
+        cpuSummaryCard.setAttribute('aria-expanded', 'false');
+        memorySummaryCard.setAttribute('aria-expanded', 'false');
+    }
+
+    function toggleResourcePopover(kind) {
+        if (resourcePopover.hidden || activeResourceKind !== kind) {
+            openResourcePopover(kind);
+        } else {
+            closeResourcePopover();
+        }
     }
 
     function updateOpsOverview(entries, parsedByName) {
         const counts = {file: 0, camera: 0, rtsp: 0};
         let consumerCount = 0;
+        const consumerIPs = new Map();
         let runtimeMissing = 0;
+        let disabledCount = 0;
         let errorCount = 0;
 
         for (const [name, stream] of entries) {
             const parsed = parsedByName.get(name) || {};
             counts[parsed.mode] = (counts[parsed.mode] || 0) + 1;
-            consumerCount += Array.isArray(stream?.consumers) ? stream.consumers.length : 0;
-            if (stream?.runtime_present === false) runtimeMissing += 1;
+            const stats = consumerStats(stream);
+            consumerCount += stats.consumers;
+            for (const [ip, count] of stats.ipEntries) {
+                consumerIPs.set(ip, (consumerIPs.get(ip) || 0) + count);
+            }
+            if (isStreamDisabled(name) || stream?.disabled) disabledCount += 1;
+            else if (stream?.runtime_present === false) runtimeMissing += 1;
             const src = getManagedSources(stream)[0] || '';
             if (src.includes('#error=') || src.includes('error=')) errorCount += 1;
         }
+
+        const ipEntries = [...consumerIPs.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'zh-CN', {numeric: true}));
+        latestConsumerSummary = {consumers: consumerCount, ipCount: consumerIPs.size, ipEntries, topIPs: ipEntries.slice(0, 3)};
+        const ipSummary = consumerIPSummary(latestConsumerSummary);
 
         document.getElementById('summary-file-count').textContent = String(counts.file || 0);
         document.getElementById('summary-camera-count').textContent = String(counts.camera || 0);
         document.getElementById('summary-rtsp-count').textContent = String(counts.rtsp || 0);
         document.getElementById('summary-consumer-count').textContent = String(consumerCount);
+        consumerSummaryCard.title = ipSummary;
+        if (!consumerPopover.hidden) {
+            renderConsumerPopover();
+            positionConsumerPopover();
+        }
 
         if (errorCount > 0) {
             setOpsStatus('error', `发现 ${errorCount} 路异常来源`, '请检查任务卡片里的 Source、上游地址或 FFmpeg 参数。');
+        } else if (disabledCount > 0) {
+            setOpsStatus('busy', `${disabledCount} 路已停用`, '配置仍保留，需要时可在任务卡片右下角打开开关恢复推流。');
         } else if (runtimeMissing > 0) {
             setOpsStatus('busy', `${runtimeMissing} 路配置待重载`, '配置文件里已存在任务，但当前运行状态还没有同步到进程。');
         } else if (entries.length === 0) {
             setOpsStatus('', '暂无视频任务', '新建本地文件、电脑摄像头或 RTSP 输入后，这里会显示实时接入状态。');
         } else if (consumerCount > 0) {
-            setOpsStatus('ready', `${consumerCount} 个消费者正在拉流`, 'RTSP / ONVIF 接入已产生活动消费者，状态会持续自动刷新。');
+            setOpsConsumerStatus(consumerCount, ipEntries);
         } else {
             setOpsStatus('ready', '服务就绪，等待拉流', '任务已发布，第三方平台或播放器接入后会在这里显示消费者数量。');
         }
@@ -3073,6 +3929,39 @@
         document.body.style.overflow = '';
     }
 
+    async function openEventConfig() {
+        eventConfigReturnFocus = document.activeElement instanceof HTMLElement
+            ? document.activeElement
+            : openEventConfigBtn;
+        openEventConfigBtn.disabled = true;
+        try {
+            await loadEventConfig();
+            fillEventConfigForm();
+            setEventConfigStatus('');
+            saveEventConfigBtn.disabled = false;
+            eventConfigModal.inert = false;
+            eventConfigModal.classList.add('is-open');
+            eventConfigModal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            requestAnimationFrame(() => eventConfigForm.elements.enabled.focus({preventScroll: true}));
+        } catch (error) {
+            setEventConfigStatus(error.message, true);
+            updateEventSummary({enabled: false, interval: '--', templates: []});
+        } finally {
+            openEventConfigBtn.disabled = false;
+        }
+    }
+
+    function closeEventConfig() {
+        if (eventConfigModal.contains(document.activeElement)) {
+            (eventConfigReturnFocus || openEventConfigBtn).focus({preventScroll: true});
+        }
+        eventConfigModal.classList.remove('is-open');
+        eventConfigModal.setAttribute('aria-hidden', 'true');
+        eventConfigModal.inert = true;
+        document.body.style.overflow = '';
+    }
+
     function fillFormFromStream(name, source) {
         const parsed = parseSource(source);
         if (!parsed) {
@@ -3112,6 +4001,7 @@
             meta.configured_streams = {};
         }
         if (!Array.isArray(meta.configured_order)) meta.configured_order = [];
+        if (!Array.isArray(meta.disabled_streams)) meta.disabled_streams = [];
         document.getElementById('api-host').textContent = meta.host || location.host;
         document.getElementById('rtsp-port').textContent = meta.rtsp_port;
         document.getElementById('onvif-path').textContent = meta.onvif_path;
@@ -3127,11 +4017,18 @@
             updateONVIFIdentitySummary();
             onvifConfigFeedback.textContent = error.message;
         }
+        try {
+            await loadEventConfig();
+        } catch (error) {
+            updateEventSummary({enabled: false, interval: '--', templates: []});
+            setEventConfigStatus(error.message, true);
+        }
         updatePreview();
     }
 
     function renderStreams(data) {
         cachedStreams = data || {};
+        processSourceIndex = buildProcessSourceIndex(cachedStreams);
         onvifChannels = buildONVIFChannels(cachedStreams);
         simList.innerHTML = '';
         const entries = sortStreamEntries(Object.entries(cachedStreams).filter(([, stream]) => getManagedSources(stream).length > 0));
@@ -3147,21 +4044,27 @@
         for (const [name, stream] of entries) {
             const src = getManagedSources(stream)[0];
             const parsed = parsedByName.get(name) || {};
-            const online = Array.isArray(stream?.consumers) ? stream.consumers.length : 0;
+            const consumerInfo = consumerStats(stream);
+            const online = consumerInfo.consumers;
+            const consumerIPText = consumerIPSummary(consumerInfo);
             const rtsp = rtspURL(name);
             const onvifChannel = onvifChannels.get(name) || 0;
             const onvif = onvifURL(onvifChannel);
+            const disabled = isStreamDisabled(name) || stream?.disabled;
 
             const card = document.createElement('article');
             card.className = 'sim-card';
             card.dataset.streamName = name;
             if (highlightedStreamName === name) card.classList.add('is-highlighted');
+            if (disabled) card.classList.add('is-disabled');
             const hasError = src.includes('#error=') || src.includes('error=');
             const runtimePresent = stream?.runtime_present !== false;
-            const stateClass = hasError ? 'is-error' : (online > 0 ? 'is-active' : 'is-idle');
-            const stateText = hasError
+            const stateClass = disabled ? 'is-disabled' : (hasError ? 'is-error' : (online > 0 ? 'is-active' : 'is-idle'));
+            const stateText = disabled
+                ? '已停用 · 配置保留'
+                : hasError
                 ? '异常'
-                : (!runtimePresent ? '已配置 · 待重载' : (online > 0 ? `运行中 · 消费者 ${online}` : '空闲'));
+                : (!runtimePresent ? '已配置 · 待重载' : (online > 0 ? `运行中 · 消费者 ${online} · IP ${consumerInfo.ipCount}` : '空闲'));
             card.innerHTML = `
                 <div class="sim-card-head">
                     <div class="sim-title-wrap">
@@ -3169,7 +4072,7 @@
                             <span class="status-dot ${stateClass}"></span>
                             <h3>${escapeHTML(name)}</h3>
                         </div>
-                        <div class="sim-subline">${stateText}</div>
+                        <div class="sim-subline" title="${escapeHTML(consumerIPText)}">${stateText}</div>
                     </div>
                     <div class="sim-badges">
                         <span class="badge">${escapeHTML(sourceTypeLabel(parsed.mode))}</span>
@@ -3218,7 +4121,7 @@
                 <div class="sim-links">
                     <div class="sim-link">
                         <div class="sim-link-top">
-                            <strong>实际 Source</strong>
+                            <strong>实际源路径</strong>
                             <div class="copy-actions"><button class="copy-btn inline" type="button" data-copy="${encodeURIComponent(src)}" data-copy-label="Source" aria-label="复制 Source">
                                 <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                             </button></div>
@@ -3228,6 +4131,11 @@
                 </div>
 
                 <div class="sim-actions">
+                    <label class="switch-control stream-toggle" title="${disabled ? '启动推流' : '停止推流'}">
+                        <input type="checkbox" data-stream-toggle="${encodeURIComponent(name)}" ${disabled ? '' : 'checked'}>
+                        <span class="switch-track" aria-hidden="true"></span>
+                        <span>${disabled ? '停用' : '运行'}</span>
+                    </label>
                     <div class="actions">
                         <button class="secondary icon-btn" type="button" data-edit="${encodeURIComponent(name)}" title="编辑任务" aria-label="编辑任务">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
@@ -3303,6 +4211,23 @@
         await refreshRuntimeState();
     }
 
+    async function setStreamEnabled(name, enabled) {
+        const url = new URL(baseURL(meta.stream_state_api));
+        url.searchParams.set('src', name);
+        const response = await fetch(url, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({enabled}),
+        });
+        if (!response.ok) throw new Error(await response.text() || (enabled ? '启动推流失败' : '停止推流失败'));
+        const data = await response.json();
+        if (Array.isArray(data.disabled_streams)) meta.disabled_streams = data.disabled_streams;
+        setStatus(`视频任务 ${name} 已${enabled ? '启动' : '停用'}。`);
+        await loadMeta();
+        await refreshRuntimeState();
+        highlightStream(name, true);
+    }
+
     form.addEventListener('input', updatePreview);
 
     cameraDeviceSelect.addEventListener('change', () => {
@@ -3364,8 +4289,14 @@
 
     document.addEventListener('keydown', event => {
         if (event.key !== 'Escape') return;
-        if (fileBrowser.classList.contains('is-open')) {
+        if (!consumerPopover.hidden) {
+            closeConsumerPopover();
+        } else if (!resourcePopover.hidden) {
+            closeResourcePopover();
+        } else if (fileBrowser.classList.contains('is-open')) {
             closeFileBrowser();
+        } else if (eventConfigModal.classList.contains('is-open')) {
+            closeEventConfig();
         } else if (onvifConfigModal.classList.contains('is-open')) {
             closeONVIFConfig();
         } else if (modal.classList.contains('is-open')) {
@@ -3384,6 +4315,70 @@
     cancelONVIFConfigBtn.addEventListener('click', closeONVIFConfig);
     onvifConfigModal.addEventListener('click', event => {
         if (event.target === onvifConfigModal) closeONVIFConfig();
+    });
+
+    openEventConfigBtn.addEventListener('click', openEventConfig);
+    closeEventConfigBtn.addEventListener('click', closeEventConfig);
+    cancelEventConfigBtn.addEventListener('click', closeEventConfig);
+    eventConfigModal.addEventListener('click', event => {
+        if (event.target === eventConfigModal) closeEventConfig();
+    });
+
+    eventTemplateList.addEventListener('change', event => {
+        const input = event.target.closest('input[data-event-template-index]');
+        if (!input) return;
+        const index = Number(input.dataset.eventTemplateIndex);
+        if (!Number.isInteger(index) || !eventConfig.templates[index]) return;
+        eventConfig.templates[index].enabled = input.checked;
+        updateEventSummary({
+            ...eventConfig,
+            enabled: eventConfigForm.elements.enabled.checked,
+            interval: eventConfigForm.elements.interval.value.trim() || eventConfig.interval,
+        });
+    });
+
+    eventConfigForm.addEventListener('input', () => {
+        updateEventSummary({
+            ...eventConfig,
+            enabled: eventConfigForm.elements.enabled.checked,
+            interval: eventConfigForm.elements.interval.value.trim() || eventConfig.interval,
+        });
+    });
+
+    eventConfigForm.addEventListener('submit', async event => {
+        event.preventDefault();
+        saveEventConfigBtn.disabled = true;
+        setEventConfigStatus('正在保存...');
+        try {
+            const templates = eventConfig.templates.map((template, index) => {
+                const input = eventTemplateList.querySelector(`input[data-event-template-index="${index}"]`);
+                return {...template, enabled: input ? input.checked : template.enabled !== false};
+            });
+            const config = normalizeEventConfig({
+                enabled: eventConfigForm.elements.enabled.checked,
+                interval: eventConfigForm.elements.interval.value.trim(),
+                burst: Number(eventConfigForm.elements.burst.value),
+                permanent: eventConfigForm.elements.permanent.checked,
+                templates,
+            });
+            const response = await fetch(baseURL(meta.events_api), {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(config),
+            });
+            if (!response.ok) throw new Error(await response.text() || '保存事件推送配置失败');
+            eventConfig = normalizeEventConfig(await response.json());
+            updateEventSummary(eventConfig);
+            setEventConfigStatus('配置已保存，正在重启...');
+
+            const restartResponse = await fetch(baseURL('api/restart'), {method: 'POST'});
+            if (!restartResponse.ok) throw new Error(await restartResponse.text() || '重启失败');
+            sessionStorage.setItem('event-config-saved', '事件推送配置已保存');
+            window.setTimeout(() => location.reload(), 1500);
+        } catch (error) {
+            setEventConfigStatus(error.message, true);
+            saveEventConfigBtn.disabled = false;
+        }
     });
 
     onvifConfigForm.addEventListener('submit', async event => {
@@ -3426,6 +4421,44 @@
         localStorage.setItem('go2rtc-simulate-sort', streamSort.value);
         renderStreams(cachedStreams);
     });
+
+    consumerSummaryCard.addEventListener('click', event => {
+        event.stopPropagation();
+        toggleConsumerPopover();
+    });
+
+    consumerPopoverClose.addEventListener('click', closeConsumerPopover);
+
+    cpuSummaryCard.addEventListener('click', event => {
+        event.stopPropagation();
+        toggleResourcePopover('cpu');
+    });
+
+    memorySummaryCard.addEventListener('click', event => {
+        event.stopPropagation();
+        toggleResourcePopover('memory');
+    });
+
+    resourcePopoverClose.addEventListener('click', closeResourcePopover);
+
+    document.addEventListener('click', event => {
+        if (!consumerPopover.hidden && !consumerPopover.contains(event.target) && !consumerSummaryCard.contains(event.target)) {
+            closeConsumerPopover();
+        }
+        if (!resourcePopover.hidden && !resourcePopover.contains(event.target) && !cpuSummaryCard.contains(event.target) && !memorySummaryCard.contains(event.target)) {
+            closeResourcePopover();
+        }
+    });
+
+    window.addEventListener('resize', () => {
+        if (!consumerPopover.hidden) positionConsumerPopover();
+        if (!resourcePopover.hidden) positionResourcePopover();
+    });
+
+    window.addEventListener('scroll', () => {
+        if (!consumerPopover.hidden) positionConsumerPopover();
+        if (!resourcePopover.hidden) positionResourcePopover();
+    }, true);
 
     resetBtn.addEventListener('click', () => {
         resetFormState();
@@ -3484,6 +4517,20 @@
             const source = getManagedSources(stream)[0];
             if (source) {
                 fillFormFromStream(name, source);
+            }
+            return;
+        }
+
+        const toggle = event.target.closest('input[data-stream-toggle]');
+        if (toggle) {
+            const name = decodeURIComponent(toggle.dataset.streamToggle);
+            toggle.disabled = true;
+            try {
+                await setStreamEnabled(name, toggle.checked);
+            } catch (error) {
+                toggle.checked = !toggle.checked;
+                toggle.disabled = false;
+                setStatus(error.message, true);
             }
             return;
         }

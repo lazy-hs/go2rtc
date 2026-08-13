@@ -16,9 +16,12 @@ import (
 
 func Init() {
 	var cfg struct {
-		Streams map[string]any    `yaml:"streams"`
-		Publish map[string]any    `yaml:"publish"`
-		Preload map[string]string `yaml:"preload"`
+		Streams  map[string]any    `yaml:"streams"`
+		Publish  map[string]any    `yaml:"publish"`
+		Preload  map[string]string `yaml:"preload"`
+		Simulate struct {
+			DisabledStreams []string `yaml:"disabled_streams"`
+		} `yaml:"simulate"`
 	}
 
 	app.LoadConfig(&cfg)
@@ -26,14 +29,19 @@ func Init() {
 	log = app.GetLogger("streams")
 	streamsMu.Lock()
 	streamOrder = streamOrderFromConfig(app.ConfigPath)
+	disabledStreams = stringSet(cfg.Simulate.DisabledStreams)
 
 	for name, item := range cfg.Streams {
+		if disabledStreams[name] {
+			continue
+		}
 		streams[name] = NewStream(item)
 	}
 	normalizeStreamOrderLocked()
 	streamsMu.Unlock()
 
 	api.HandleFunc("api/streams", apiStreams)
+	api.HandleFunc("api/streams/state", apiStreamState)
 	api.HandleFunc("api/streams.dot", apiStreamsDOT)
 	api.HandleFunc("api/preload", apiPreload)
 	api.HandleFunc("api/schemes", apiSchemes)
@@ -155,6 +163,17 @@ var log zerolog.Logger
 var streams = map[string]*Stream{}
 var streamsMu sync.Mutex
 var streamOrder []string
+var disabledStreams = map[string]bool{}
+
+func stringSet(items []string) map[string]bool {
+	set := make(map[string]bool, len(items))
+	for _, item := range items {
+		if item != "" {
+			set[item] = true
+		}
+	}
+	return set
+}
 
 func Get(name string) *Stream {
 	streamsMu.Lock()
@@ -166,12 +185,66 @@ func Delete(name string) {
 	streamsMu.Lock()
 	defer streamsMu.Unlock()
 	delete(streams, name)
+	delete(disabledStreams, name)
 	for i, item := range streamOrder {
 		if item == name {
 			streamOrder = append(streamOrder[:i], streamOrder[i+1:]...)
 			break
 		}
 	}
+}
+
+func Disable(name string) {
+	streamsMu.Lock()
+	stream := streams[name]
+	delete(streams, name)
+	disabledStreams[name] = true
+	for i, item := range streamOrder {
+		if item == name {
+			streamOrder = append(streamOrder[:i], streamOrder[i+1:]...)
+			break
+		}
+	}
+	streamsMu.Unlock()
+
+	if stream != nil {
+		stream.Close()
+	}
+}
+
+func Enable(name string, sources ...string) error {
+	streamsMu.Lock()
+	delete(disabledStreams, name)
+	if _, ok := streams[name]; ok {
+		streamsMu.Unlock()
+		return nil
+	}
+	streamsMu.Unlock()
+
+	stream, err := New(name, sources...)
+	if err != nil {
+		return err
+	}
+	_ = stream
+	return nil
+}
+
+func IsDisabled(name string) bool {
+	streamsMu.Lock()
+	defer streamsMu.Unlock()
+	return disabledStreams[name]
+}
+
+func DisabledNames() []string {
+	streamsMu.Lock()
+	defer streamsMu.Unlock()
+
+	names := make([]string, 0, len(disabledStreams))
+	for name := range disabledStreams {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
 }
 
 func GetAllNames() []string {

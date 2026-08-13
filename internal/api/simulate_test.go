@@ -48,10 +48,23 @@ func TestSimulateHandlerUsesRequestHostAndBasePath(t *testing.T) {
 	require.Equal(t, "/rtc/api/simulate/metrics", info.MetricsAPI)
 	require.Equal(t, "/rtc/api/ffmpeg/devices", info.DevicesAPI)
 	require.Equal(t, "/rtc/api/simulate/onvif", info.ONVIFConfigAPI)
+	require.Equal(t, "/rtc/api/streams/state", info.StreamStateAPI)
+	require.Equal(t, "/rtc/api/simulate/events", info.EventsAPI)
 	require.Equal(t, "/rtc/api/simulate/files", info.FilesAPI)
 	require.Equal(t, "/rtc/api/simulate/upload", info.UploadAPI)
 	require.Equal(t, "/rtc/onvif/device_service", info.ONVIFPath)
 	require.Equal(t, "8554", info.RTSPPort)
+}
+
+func TestConfiguredDisabledStreamsFromFile(t *testing.T) {
+	configPath := filepath.Join(t.TempDir(), "go2rtc.yaml")
+	require.NoError(t, os.WriteFile(configPath, []byte(`simulate:
+  disabled_streams:
+    - camera2
+    - rtsp-main
+`), 0644))
+
+	require.Equal(t, []string{"camera2", "rtsp-main"}, configuredDisabledStreamsFromFile(configPath))
 }
 
 func TestSimulateHandlerUsesConfiguredRTSPPort(t *testing.T) {

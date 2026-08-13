@@ -1,13 +1,17 @@
 package streams
 
 import (
+	"encoding/json"
 	"net/http"
+	"os"
+	"sort"
 
 	"github.com/AlexxIT/go2rtc/internal/api"
 	"github.com/AlexxIT/go2rtc/internal/app"
 	"github.com/AlexxIT/go2rtc/pkg/core"
 	"github.com/AlexxIT/go2rtc/pkg/creds"
 	"github.com/AlexxIT/go2rtc/pkg/probe"
+	"github.com/AlexxIT/go2rtc/pkg/yaml"
 )
 
 func apiStreams(w http.ResponseWriter, r *http.Request) {
@@ -69,6 +73,10 @@ func apiStreams(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		if IsDisabled(name) {
+			return
+		}
+
 		if _, err := New(name, sources...); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -115,8 +123,113 @@ func apiStreams(w http.ResponseWriter, r *http.Request) {
 
 		if err := app.PatchConfig([]string{"streams", src}, nil); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		disabled := stringSet(DisabledNames())
+		delete(disabled, src)
+		disabledNames := make([]string, 0, len(disabled))
+		for disabledName := range disabled {
+			disabledNames = append(disabledNames, disabledName)
+		}
+		sort.Strings(disabledNames)
+		if err := app.PatchConfig([]string{"simulate", "disabled_streams"}, disabledNames); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
 	}
+}
+
+type streamStateRequest struct {
+	Enabled bool `json:"enabled"`
+}
+
+func apiStreamState(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		w.Header().Set("Allow", "PUT")
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	name := r.URL.Query().Get("src")
+	if name == "" {
+		http.Error(w, "stream name required", http.StatusBadRequest)
+		return
+	}
+
+	var req streamStateRequest
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	configured := appConfiguredStreams()
+	sources := configured[name]
+	if len(sources) == 0 {
+		http.Error(w, "stream config not found", http.StatusNotFound)
+		return
+	}
+
+	disabled := stringSet(DisabledNames())
+	if req.Enabled {
+		delete(disabled, name)
+	} else {
+		disabled[name] = true
+	}
+	disabledNames := make([]string, 0, len(disabled))
+	for disabledName := range disabled {
+		disabledNames = append(disabledNames, disabledName)
+	}
+	sort.Strings(disabledNames)
+
+	if err := app.PatchConfig([]string{"simulate", "disabled_streams"}, disabledNames); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if req.Enabled {
+		if err := Enable(name, sources...); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	} else {
+		Disable(name)
+	}
+
+	api.ResponseJSON(w, map[string]any{"name": name, "enabled": req.Enabled, "disabled_streams": disabledNames})
+}
+
+func appConfiguredStreams() map[string][]string {
+	streams := map[string][]string{}
+	if app.ConfigPath == "" {
+		return streams
+	}
+	data, err := os.ReadFile(app.ConfigPath)
+	if err != nil {
+		return streams
+	}
+
+	var cfg struct {
+		Streams map[string]any `yaml:"streams"`
+	}
+	if yaml.Unmarshal(data, &cfg) != nil {
+		return streams
+	}
+	for name, value := range cfg.Streams {
+		switch value := value.(type) {
+		case string:
+			streams[name] = []string{value}
+		case []any:
+			for _, item := range value {
+				if source, ok := item.(string); ok {
+					streams[name] = append(streams[name], source)
+				}
+			}
+		case []string:
+			streams[name] = append(streams[name], value...)
+		}
+	}
+	return streams
 }
 
 func apiStreamsDOT(w http.ResponseWriter, r *http.Request) {
