@@ -57,6 +57,19 @@ func patch(in []byte, path []string, value any) ([]byte, error) {
 	// dict items list
 	nodes := root.Content[0].Content
 
+	if len(path) == 1 {
+		if iKey, _ := findNode(nodes, path); iKey != nil {
+			paste, err := Encode(map[string]any{path[0]: value}, 2)
+			if err != nil {
+				return nil, err
+			}
+
+			i0, i1 := nodeBounds(in, iKey)
+			return join(in[:i0], paste, in[i1:]), nil
+		}
+		return addToEnd(in, path, value)
+	}
+
 	n := len(path) - 1
 
 	// parent node key/value
@@ -154,12 +167,20 @@ func isSequenceLine(line []byte, indent int) bool {
 }
 
 func addToEnd(in []byte, path []string, value any) ([]byte, error) {
-	if len(path) != 2 || value == nil {
+	if value == nil {
 		return nil, errors.New("yaml: path not exist")
 	}
 
-	v := map[string]map[string]any{
-		path[0]: {path[1]: value},
+	var v any
+	switch len(path) {
+	case 1:
+		v = map[string]any{path[0]: value}
+	case 2:
+		v = map[string]map[string]any{
+			path[0]: {path[1]: value},
+		}
+	default:
+		return nil, errors.New("yaml: path not exist")
 	}
 	paste, err := Encode(v, 2)
 	if err != nil {

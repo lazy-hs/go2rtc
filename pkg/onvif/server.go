@@ -201,31 +201,71 @@ func escapeServerXML(value string) string {
 	return buf.String()
 }
 
+type Profile struct {
+	Name        string
+	Token       string
+	SourceToken string
+	Width       int
+	Height      int
+}
+
 func GetProfilesResponse(names []string) []byte {
+	profiles := make([]Profile, 0, len(names))
+	for _, name := range names {
+		profiles = append(profiles, Profile{Name: name, Token: name, SourceToken: name})
+	}
+	return GetProfilesResponseWithProfiles(profiles)
+}
+
+func GetProfilesResponseWithProfiles(profiles []Profile) []byte {
 	e := NewEnvelope()
 	e.Append(`<trt:GetProfilesResponse>`)
-	for _, name := range names {
-		appendProfile(e, "Profiles", name)
+	for _, profile := range profiles {
+		appendProfile(e, "Profiles", profile)
 	}
 	e.Append(`</trt:GetProfilesResponse>`)
 	return e.Bytes()
 }
 
 func GetProfileResponse(name string) []byte {
+	return GetProfileResponseWithProfile(Profile{Name: name, Token: name, SourceToken: name})
+}
+
+func GetProfileResponseWithProfile(profile Profile) []byte {
 	e := NewEnvelope()
 	e.Append(`<trt:GetProfileResponse>`)
-	appendProfile(e, "Profile", name)
+	appendProfile(e, "Profile", profile)
 	e.Append(`</trt:GetProfileResponse>`)
 	return e.Bytes()
 }
 
-func appendProfile(e *Envelope, tag, name string) {
+func appendProfile(e *Envelope, tag string, profile Profile) {
 	// go2rtc name = ONVIF Profile Name = ONVIF Profile token
-	e.Appendf(`<trt:%s token="%s" fixed="true">`, tag, name)
-	e.Appendf(`<tt:Name>%s</tt:Name>`, name)
-	appendVideoSourceConfiguration(e, "VideoSourceConfiguration", name)
-	appendVideoEncoderConfiguration(e, "VideoEncoderConfiguration")
+	profile = normalizeProfile(profile)
+	e.Appendf(`<trt:%s token="%s" fixed="true">`, tag, profile.Token)
+	e.Appendf(`<tt:Name>%s</tt:Name>`, profile.Name)
+	appendVideoSourceConfiguration(e, "VideoSourceConfiguration", profile.SourceToken)
+	appendVideoEncoderConfiguration(e, "VideoEncoderConfiguration", profile)
 	e.Appendf(`</trt:%s>`, tag)
+}
+
+func normalizeProfile(profile Profile) Profile {
+	if profile.Token == "" {
+		profile.Token = profile.Name
+	}
+	if profile.SourceToken == "" {
+		profile.SourceToken = profile.Token
+	}
+	if profile.Name == "" {
+		profile.Name = profile.Token
+	}
+	if profile.Width <= 0 {
+		profile.Width = 1920
+	}
+	if profile.Height <= 0 {
+		profile.Height = 1080
+	}
+	return profile
 }
 
 func GetVideoSourcesResponse(names []string) []byte {
@@ -272,7 +312,7 @@ func appendVideoSourceConfiguration(e *Envelope, tag, name string) {
 func GetVideoEncoderConfigurationsResponse() []byte {
 	e := NewEnvelope()
 	e.Append(`<trt:GetVideoEncoderConfigurationsResponse>`)
-	appendVideoEncoderConfiguration(e, "VideoEncoderConfigurations")
+	appendVideoEncoderConfiguration(e, "VideoEncoderConfigurations", Profile{})
 	e.Append(`</trt:GetVideoEncoderConfigurationsResponse>`)
 	return e.Bytes()
 }
@@ -280,23 +320,24 @@ func GetVideoEncoderConfigurationsResponse() []byte {
 func GetVideoEncoderConfigurationResponse() []byte {
 	e := NewEnvelope()
 	e.Append(`<trt:GetVideoEncoderConfigurationResponse>`)
-	appendVideoEncoderConfiguration(e, "VideoEncoderConfiguration")
+	appendVideoEncoderConfiguration(e, "VideoEncoderConfiguration", Profile{})
 	e.Append(`</trt:GetVideoEncoderConfigurationResponse>`)
 	return e.Bytes()
 }
 
-func appendVideoEncoderConfiguration(e *Envelope, tag string) {
+func appendVideoEncoderConfiguration(e *Envelope, tag string, profile Profile) {
 	// empty `RateControl` important for UniFi Protect
+	profile = normalizeProfile(profile)
 	e.Appendf(`<tt:%s token="vec">
 		<tt:Name>VEC</tt:Name>
         <tt:UseCount>1</tt:UseCount>
 		<tt:Encoding>H264</tt:Encoding>
-		<tt:Resolution><tt:Width>1920</tt:Width><tt:Height>1080</tt:Height></tt:Resolution>
+		<tt:Resolution><tt:Width>%d</tt:Width><tt:Height>%d</tt:Height></tt:Resolution>
         <tt:Quality>0</tt:Quality>
 		<tt:RateControl><tt:FrameRateLimit>30</tt:FrameRateLimit><tt:EncodingInterval>1</tt:EncodingInterval><tt:BitrateLimit>8192</tt:BitrateLimit></tt:RateControl>
         <tt:H264><tt:GovLength>10</tt:GovLength><tt:H264Profile>Main</tt:H264Profile></tt:H264>
         <tt:SessionTimeout>PT10S</tt:SessionTimeout>
-	</tt:%s>`, tag, tag)
+	</tt:%s>`, tag, profile.Width, profile.Height, tag)
 }
 
 func GetStreamUriResponse(uri string) []byte {

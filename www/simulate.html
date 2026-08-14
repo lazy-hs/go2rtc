@@ -36,6 +36,10 @@
             box-sizing: border-box;
         }
 
+        [hidden] {
+            display: none !important;
+        }
+
         html {
             background: var(--bg);
         }
@@ -581,9 +585,183 @@
 
         .dashboard {
             display: grid;
-            grid-template-columns: minmax(0, 1.35fr) minmax(340px, 0.65fr);
+            grid-template-columns: 1fr;
             gap: 18px;
             align-items: start;
+        }
+
+        .access-card .card-body {
+            gap: 0;
+            padding-top: 14px;
+            padding-bottom: 16px;
+        }
+
+        .access-card .card-head {
+            padding-top: 16px;
+            padding-bottom: 10px;
+        }
+
+        .access-card .mini-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .access-card .mini-item {
+            padding: 11px 13px;
+        }
+
+        .access-card .mini-item strong {
+            margin-bottom: 6px;
+        }
+
+        .access-card .event-summary-card {
+            min-height: 52px;
+            padding: 10px 12px;
+        }
+
+        .access-body {
+            display: grid;
+            grid-template-columns: minmax(520px, 760px) minmax(260px, 1fr);
+            gap: 18px;
+            align-items: stretch;
+        }
+
+        .access-panel {
+            min-width: 0;
+            display: grid;
+            gap: 12px;
+            align-content: start;
+        }
+
+        .access-roadmap {
+            position: relative;
+            min-width: 0;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 120px minmax(0, 1fr);
+            gap: 18px;
+            align-items: center;
+            min-height: 164px;
+            padding: 16px 18px;
+            border: 1px solid rgba(34, 211, 238, 0.16);
+            border-radius: 18px;
+            background:
+                radial-gradient(circle at 22% 50%, rgba(34, 211, 238, 0.16), transparent 38%),
+                linear-gradient(135deg, rgba(2, 6, 23, 0.18), rgba(15, 23, 42, 0.52));
+        }
+
+        .access-roadmap::after {
+            content: "";
+            position: absolute;
+            inset: 16px;
+            border-radius: 16px;
+            border: 1px dashed rgba(148, 163, 184, 0.12);
+            pointer-events: none;
+        }
+
+        .roadmap-orbit {
+            position: relative;
+            width: 96px;
+            height: 96px;
+            border-radius: 999px;
+            border: 1px solid rgba(34, 211, 238, 0.24);
+            background: rgba(2, 6, 23, 0.26);
+            box-shadow: inset 0 0 24px rgba(34, 211, 238, 0.08);
+        }
+
+        .roadmap-orbit::before,
+        .roadmap-orbit::after {
+            content: "";
+            position: absolute;
+            inset: 18px;
+            border-radius: inherit;
+            border: 1px solid rgba(34, 211, 238, 0.18);
+        }
+
+        .roadmap-dot {
+            position: absolute;
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #22d3ee;
+            box-shadow: 0 0 18px rgba(34, 211, 238, 0.78);
+            animation: roadmapPulse 2.4s ease-in-out infinite;
+        }
+
+        .roadmap-dot:nth-child(1) {
+            top: 17px;
+            left: 46px;
+        }
+
+        .roadmap-dot:nth-child(2) {
+            right: 19px;
+            bottom: 25px;
+            animation-delay: .45s;
+        }
+
+        .roadmap-dot:nth-child(3) {
+            left: 20px;
+            bottom: 24px;
+            animation-delay: .9s;
+        }
+
+        .roadmap-copy {
+            position: relative;
+            z-index: 1;
+            min-width: 0;
+            display: grid;
+            gap: 10px;
+        }
+
+        .roadmap-copy span {
+            width: fit-content;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: rgba(34, 211, 238, 0.10);
+            color: #67e8f9;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .roadmap-copy strong {
+            color: var(--text);
+            font-size: 18px;
+            line-height: 1.25;
+        }
+
+        .roadmap-copy p {
+            margin: 0;
+            max-width: 420px;
+            color: var(--text-muted);
+            font-size: 12px;
+            line-height: 1.65;
+        }
+
+        .roadmap-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+        }
+
+        .roadmap-chips em {
+            font-style: normal;
+            padding: 5px 8px;
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            border-radius: 999px;
+            color: rgba(226, 232, 240, 0.78);
+            font-size: 11px;
+            line-height: 1;
+        }
+
+        @keyframes roadmapPulse {
+            0%, 100% {
+                transform: scale(.82);
+                opacity: .46;
+            }
+            50% {
+                transform: scale(1.18);
+                opacity: 1;
+            }
         }
 
         .stack {
@@ -816,6 +994,69 @@
             color: var(--danger);
         }
 
+        .toast-region {
+            position: fixed;
+            top: 78px;
+            right: 18px;
+            z-index: 1300;
+            width: min(360px, calc(100vw - 24px));
+            pointer-events: none;
+        }
+
+        .config-toast {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px 14px;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            background: #111827;
+            color: #e2e8f0;
+            box-shadow: 0 18px 42px rgba(2, 6, 23, 0.42);
+            font-size: 13px;
+            line-height: 1.5;
+            opacity: 0;
+            transform: translateX(18px);
+            transition: opacity 180ms ease, transform 180ms ease;
+        }
+
+        .config-toast.is-visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .config-toast svg {
+            width: 18px;
+            height: 18px;
+            flex: 0 0 auto;
+            margin-top: 1px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .config-toast.is-success {
+            border-color: rgba(52, 211, 153, 0.5);
+            color: #6ee7b7;
+        }
+
+        .config-toast.is-warning {
+            border-color: rgba(251, 191, 36, 0.5);
+            color: #fcd34d;
+        }
+
+        .config-toast.is-error {
+            border-color: rgba(251, 113, 133, 0.55);
+            color: #fda4af;
+        }
+
+        .config-toast span {
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
         .mini-grid,
         .section-shell,
         .sim-links,
@@ -905,12 +1146,12 @@
 
         .launcher-grid {
             display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-columns: 1fr;
             gap: 12px;
         }
 
         .launcher-item {
-            padding: 16px;
+            padding: 14px 16px;
             border-radius: 18px;
             border: 1px solid var(--line);
             background: rgba(15, 23, 42, 0.6);
@@ -1023,6 +1264,107 @@
             background: rgba(2, 6, 23, 0.55);
             color: var(--text);
             font-size: 12px;
+        }
+
+        select.native-select-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            margin: 0;
+            padding: 0;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .custom-select-trigger {
+            width: 100%;
+            min-height: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            border: 1px solid rgba(71, 85, 105, 0.65);
+            border-radius: 11px;
+            background: rgba(15, 23, 42, 0.72);
+            color: #f8fafc;
+            padding: 9px 12px;
+            font-size: 13px;
+            line-height: 1.2;
+            text-align: left;
+            transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+        }
+
+        .sort-control .custom-select-trigger {
+            min-width: 178px;
+            min-height: 32px;
+            padding: 6px 10px;
+            border-radius: 9px;
+            background: rgba(2, 6, 23, 0.55);
+            font-size: 12px;
+        }
+
+        .custom-select-trigger:hover,
+        .custom-select-trigger[aria-expanded="true"] {
+            border-color: rgba(34, 211, 238, 0.55);
+            background: rgba(15, 23, 42, 0.95);
+        }
+
+        .custom-select-trigger:focus-visible {
+            outline: none;
+            border-color: rgba(34, 211, 238, 0.65);
+            box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.12);
+        }
+
+        .custom-select-trigger:disabled {
+            cursor: not-allowed;
+            opacity: 0.58;
+        }
+
+        .custom-select-trigger svg {
+            width: 14px;
+            height: 14px;
+            flex: 0 0 auto;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+        }
+
+        .select-popover {
+            position: fixed;
+            z-index: 1400;
+            max-height: min(300px, calc(100vh - 24px));
+            overflow: auto;
+            padding: 6px;
+            border: 1px solid rgba(34, 50, 77, 0.96);
+            border-radius: 12px;
+            background: #111827;
+            box-shadow: 0 18px 44px rgba(2, 6, 23, 0.46);
+        }
+
+        .select-option {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 9px 10px;
+            border: 0;
+            border-radius: 9px;
+            background: transparent;
+            color: #dbeafe;
+            font-size: 12px;
+            text-align: left;
+        }
+
+        .select-option:hover,
+        .select-option.is-active {
+            background: rgba(34, 211, 238, 0.12);
+            color: #f8fafc;
+        }
+
+        .select-option.is-selected {
+            color: #67e8f9;
+            font-weight: 700;
         }
 
         .sim-card {
@@ -1320,7 +1662,7 @@
             display: flex;
             align-items: stretch;
             justify-content: flex-end;
-            z-index: 50;
+            z-index: 1000;
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
@@ -1337,7 +1679,7 @@
         .modal-panel {
             width: min(520px, 100%);
             height: 100%;
-            background: linear-gradient(180deg, rgba(15, 23, 42, 0.98) 0%, rgba(17, 24, 39, 0.98) 100%);
+            background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
             color: #e2e8f0;
             box-shadow: -24px 0 80px rgba(2, 6, 23, 0.42);
             border-left: 1px solid rgba(34, 50, 77, 0.96);
@@ -1352,8 +1694,16 @@
         }
 
         .onvif-identity-bar {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 12px;
+            align-items: center;
             padding-bottom: 14px;
             border-bottom: 1px solid rgba(34, 50, 77, 0.82);
+        }
+
+        .access-card .onvif-identity-bar {
+            padding-bottom: 10px;
         }
 
         .event-summary-card {
@@ -1364,19 +1714,19 @@
             gap: 12px;
             align-items: center;
             padding: 12px 14px;
-            border: 1px solid rgba(34, 211, 238, 0.16);
+            border: 1px solid rgba(34, 211, 238, 0.36);
             border-radius: 15px;
-            background: rgba(2, 6, 23, 0.30);
+            background: linear-gradient(135deg, rgba(34, 211, 238, 0.12), rgba(15, 23, 42, 0.46));
             color: inherit;
             text-align: left;
-            box-shadow: none;
+            box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.03);
         }
 
         .event-summary-card:hover {
-            border-color: rgba(34, 211, 238, 0.32);
-            background: rgba(34, 211, 238, 0.08);
+            border-color: rgba(34, 211, 238, 0.62);
+            background: linear-gradient(135deg, rgba(34, 211, 238, 0.18), rgba(15, 23, 42, 0.52));
             transform: none;
-            box-shadow: none;
+            box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.08);
         }
 
         .event-summary-copy {
@@ -1386,8 +1736,9 @@
         }
 
         .event-summary-copy span {
-            color: var(--text-muted);
+            color: rgba(125, 211, 252, 0.92);
             font-size: 11px;
+            font-weight: 700;
         }
 
         .event-summary-copy strong {
@@ -1401,7 +1752,7 @@
 
         .event-summary-copy small,
         .event-summary-card > small {
-            color: rgba(219, 234, 254, 0.62);
+            color: rgba(219, 234, 254, 0.78);
             font-size: 11px;
             white-space: nowrap;
         }
@@ -1426,11 +1777,72 @@
             white-space: nowrap;
         }
 
+        .onvif-publish-meta {
+            min-width: 0;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(72px, auto));
+            gap: 8px;
+            align-items: stretch;
+        }
+
+        .onvif-publish-pill {
+            display: grid;
+            gap: 3px;
+            min-width: 0;
+            padding: 8px 10px;
+            border: 1px solid rgba(34, 211, 238, 0.14);
+            border-radius: 12px;
+            background: rgba(2, 6, 23, 0.28);
+        }
+
+        .onvif-publish-pill span {
+            color: var(--text-muted);
+            font-size: 10px;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .onvif-publish-pill strong {
+            overflow: hidden;
+            color: var(--text);
+            font-size: 12px;
+            line-height: 1.25;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .publish-config-note {
+            display: grid;
+            gap: 4px;
+            padding: 10px 12px;
+            border: 1px solid rgba(34, 211, 238, 0.14);
+            border-radius: 12px;
+            background: rgba(2, 6, 23, 0.34);
+        }
+
+        .publish-config-note span {
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+
+        .publish-config-note strong {
+            color: var(--text);
+            font-size: 13px;
+            line-height: 1.3;
+        }
+
+        .publish-config-grid {
+            grid-template-columns: 1fr;
+        }
+
         .onvif-identity-actions {
             flex: 0 0 auto;
-            display: grid;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-end;
             justify-items: end;
-            gap: 4px;
+            gap: 8px;
         }
 
         .onvif-access-head {
@@ -1712,6 +2124,8 @@
         }
 
         .modal-form input[type="text"],
+        .modal-form input[type="password"],
+        .modal-form input[type="url"],
         .modal-form input[type="number"],
         .modal-form textarea,
         .modal-form select {
@@ -1725,12 +2139,16 @@
         }
 
         .modal-form input[type="text"]::placeholder,
+        .modal-form input[type="password"]::placeholder,
+        .modal-form input[type="url"]::placeholder,
         .modal-form input[type="number"]::placeholder,
         .modal-form textarea::placeholder {
             color: #64748b;
         }
 
         .modal-form input[type="text"]:focus,
+        .modal-form input[type="password"]:focus,
+        .modal-form input[type="url"]:focus,
         .modal-form input[type="number"]:focus,
         .modal-form textarea:focus,
         .modal-form select:focus {
@@ -1747,6 +2165,57 @@
             border-radius: 12px;
         }
 
+        .quality-custom-grid[hidden] {
+            display: none !important;
+        }
+
+        .quality-choice-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .quality-choice {
+            position: relative;
+            min-width: 0;
+            min-height: 34px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 7px 9px;
+            border: 1px solid rgba(71, 85, 105, 0.65);
+            border-radius: 10px;
+            background: rgba(15, 23, 42, 0.62);
+            color: #cbd5e1;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .quality-choice input {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .quality-choice:has(input:checked) {
+            border-color: rgba(34, 211, 238, 0.72);
+            background: rgba(34, 211, 238, 0.18);
+            color: #e0f2fe;
+        }
+
+        .quality-choice:has(input:disabled) {
+            cursor: not-allowed;
+            opacity: .45;
+        }
+
+        .quality-choice:has(input:focus-visible) {
+            box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.12);
+        }
+
         .event-template-list {
             display: grid;
             gap: 8px;
@@ -1755,10 +2224,28 @@
             padding-right: 3px;
         }
 
+        .event-template-toolbar {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 10px;
+            align-items: end;
+            margin-bottom: 10px;
+        }
+
+        .event-template-toolbar .field {
+            margin: 0;
+        }
+
+        .event-template-add {
+            min-height: 40px;
+            padding: 0 14px;
+            white-space: nowrap;
+        }
+
         .event-template-row {
             min-width: 0;
             display: grid;
-            grid-template-columns: minmax(0, 1fr) auto;
+            grid-template-columns: minmax(0, 1fr) auto auto;
             gap: 12px;
             align-items: center;
             padding: 10px 12px;
@@ -1767,16 +2254,31 @@
             background: rgba(15, 23, 42, 0.44);
         }
 
-        .event-template-row code {
-            display: block;
+        .event-template-name {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             min-width: 0;
+        }
+
+        .event-template-name strong {
             overflow: hidden;
             color: #dbeafe;
-            font-family: Consolas, Monaco, monospace;
-            font-size: 11px;
-            line-height: 1.45;
+            font-size: 13px;
+            line-height: 1.35;
             text-overflow: ellipsis;
             white-space: nowrap;
+        }
+
+        .event-template-badge {
+            flex: 0 0 auto;
+            padding: 2px 7px;
+            border: 1px solid rgba(34, 211, 238, 0.18);
+            border-radius: 999px;
+            color: rgba(125, 211, 252, 0.92);
+            background: rgba(34, 211, 238, 0.08);
+            font-size: 10px;
+            line-height: 1.4;
         }
 
         .event-template-row small {
@@ -1784,6 +2286,47 @@
             margin-top: 2px;
             color: var(--text-muted);
             font-size: 10px;
+        }
+
+        .event-template-remove {
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            border-radius: 9px;
+            font-size: 16px;
+            line-height: 1;
+        }
+
+        .event-custom-config {
+            margin-top: 10px;
+            border: 1px solid rgba(71, 85, 105, 0.52);
+            border-radius: 12px;
+            background: rgba(15, 23, 42, 0.34);
+        }
+
+        .event-custom-config summary {
+            cursor: pointer;
+            padding: 10px 12px;
+            color: #dbeafe;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .event-custom-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            padding: 0 12px 12px;
+        }
+
+        .event-custom-grid .wide {
+            grid-column: 1 / -1;
+        }
+
+        .event-custom-actions {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: flex-end;
         }
 
         .event-template-empty {
@@ -1861,7 +2404,7 @@
         .file-browser-shell {
             position: fixed;
             inset: 0;
-            z-index: 70;
+            z-index: 1100;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -2035,10 +2578,15 @@
         @media (max-width: 1180px) {
             .panel-header,
             .dashboard,
+            .access-body,
             .ops-overview,
             .hero-stats,
             .sim-meta {
                 grid-template-columns: 1fr;
+            }
+
+            .access-roadmap {
+                min-height: 140px;
             }
 
             .panel-header {
@@ -2122,12 +2670,52 @@
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
 
+            .access-card .mini-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .access-roadmap {
+                grid-template-columns: 1fr;
+            }
+
             .modal-form .form-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
 
+            .quality-choice-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
             .onvif-identity-bar {
+                grid-template-columns: 1fr;
+                gap: 10px;
                 padding-bottom: 12px;
+            }
+
+            .onvif-publish-meta {
+                grid-template-columns: minmax(108px, 1.35fr) repeat(2, minmax(0, 1fr));
+                width: 100%;
+            }
+
+            .onvif-publish-pill {
+                padding-inline: 8px;
+            }
+
+            .onvif-publish-pill strong {
+                font-size: 11px;
+            }
+
+            .event-template-toolbar,
+            .event-custom-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .event-template-row {
+                grid-template-columns: minmax(0, 1fr) auto;
+            }
+
+            .event-template-remove {
+                grid-column: 2;
             }
 
             .onvif-access-head {
@@ -2301,59 +2889,48 @@
             </div>
 
             <div class="dashboard">
-                <section class="side-card launcher-card surface-card">
-                    <div class="card-head">
-                        <h3>任务创建器</h3>
-                        <p>选择本地文件、电脑摄像头或上游 RTSP 地址，创建后由 go2rtc 统一发布。</p>
-                    </div>
-                    <div class="card-body">
-                        <div class="launcher-grid">
-                            <div class="launcher-item">
-                                <span>创建方式</span>
-                                <strong>三种视频来源</strong>
-                            </div>
-                            <div class="launcher-item">
-                                <span>发布协议</span>
-                                <strong>RTSP + ONVIF</strong>
-                            </div>
-                            <div class="launcher-item">
-                                <span>当前主机</span>
-                                <strong id="api-host">加载中...</strong>
-                            </div>
-                            <div class="launcher-item">
-                                <span>RTSP 端口</span>
-                                <strong id="rtsp-port">加载中...</strong>
-                            </div>
-                        </div>
-                        <div class="source-preview">
-                            <strong>默认生成预览</strong>
-                            <code id="source-value">点击“新建任务”后在弹窗中填写表单</code>
-                        </div>
-                        <div class="actions">
-                            <button class="secondary" id="refresh-state" type="button">刷新列表</button>
-                        </div>
-                    </div>
-                </section>
-
-                <aside class="side-card surface-card">
+                <aside class="side-card surface-card access-card">
                     <div class="card-head onvif-access-head">
                         <div class="onvif-access-title">
                             <h3>访问概览</h3>
                             <p>保存后即可复制 RTSP 地址与 ONVIF 服务入口，用于第三方平台接入测试。</p>
                         </div>
                         <div class="onvif-identity-actions">
+                            <button class="secondary" id="refresh-state" type="button">刷新列表</button>
                             <button class="floating-action" id="open-onvif-config" type="button">设备信息</button>
                             <span id="onvif-config-feedback" role="status" aria-live="polite"></span>
                         </div>
                     </div>
-                    <div class="card-body stack">
+                    <div class="card-body access-body">
+                        <div class="access-panel">
                         <div class="onvif-identity-bar">
                             <div class="onvif-identity-copy">
                                 <span>模拟设备</span>
                                 <strong id="onvif-device-name">加载中...</strong>
                                 <small id="onvif-device-model">加载中...</small>
                             </div>
+                            <div class="onvif-publish-meta" aria-label="发布信息">
+                                <div class="onvif-publish-pill">
+                                    <span>发布协议</span>
+                                    <strong>RTSP + ONVIF</strong>
+                                </div>
+                                <div class="onvif-publish-pill">
+                                    <span>ONVIF 端口</span>
+                                    <strong id="onvif-service-port-label">加载中...</strong>
+                                </div>
+                                <div class="onvif-publish-pill">
+                                    <span>RTSP 端口</span>
+                                    <strong id="rtsp-publish-port">加载中...</strong>
+                                </div>
+                            </div>
                         </div>
+                        <button class="event-summary-card" id="open-event-config" type="button" aria-haspopup="dialog" aria-controls="event-config-modal">
+                            <span class="event-summary-copy">
+                                <span>事件推送</span>
+                                <strong id="event-summary-title">加载中...</strong>
+                            </span>
+                            <small id="event-summary-detail">点击配置 · 频率 --</small>
+                        </button>
                         <div class="mini-grid">
                             <div class="mini-item">
                                 <strong>ONVIF 服务</strong>
@@ -2372,13 +2949,24 @@
                                 <div class="value" id="log-api">加载中...</div>
                             </div>
                         </div>
-                        <button class="event-summary-card" id="open-event-config" type="button" aria-haspopup="dialog" aria-controls="event-config-modal">
-                            <span class="event-summary-copy">
-                                <span>事件推送</span>
-                                <strong id="event-summary-title">加载中...</strong>
-                            </span>
-                            <small id="event-summary-detail">频率 --</small>
-                        </button>
+                        </div>
+                        <div class="access-roadmap" aria-label="后续功能预告">
+                            <div class="roadmap-orbit" aria-hidden="true">
+                                <i class="roadmap-dot"></i>
+                                <i class="roadmap-dot"></i>
+                                <i class="roadmap-dot"></i>
+                            </div>
+                            <div class="roadmap-copy">
+                                <span>COMING SOON</span>
+                                <strong>更多功能敬请期待</strong>
+                                <p>这里会继续承载模拟流的扩展能力，例如批量导入、链路诊断和访问模板，让调试入口保持清爽。</p>
+                                <div class="roadmap-chips">
+                                    <em>批量任务</em>
+                                    <em>链路诊断</em>
+                                    <em>模板发布</em>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </aside>
             </div>
@@ -2487,7 +3075,17 @@
                     <label for="rtsp-input">RTSP 地址</label>
                     <input id="rtsp-input" name="rtsp_input" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="rtsp://用户名:密码@设备地址:554/stream">
                 </div>
-                <div class="helper">使用 go2rtc 直接透传上游音视频，避免重复编码并降低延迟；对外仍发布为本任务的 RTSP 和 ONVIF 通道。</div>
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="rtsp-username">源用户名</label>
+                        <input id="rtsp-username" name="rtsp_username" type="text" autocomplete="username" placeholder="可留空">
+                    </div>
+                    <div class="field">
+                        <label for="rtsp-password">源密码</label>
+                        <input id="rtsp-password" name="rtsp_password" type="password" autocomplete="current-password" placeholder="可留空">
+                    </div>
+                </div>
+                <div class="helper">未配置清晰度和转码参数时直接透传上游音视频；需要缩放或编码时会自动使用 ffmpeg 转发。</div>
             </div>
 
             <div class="modal-section source-options" id="transcode-options">
@@ -2495,6 +3093,7 @@
                     <div class="field">
                         <label for="video">视频编码</label>
                         <select id="video" name="video">
+                            <option value="copy">原始编码（复制）</option>
                             <option value="h264">H.264</option>
                             <option value="h265">H.265</option>
                             <option value="mjpeg">MJPEG</option>
@@ -2510,6 +3109,32 @@
                             <option value="pcma">PCMA</option>
                             <option value="pcmu">PCMU</option>
                         </select>
+                    </div>
+                    <div class="field wide">
+                        <label>ONVIF 清晰度档位</label>
+                        <div class="quality-choice-grid" id="quality-options">
+                            <label class="quality-choice"><input type="checkbox" name="onvif_quality" value="original" checked><span>原始</span></label>
+                            <label class="quality-choice"><input type="checkbox" name="onvif_quality" value="360"><span>360p</span></label>
+                            <label class="quality-choice"><input type="checkbox" name="onvif_quality" value="480"><span>480p</span></label>
+                            <label class="quality-choice"><input type="checkbox" name="onvif_quality" value="720"><span>720p</span></label>
+                            <label class="quality-choice"><input type="checkbox" name="onvif_quality" value="1080"><span>1080p</span></label>
+                            <label class="quality-choice"><input type="checkbox" name="onvif_quality" value="1440"><span>1440p</span></label>
+                            <label class="quality-choice"><input type="checkbox" name="onvif_quality" value="2048"><span>2048p</span></label>
+                            <label class="quality-choice"><input type="checkbox" name="onvif_quality" value="2160"><span>2160p / 4K</span></label>
+                            <label class="quality-choice"><input type="checkbox" name="onvif_quality" value="4320"><span>4320p / 8K</span></label>
+                            <label class="quality-choice"><input id="quality-custom-enabled" type="checkbox" name="onvif_quality" value="custom"><span>自定义</span></label>
+                        </div>
+                        <div class="helper" id="quality-helper">用于 ONVIF 客户端切换不同 Profile；RTSP 输入按码率配置，不单独设置清晰度档位。</div>
+                    </div>
+                </div>
+                <div class="form-grid quality-custom-grid" id="quality-custom-grid" hidden>
+                    <div class="field">
+                        <label for="custom-width">自定义宽度</label>
+                        <input id="custom-width" name="custom_width" type="number" min="1" max="16384" step="1" inputmode="numeric" placeholder="例如：1280">
+                    </div>
+                    <div class="field">
+                        <label for="custom-height">自定义高度</label>
+                        <input id="custom-height" name="custom_height" type="number" min="1" max="16384" step="1" inputmode="numeric" placeholder="例如：720">
                     </div>
                 </div>
                 <div class="rate-grid">
@@ -2603,6 +3228,32 @@
                         </div>
                     </div>
                 </div>
+                <div class="modal-section">
+                    <h3>发布配置</h3>
+                    <div class="form-grid publish-config-grid">
+                        <div class="publish-config-note">
+                            <span>发布协议</span>
+                            <strong>RTSP + ONVIF</strong>
+                        </div>
+                        <div class="field">
+                            <label for="onvif-service-port">ONVIF 服务端口</label>
+                            <input id="onvif-service-port" name="service_port" type="number" min="1" max="65535" step="1" inputmode="numeric" placeholder="例如：2984">
+                        </div>
+                        <div class="field">
+                            <label for="onvif-rtsp-port">RTSP 端口</label>
+                            <input id="onvif-rtsp-port" name="rtsp_port" type="number" min="1" max="65535" step="1" inputmode="numeric" placeholder="例如：9554">
+                        </div>
+                        <div class="field">
+                            <label for="onvif-rtsp-username">视频流访问用户名</label>
+                            <input id="onvif-rtsp-username" name="rtsp_username" type="text" maxlength="256" autocomplete="username" placeholder="留空则不鉴权">
+                        </div>
+                        <div class="field">
+                            <label for="onvif-rtsp-password">视频流访问密码</label>
+                            <input id="onvif-rtsp-password" name="rtsp_password" type="password" maxlength="256" autocomplete="new-password" placeholder="留空则不鉴权">
+                        </div>
+                    </div>
+                    <div class="helper">端口保存后会写入 api.listen 和 rtsp.listen；视频流访问用户名/密码用于 ONVIF 返回的取流地址和 RTSP 访问鉴权，留空则不启用鉴权。</div>
+                </div>
                 <div id="onvif-config-status" class="status" role="status" aria-live="polite"></div>
             </div>
             <div class="modal-actions">
@@ -2661,7 +3312,50 @@
                 </div>
                 <div class="modal-section">
                     <h3>事件模板</h3>
+                    <div class="event-template-toolbar" aria-label="新增事件模板">
+                        <div class="field">
+                            <label for="event-template-preset">新增事件</label>
+                            <select id="event-template-preset"></select>
+                        </div>
+                        <button class="secondary event-template-add" id="add-event-template" type="button">添加事件</button>
+                    </div>
                     <div class="event-template-list" id="event-template-list"></div>
+                    <details class="event-custom-config">
+                        <summary>自定义事件配置</summary>
+                        <div class="event-custom-grid">
+                            <div class="field">
+                                <label for="event-custom-name">中文事件名称</label>
+                                <input id="event-custom-name" type="text" placeholder="例如：宠物检测">
+                            </div>
+                            <div class="field">
+                                <label for="event-custom-topic">ONVIF Topic</label>
+                                <input id="event-custom-topic" type="text" placeholder="例如：tns1:RuleEngine/PetDetector">
+                            </div>
+                            <div class="field">
+                                <label for="event-custom-start-operation">开始动作</label>
+                                <input id="event-custom-start-operation" type="text" placeholder="Changed">
+                            </div>
+                            <div class="field">
+                                <label for="event-custom-end-operation">结束动作</label>
+                                <input id="event-custom-end-operation" type="text" placeholder="Deleted">
+                            </div>
+                            <div class="field wide">
+                                <label for="event-custom-source-data">Source XML（可选）</label>
+                                <textarea id="event-custom-source-data" rows="2" placeholder="不填写则使用默认 Source"></textarea>
+                            </div>
+                            <div class="field wide">
+                                <label for="event-custom-start-data">开始数据 XML（可选）</label>
+                                <textarea id="event-custom-start-data" rows="2" placeholder="例如：&lt;tt:SimpleItem Value=&quot;true&quot; Name=&quot;IsMotion&quot;/&gt;"></textarea>
+                            </div>
+                            <div class="field wide">
+                                <label for="event-custom-end-data">结束数据 XML（可选）</label>
+                                <textarea id="event-custom-end-data" rows="2" placeholder="例如：&lt;tt:SimpleItem Value=&quot;false&quot; Name=&quot;IsMotion&quot;/&gt;"></textarea>
+                            </div>
+                            <div class="event-custom-actions">
+                                <button class="secondary event-template-add" id="add-custom-event-template" type="button">添加自定义事件</button>
+                            </div>
+                        </div>
+                    </details>
                 </div>
                 <div id="event-config-status" class="status" role="status" aria-live="polite"></div>
             </div>
@@ -2689,6 +3383,9 @@
         </div>
     </section>
 </div>
+
+<div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+<div id="select-popover" class="select-popover" role="listbox" hidden></div>
 
 <script>
     const form = document.getElementById('simulate-form');
@@ -2759,6 +3456,18 @@
     const saveEventConfigBtn = document.getElementById('save-event-config');
     const eventConfigStatus = document.getElementById('event-config-status');
     const eventTemplateList = document.getElementById('event-template-list');
+    const eventTemplatePreset = document.getElementById('event-template-preset');
+    const addEventTemplateBtn = document.getElementById('add-event-template');
+    const addCustomEventTemplateBtn = document.getElementById('add-custom-event-template');
+    const eventCustomName = document.getElementById('event-custom-name');
+    const eventCustomTopic = document.getElementById('event-custom-topic');
+    const eventCustomStartOperation = document.getElementById('event-custom-start-operation');
+    const eventCustomEndOperation = document.getElementById('event-custom-end-operation');
+    const eventCustomSourceData = document.getElementById('event-custom-source-data');
+    const eventCustomStartData = document.getElementById('event-custom-start-data');
+    const eventCustomEndData = document.getElementById('event-custom-end-data');
+    const toastRegion = document.getElementById('toast-region');
+    const selectPopover = document.getElementById('select-popover');
     const sourceModeButtons = [...document.querySelectorAll('[data-source-mode]')];
     const sourcePanels = [...document.querySelectorAll('[data-source-panel]')];
     const transcodeOptions = document.getElementById('transcode-options');
@@ -2766,6 +3475,11 @@
     const cameraDeviceSelect = document.getElementById('camera-device');
     const cameraDeviceState = document.getElementById('camera-device-state');
     const rtspInput = document.getElementById('rtsp-input');
+    const qualityCustomGrid = document.getElementById('quality-custom-grid');
+    const qualityHelper = document.getElementById('quality-helper');
+    const qualityOptions = document.getElementById('quality-options');
+    const qualityCustomEnabled = document.getElementById('quality-custom-enabled');
+    const onvifQualitySection = qualityOptions?.closest('.field');
 
     let editingName = '';
     let highlightedStreamName = '';
@@ -2787,16 +3501,37 @@
     let activeResourceKind = 'cpu';
     let processSourceIndex = new Map();
     let eventConfig = {enabled: true, interval: '1m', burst: 10, permanent: true, templates: []};
+    let toastTimer = 0;
+    let activeCustomSelect = null;
+    const customSelectInstances = new Map();
+    const defaultEventSourceData = '<tt:SimpleItem Value="analytics_video_source_audio_source" Name="VideoAnalyticsConfigurationToken"/><tt:SimpleItem Value="MyMotionDetectorRule" Name="Rule"/>';
+    const defaultEventStartData = '<tt:SimpleItem Value="true" Name="IsMotion"/>';
+    const defaultEventEndData = '<tt:SimpleItem Value="false" Name="IsMotion"/>';
+    const eventTemplateCatalog = [
+        {name: '画面变化', topic: 'tns1:VideoSource/MotionAlarm'},
+        {name: '包裹检测', topic: 'tns1:RuleEngine/PackageDetector'},
+        {name: '车辆检测', topic: 'tns1:RuleEngine/MyRuleDetector/VehicleDetect'},
+        {name: '火焰检测', topic: 'tns1:RuleEngine/FlameDetector'},
+        {name: '区域闯入', topic: 'tns1:RuleEngine/FieldDetector/ObjectsInside', sourceData: ''},
+        {name: '越线', topic: 'tns1:RuleEngine/LineDetector/Crossed', sourceData: ''},
+        {name: '区域离开', topic: 'tns1:RuleEngine/FieldDetector/Outside', sourceData: ''},
+        {name: '咳嗽声', topic: 'tns1:RuleEngine/AudioAnalytics/Cough', sourceData: ''},
+        {name: '哭声', topic: 'tns1:RuleEngine/AudioAnalytics/Cry', sourceData: ''},
+    ].map(template => normalizeEventTemplatePreset(template));
     let meta = {
         host: location.host,
         base_path: '',
         rtsp_port: '8554',
+        rtsp_username: '',
+        rtsp_password: '',
         rtsp_path: '/',
         onvif_path: '/onvif/device_service',
         onvif_config_api: 'api/simulate/onvif',
         stream_state_api: 'api/streams/state',
         events_api: 'api/simulate/events',
         disabled_streams: [],
+        onvif_quality: {},
+        onvif_qualities: {},
         metrics_api: 'api/simulate/metrics',
         streams_api: 'api/streams',
         log_api: 'api/log',
@@ -2812,6 +3547,97 @@
         return new URL(path, location.href).toString();
     }
 
+    function showToast(message, type = 'success') {
+        window.clearTimeout(toastTimer);
+
+        const toast = document.createElement('div');
+        toast.className = `config-toast is-${type}`;
+        toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
+        toast.innerHTML = type === 'success'
+            ? '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m8 12 2.5 2.5L16 9"></path></svg>'
+            : type === 'warning'
+                ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.7 2.4 17.4A2 2 0 0 0 4.1 20h15.8a2 2 0 0 0 1.7-2.6L13.7 3.7a2 2 0 0 0-3.4 0Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>'
+                : '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m9 9 6 6"></path><path d="m15 9-6 6"></path></svg>';
+
+        const text = document.createElement('span');
+        text.textContent = message;
+        toast.appendChild(text);
+        toastRegion.replaceChildren(toast);
+        window.requestAnimationFrame(() => toast.classList.add('is-visible'));
+
+        toastTimer = window.setTimeout(() => {
+            toast.classList.remove('is-visible');
+            window.setTimeout(() => toast.remove(), 200);
+        }, 8000);
+    }
+
+    function showSavedToast() {
+        try {
+            const savedToast = JSON.parse(sessionStorage.getItem('simulate-toast'));
+            sessionStorage.removeItem('simulate-toast');
+            if (savedToast?.message && savedToast?.type) {
+                showToast(savedToast.message, savedToast.type);
+            }
+        } catch {
+            sessionStorage.removeItem('simulate-toast');
+        }
+    }
+
+    async function waitForRestart() {
+        const startedAt = Date.now();
+        let observedOffline = false;
+        await new Promise(resolve => setTimeout(resolve, 350));
+
+        while (Date.now() - startedAt < 15000) {
+            try {
+                const [simulateResponse, streamsResponse] = await Promise.all([
+                    fetch(baseURL('api/simulate'), {cache: 'no-store'}),
+                    fetch(baseURL('api/streams'), {cache: 'no-store'}),
+                ]);
+                if (
+                    simulateResponse.ok && streamsResponse.ok &&
+                    (observedOffline || Date.now() - startedAt > 1500)
+                ) return true;
+            } catch {
+                observedOffline = true;
+            }
+            await new Promise(resolve => setTimeout(resolve, 400));
+        }
+        return false;
+    }
+
+    async function saveAndRestart(successMessage, setInlineStatus) {
+        setInlineStatus('配置已保存，正在重启服务...');
+        try {
+            const restartResponse = await fetch(baseURL('api/restart'), {method: 'POST'});
+            if (!restartResponse.ok) {
+                throw new Error(await restartResponse.text() || '服务重启失败');
+            }
+        } catch (error) {
+            if (!(error instanceof TypeError)) throw error;
+            // Restart may close the current HTTP connection before the response finishes.
+        }
+
+        if (await waitForRestart()) {
+            setInlineStatus(successMessage);
+            showToast(successMessage, 'success');
+            sessionStorage.setItem('simulate-toast', JSON.stringify({message: successMessage, type: 'success'}));
+            window.setTimeout(() => location.reload(), 900);
+            return true;
+        }
+
+        const warning = '配置已保存，但未能确认服务重启状态';
+        setInlineStatus(warning);
+        showToast(warning, 'warning');
+        return false;
+    }
+
+    function saveFailureMessage(error, fallback) {
+        return error instanceof TypeError
+            ? '无法连接 go2rtc 服务，配置保存失败'
+            : (error.message || fallback);
+    }
+
     function splitHostPort(host) {
         if (!host) return {hostname: location.hostname || '127.0.0.1', port: ''};
         try {
@@ -2820,6 +3646,124 @@
         } catch {
             return {hostname: host, port: ''};
         }
+    }
+
+    function customSelectLabel(select) {
+        return select.selectedOptions[0]?.textContent || select.options[0]?.textContent || '请选择';
+    }
+
+    function closeCustomSelect() {
+        if (activeCustomSelect) {
+            activeCustomSelect.button.setAttribute('aria-expanded', 'false');
+        }
+        activeCustomSelect = null;
+        selectPopover.hidden = true;
+        selectPopover.replaceChildren();
+    }
+
+    function positionCustomSelectPopover(instance) {
+        const rect = instance.button.getBoundingClientRect();
+        const width = Math.max(rect.width, instance.minWidth || 0);
+        selectPopover.style.width = `${Math.round(width)}px`;
+        selectPopover.style.left = `${Math.round(Math.min(rect.left, window.innerWidth - width - 8))}px`;
+        selectPopover.style.top = `${Math.round(Math.min(rect.bottom + 6, window.innerHeight - 12))}px`;
+    }
+
+    function renderCustomSelectPopover(instance) {
+        selectPopover.replaceChildren();
+        const options = [...instance.select.options];
+        for (const option of options) {
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'select-option';
+            item.role = 'option';
+            item.textContent = option.textContent;
+            item.disabled = option.disabled;
+            item.dataset.value = option.value;
+            if (option.value === instance.select.value) {
+                item.classList.add('is-selected', 'is-active');
+                item.setAttribute('aria-selected', 'true');
+            } else {
+                item.setAttribute('aria-selected', 'false');
+            }
+            item.addEventListener('click', () => {
+                if (option.disabled) return;
+                instance.select.value = option.value;
+                instance.select.dispatchEvent(new Event('change', {bubbles: true}));
+                instance.select.dispatchEvent(new Event('input', {bubbles: true}));
+                closeCustomSelect();
+                instance.button.focus({preventScroll: true});
+            });
+            selectPopover.appendChild(item);
+        }
+        positionCustomSelectPopover(instance);
+    }
+
+    function openCustomSelect(instance) {
+        if (instance.select.disabled) return;
+        if (activeCustomSelect === instance && !selectPopover.hidden) {
+            closeCustomSelect();
+            return;
+        }
+        closeCustomSelect();
+        activeCustomSelect = instance;
+        instance.button.setAttribute('aria-expanded', 'true');
+        renderCustomSelectPopover(instance);
+        selectPopover.hidden = false;
+    }
+
+    function syncCustomSelect(select) {
+        const instance = customSelectInstances.get(select);
+        if (!instance) return;
+        instance.label.textContent = customSelectLabel(select);
+        instance.button.disabled = select.disabled || !select.options.length;
+        instance.button.title = instance.label.textContent;
+        if (activeCustomSelect === instance && !selectPopover.hidden) {
+            renderCustomSelectPopover(instance);
+        }
+    }
+
+    function enhanceCustomSelect(select, {minWidth = 0} = {}) {
+        if (!select || customSelectInstances.has(select)) return customSelectInstances.get(select);
+        select.classList.add('native-select-hidden');
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'custom-select-trigger';
+        button.setAttribute('aria-haspopup', 'listbox');
+        button.setAttribute('aria-expanded', 'false');
+
+        const label = document.createElement('span');
+        const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        icon.setAttribute('viewBox', '0 0 24 24');
+        icon.setAttribute('aria-hidden', 'true');
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'm6 9 6 6 6-6');
+        icon.appendChild(path);
+        button.append(label, icon);
+        select.insertAdjacentElement('afterend', button);
+
+        const instance = {select, button, label, minWidth};
+        customSelectInstances.set(select, instance);
+        button.addEventListener('click', event => {
+            event.preventDefault();
+            event.stopPropagation();
+            openCustomSelect(instance);
+        });
+        button.addEventListener('keydown', event => {
+            if (event.key === 'Enter' || event.key === ' ' || event.key === 'ArrowDown') {
+                event.preventDefault();
+                event.stopPropagation();
+                openCustomSelect(instance);
+            } else if (event.key === 'Escape') {
+                event.preventDefault();
+                event.stopPropagation();
+                closeCustomSelect();
+            }
+        });
+        select.addEventListener('change', () => syncCustomSelect(select));
+        syncCustomSelect(select);
+        return instance;
     }
 
     function setCameraDeviceState(message, isError = false) {
@@ -2854,6 +3798,219 @@
         return `最高模式 ${defaults.size || '设备分辨率'}${defaults.framerate ? ` · ${defaults.framerate}fps` : ''}`;
     }
 
+    function parseSize(value) {
+        const match = String(value || '').trim().match(/^(\d{2,5})\s*x\s*(\d{2,5})$/i);
+        if (!match) return {width: 0, height: 0};
+        return {width: Number(match[1]) || 0, height: Number(match[2]) || 0};
+    }
+
+    function currentSourceMaxHeight() {
+        if (sourceMode !== 'camera') return 0;
+        return parseSize(form.elements.camera_size.value).height || parseSize(cameraDeviceDefaults(cameraDeviceSelect.value).size).height;
+    }
+
+    function qualityInputs() {
+        return [...qualityOptions.querySelectorAll('input[name="onvif_quality"]')];
+    }
+
+    function checkedQualityInputs() {
+        return qualityInputs().filter(input => input.checked && !input.disabled);
+    }
+
+    function normalizeONVIFQualityItems(value) {
+        if (Array.isArray(value)) return value;
+        if (value && typeof value === 'object') return [value];
+        return [];
+    }
+
+    function qualityValueFromItem(item = {}) {
+        const width = Number(item.width) || 0;
+        const height = Number(item.height) || 0;
+        const known = new Set(['360', '480', '720', '1080', '1440', '2048', '2160', '4320']);
+        if (width <= 0 && height <= 0) return 'original';
+        if (width <= 0 && known.has(String(height))) return String(height);
+        return 'custom';
+    }
+
+    function onvifQualityValuesFromConfig(value) {
+        const values = normalizeONVIFQualityItems(value).map(qualityValueFromItem);
+        return values.length ? values : ['original'];
+    }
+
+    function ensureAtLeastOneQuality() {
+        if (checkedQualityInputs().length > 0) return;
+        const original = qualityOptions.querySelector('input[value="original"]');
+        if (original && !original.disabled) {
+            original.checked = true;
+            return;
+        }
+        const fallback = qualityInputs().find(input => !input.disabled);
+        if (fallback) fallback.checked = true;
+    }
+
+    function setONVIFQualitySelection(value = []) {
+        const items = normalizeONVIFQualityItems(value);
+        const values = new Set(onvifQualityValuesFromConfig(items));
+        for (const input of qualityInputs()) {
+            input.checked = values.has(input.value);
+        }
+        const custom = items.find(item => qualityValueFromItem(item) === 'custom');
+        form.elements.custom_width.value = custom?.width || '';
+        form.elements.custom_height.value = custom?.height || '';
+        ensureAtLeastOneQuality();
+        updateQualityControls();
+    }
+
+    function selectedONVIFQualityValues() {
+        ensureAtLeastOneQuality();
+        return checkedQualityInputs().map(input => input.value);
+    }
+
+    function updateQualityControls() {
+        const maxHeight = currentSourceMaxHeight();
+        const rtspOnly = sourceMode === 'rtsp';
+        if (onvifQualitySection) onvifQualitySection.hidden = rtspOnly;
+
+        for (const input of qualityInputs()) {
+            const height = Number(input.value);
+            input.disabled = rtspOnly || Boolean(height && maxHeight && height > maxHeight);
+            if (input.disabled) input.checked = false;
+        }
+        if (rtspOnly) {
+            const original = qualityOptions.querySelector('input[value="original"]');
+            if (original) {
+                original.disabled = false;
+                original.checked = true;
+            }
+        }
+        ensureAtLeastOneQuality();
+
+        const custom = Boolean(qualityCustomEnabled?.checked && !qualityCustomEnabled.disabled);
+        qualityCustomGrid.hidden = !custom;
+        if (!custom) {
+            form.elements.custom_width.value = '';
+            form.elements.custom_height.value = '';
+        }
+        qualityHelper.textContent = rtspOnly
+            ? 'RTSP 输入按码率配置，不生成额外 ONVIF 清晰度档位。'
+            : (maxHeight
+                ? `当前源最高约 ${maxHeight}p，超过源分辨率的档位已禁用；ONVIF 客户端可在多个 Profile 间切换。`
+                : '用于 ONVIF 客户端切换不同 Profile；RTSP 地址保持任务本身的码率与编码配置。');
+    }
+
+    function updateQualityControlsLegacy() {
+        const select = form.elements.quality;
+        const maxHeight = currentSourceMaxHeight();
+        for (const option of select.options) {
+            const height = Number(option.value);
+            option.disabled = Boolean(height && maxHeight && height > maxHeight);
+        }
+        if (select.selectedOptions[0]?.disabled) {
+            select.value = '';
+        }
+
+        const custom = select.value === 'custom';
+        qualityCustomGrid.hidden = !custom;
+        if (!custom) {
+            form.elements.custom_width.value = '';
+            form.elements.custom_height.value = '';
+        }
+        qualityHelper.textContent = maxHeight
+            ? `当前源最高约 ${maxHeight}p，超过源分辨率的档位已禁用；仅 ONVIF 取流会按该清晰度派生。`
+            : '仅影响 ONVIF 客户端获取到的取流地址；普通 RTSP 地址保持原任务码率与编码配置。';
+        syncCustomSelect(select);
+    }
+
+	function onvifQualityFromFormLegacy(data) {
+        const quality = (data.get('quality') || '').toString();
+        if (!quality) return {width: 0, height: 0};
+        if (quality === 'custom') {
+            const width = Number((data.get('custom_width') || '').toString().trim());
+            const height = Number((data.get('custom_height') || '').toString().trim());
+            return {
+                width: Number.isInteger(width) && width > 0 ? width : 0,
+                height: Number.isInteger(height) && height > 0 ? height : 0,
+            };
+        }
+        const height = Number(quality);
+        return {width: 0, height: Number.isInteger(height) && height > 0 ? height : 0};
+    }
+
+    function qualityFromParams(width, height) {
+        if (!width && !height) return {quality: '', width: '', height: ''};
+        const known = new Set(['360', '480', '720', '1080', '1440', '2048', '2160', '4320']);
+        const heightValue = String(height || '');
+        if (!width && known.has(heightValue)) return {quality: heightValue, width: '', height: ''};
+        return {quality: 'custom', width: width || '', height: height || ''};
+    }
+
+    function qualityLabel(parsed = {}) {
+        if (!parsed.quality) return '原始清晰度';
+        if (parsed.quality === 'custom') {
+            const size = [parsed.customWidth || parsed.width || '', parsed.customHeight || parsed.height || ''].filter(Boolean).join('×');
+            return size ? `自定义 ${size}` : '自定义清晰度';
+        }
+        return `${parsed.quality}p`;
+    }
+
+    function qualityItemsLabel(value) {
+        const labels = normalizeONVIFQualityItems(value).map(item => qualityLabel({
+            quality: qualityValueFromItem(item),
+            width: item.width || '',
+            height: item.height || '',
+        }));
+        const unique = [...new Set(labels.length ? labels : [qualityLabel({})])];
+        if (unique.length <= 3) return unique.join(' / ');
+        return `${unique.length} 个档位：${unique.slice(0, 3).join(' / ')}…`;
+    }
+
+    function streamONVIFQualities(name, parsed = {}) {
+        if (meta.onvif_qualities?.[name]) return meta.onvif_qualities[name];
+        if (meta.onvif_quality?.[name]) return [meta.onvif_quality[name]];
+        if (parsed.customWidth || parsed.customHeight || parsed.quality) {
+            return [{width: Number(parsed.customWidth) || 0, height: Number(parsed.customHeight || parsed.quality) || 0}];
+        }
+        return [{}];
+    }
+
+    function stripRTSPCredentials(value) {
+        try {
+            const url = new URL(value);
+            if (!/^rtsp:$/i.test(url.protocol)) return value;
+            url.username = '';
+            url.password = '';
+            return url.toString();
+        } catch {
+            return value;
+        }
+    }
+
+    function readRTSPCredentials(value) {
+        try {
+            const url = new URL(value);
+            if (!/^rtsp:$/i.test(url.protocol)) return {username: '', password: ''};
+            return {username: decodeURIComponent(url.username || ''), password: decodeURIComponent(url.password || '')};
+        } catch {
+            return {username: '', password: ''};
+        }
+    }
+
+    function mergeRTSPCredentials(value, username, password) {
+        try {
+            const url = new URL(value);
+            if (!/^rtsp:$/i.test(url.protocol)) return '';
+            const user = String(username || '').trim();
+            const pass = String(password || '').trim();
+            if (user) {
+                url.username = user;
+                url.password = pass;
+            }
+            return url.toString();
+        } catch {
+            return '';
+        }
+    }
+
     function renderCameraDevices(selectedValue = '') {
         cameraDeviceSelect.replaceChildren();
         if (!cameraDevices.length) {
@@ -2871,6 +4028,7 @@
             ? selectedValue
             : '0';
         applyCameraDefaults(cameraDeviceSelect.value);
+        updateQualityControls();
     }
 
     async function loadCameraDevices(selectedValue = '') {
@@ -2918,13 +4076,22 @@
         form.elements.file.required = sourceMode === 'file';
         cameraDeviceSelect.required = sourceMode === 'camera';
         rtspInput.required = sourceMode === 'rtsp';
-        transcodeOptions.hidden = sourceMode === 'rtsp';
+        transcodeOptions.hidden = false;
         filePlaybackOptions.hidden = sourceMode !== 'file';
         form.elements.audio.disabled = sourceMode === 'camera';
         if (sourceMode === 'camera') {
+            if (!options.preserveCodec) form.elements.video.value = 'h264';
             form.elements.audio.value = '';
             loadCameraDevices(options.cameraDevice || '');
+        } else if (sourceMode === 'rtsp' && !options.preserveCodec) {
+            form.elements.video.value = 'copy';
+            form.elements.audio.value = 'copy';
+        } else if (sourceMode === 'file' && !options.preserveCodec && form.elements.video.value === 'copy') {
+            form.elements.video.value = 'h264';
         }
+        syncCustomSelect(form.elements.video);
+        syncCustomSelect(form.elements.audio);
+        updateQualityControls();
         updatePreview();
     }
 
@@ -2936,13 +4103,29 @@
         const bitrate = normalizeBitrate(data.get('bitrate'));
         const maxrate = normalizeBitrate(data.get('maxrate'));
         const bufsize = normalizeBitrate(data.get('bufsize'));
-
-        if (sourceMode === 'rtsp') {
-            const rtsp = (data.get('rtsp_input') || '').toString().trim();
-            return /^rtsp:\/\//i.test(rtsp) ? rtsp : '';
+        let sourceVideo = video || 'h264';
+        if ((bitrate || maxrate || bufsize) && sourceVideo === 'copy') {
+            sourceVideo = 'h264';
         }
 
-        const params = [`video=${video}`];
+        if (sourceMode === 'rtsp') {
+            const rtsp = mergeRTSPCredentials(
+                (data.get('rtsp_input') || '').toString().trim(),
+                data.get('rtsp_username'),
+                data.get('rtsp_password'),
+            );
+            if (!rtsp) return '';
+            const direct = sourceVideo === 'copy' && audio === 'copy' && !bitrate && !maxrate && !bufsize;
+            if (direct) return rtsp;
+            const params = [`video=${sourceVideo || 'h264'}`];
+            if (bitrate) params.push(`bitrate=${bitrate}`);
+            if (maxrate) params.push(`maxrate=${maxrate}`);
+            if (bufsize) params.push(`bufsize=${bufsize}`);
+            if (audio) params.push(`audio=${audio}`);
+            return `ffmpeg:${rtsp}#${params.join('#')}`;
+        }
+
+        const params = [`video=${sourceVideo}`];
         if (bitrate) params.push(`bitrate=${bitrate}`);
         if (maxrate) params.push(`maxrate=${maxrate}`);
         if (bufsize) params.push(`bufsize=${bufsize}`);
@@ -2993,9 +4176,9 @@
     function updatePreview() {
         const source = buildSource();
         const name = form.elements.name.value.trim();
-        sourceValue.textContent = source || '点击“新建任务”后在弹窗中填写表单';
+        if (sourceValue) sourceValue.textContent = source || '点击“新建任务”后在弹窗中填写表单';
         modalSourcePreview.textContent = source || '请先填写表单字段';
-        modalRTSPPreview.textContent = name ? rtspURL(name) : '请先填写任务名称';
+        modalRTSPPreview.textContent = name ? rtspURL(name, {maskPassword: true}) : '请先填写任务名称';
         modalONVIFPreview.textContent = onvifURL();
     }
 
@@ -3152,7 +4335,7 @@
 
     function isManagedStream(source) {
         if (typeof source !== 'string') return false;
-        return (source.startsWith('ffmpeg:') && (source.includes('#input=file') || source.startsWith('ffmpeg:device?')))
+        return (source.startsWith('ffmpeg:') && (source.includes('#input=file') || source.startsWith('ffmpeg:device?') || /^ffmpeg:rtsp:\/\//i.test(source)))
             || /^rtsp:\/\//i.test(source);
     }
 
@@ -3246,9 +4429,12 @@
 
     function parseSource(source) {
         if (/^rtsp:\/\//i.test(source)) {
+            const credentials = readRTSPCredentials(source);
             return {
                 mode: 'rtsp', rtsp: source, file: source, video: 'copy', audio: 'copy',
-                bitrate: '', maxrate: '', bufsize: '', cameraDevice: '', cameraSize: '', cameraFramerate: '',
+                bitrate: '', maxrate: '', bufsize: '', quality: '', customWidth: '', customHeight: '',
+                rtspUsername: credentials.username, rtspPassword: credentials.password,
+                cameraDevice: '', cameraSize: '', cameraFramerate: '',
             };
         }
 
@@ -3260,6 +4446,7 @@
         const result = {
             mode: file.startsWith('device?') ? 'camera' : (/^rtsp:\/\//i.test(file) ? 'rtsp' : 'file'),
             file, rtsp: '', video: 'h264', audio: '', bitrate: '', maxrate: '', bufsize: '',
+            quality: '', customWidth: '', customHeight: '', rtspUsername: '', rtspPassword: '',
             cameraDevice: '', cameraSize: '', cameraFramerate: '',
         };
 
@@ -3270,8 +4457,13 @@
             result.cameraFramerate = query.get('framerate') || '';
         } else if (result.mode === 'rtsp') {
             result.rtsp = file;
+            const credentials = readRTSPCredentials(file);
+            result.rtspUsername = credentials.username;
+            result.rtspPassword = credentials.password;
         }
 
+        let width = '';
+        let height = '';
         for (const part of params) {
             const [key, value = ''] = part.split('=');
             if (key === 'video' && value) result.video = value;
@@ -3279,7 +4471,13 @@
             if (key === 'bitrate') result.bitrate = bitrateToKbps(value);
             if (key === 'maxrate') result.maxrate = bitrateToKbps(value);
             if (key === 'bufsize') result.bufsize = bitrateToKbps(value);
+            if (key === 'width') width = value;
+            if (key === 'height') height = value;
         }
+        const quality = qualityFromParams(width, height);
+        result.quality = quality.quality;
+        result.customWidth = quality.width;
+        result.customHeight = quality.height;
 
         return result;
     }
@@ -3322,6 +4520,77 @@
         opsStatusDetail.className = 'ops-status-detail';
     }
 
+    function fallbackEventTopicName(topic) {
+        const last = String(topic || '').split('/').filter(Boolean).pop();
+        return last ? `自定义事件：${last}` : '自定义事件';
+    }
+
+    function eventTopicName(topic) {
+        const preset = eventTemplateCatalog.find(item => item.topic === topic);
+        if (preset?.name) return preset.name;
+        return fallbackEventTopicName(topic);
+    }
+
+    function normalizeEventTemplatePreset(template = {}) {
+        const topic = String(template.topic || '').trim();
+        const sourceData = template.sourceData === undefined ? defaultEventSourceData : String(template.sourceData || '');
+        const startData = template.startData === undefined ? defaultEventStartData : String(template.startData || '');
+        const endData = template.endData === undefined ? defaultEventEndData : String(template.endData || '');
+        return {
+            enabled: template.enabled !== false,
+            name: String(template.name || '').trim() || fallbackEventTopicName(topic),
+            topic,
+            sourceData,
+            startData,
+            endData,
+            startOperation: String(template.startOperation || 'Changed').trim(),
+            endOperation: String(template.endOperation || 'Deleted').trim(),
+        };
+    }
+
+    function eventTemplateLabel(template, index = 0) {
+        return String(template?.name || '').trim() || eventTopicName(template?.topic) || `事件 ${index + 1}`;
+    }
+
+    function eventTemplateStatus(template) {
+        if (template.enabled === false) return '已停用，保存后不参与推送';
+        return '已启用，保存后参与随机推送';
+    }
+
+    function configuredEventTemplatePresets() {
+        const byTopic = new Map(eventTemplateCatalog.map(template => [template.topic, template]));
+        for (const template of eventConfig.templates || []) {
+            const normalized = normalizeEventTemplatePreset(template);
+            if (normalized.topic && !byTopic.has(normalized.topic)) {
+                byTopic.set(normalized.topic, normalized);
+            }
+        }
+        return [...byTopic.values()];
+    }
+
+    function renderEventTemplatePresetOptions() {
+        const configuredTopics = new Set((eventConfig.templates || []).map(template => template.topic).filter(Boolean));
+        const options = configuredEventTemplatePresets().filter(template => template.topic && !configuredTopics.has(template.topic));
+        eventTemplatePreset.replaceChildren();
+        if (!options.length) {
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = '所有模板都已添加';
+            eventTemplatePreset.appendChild(option);
+            addEventTemplateBtn.disabled = true;
+            syncCustomSelect(eventTemplatePreset);
+            return;
+        }
+        for (const template of options) {
+            const option = document.createElement('option');
+            option.value = template.topic;
+            option.textContent = template.name;
+            eventTemplatePreset.appendChild(option);
+        }
+        addEventTemplateBtn.disabled = false;
+        syncCustomSelect(eventTemplatePreset);
+    }
+
     function normalizeEventConfig(config = {}) {
         const templates = Array.isArray(config.templates) ? config.templates : [];
         return {
@@ -3331,6 +4600,7 @@
             permanent: Boolean(config.permanent),
             templates: templates.map(template => ({
                 enabled: template?.enabled !== false,
+                name: String(template?.name || '').trim() || eventTopicName(template?.topic),
                 topic: String(template?.topic || ''),
                 sourceData: String(template?.sourceData || ''),
                 startData: String(template?.startData || ''),
@@ -3346,7 +4616,7 @@
         const enabledCount = templates.filter(template => template.enabled !== false).length;
         const total = templates.length;
         eventSummaryTitle.textContent = `${config.enabled === false ? '已停用' : '已启用'} ${enabledCount}/${total} 个事件`;
-        eventSummaryDetail.textContent = `频率 ${config.interval || '--'}`;
+        eventSummaryDetail.textContent = `点击配置 · 频率 ${config.interval || '--'}`;
         openEventConfigBtn.title = `${enabledCount} 个事件启用，推送频率 ${config.interval || '--'}`;
     }
 
@@ -3361,28 +4631,34 @@
         if (!templates.length) {
             const empty = document.createElement('div');
             empty.className = 'event-template-empty';
-            empty.textContent = '当前配置里还没有事件模板。';
+            empty.textContent = '当前还没有配置事件，请从上方选择中文模板添加。';
             eventTemplateList.appendChild(empty);
+            renderEventTemplatePresetOptions();
             return;
         }
 
         templates.forEach((template, index) => {
             const row = document.createElement('div');
             row.className = 'event-template-row';
-            const topic = template.topic || `事件模板 ${index + 1}`;
+            const name = eventTemplateLabel(template, index);
             row.innerHTML = `
                 <div>
-                    <code title="${escapeHTML(topic)}">${escapeHTML(topic)}</code>
-                    <small>${escapeHTML([template.startOperation || 'Changed', template.endOperation || ''].filter(Boolean).join(' / '))}</small>
+                    <div class="event-template-name">
+                        <strong>${escapeHTML(name)}</strong>
+                        <span class="event-template-badge">${template.enabled === false ? '停用' : '启用'}</span>
+                    </div>
+                    <small>${escapeHTML(eventTemplateStatus(template))}</small>
                 </div>
                 <label class="switch-control" title="启用 / 停用该事件">
                     <input type="checkbox" data-event-template-index="${index}" ${template.enabled !== false ? 'checked' : ''}>
                     <span class="switch-track" aria-hidden="true"></span>
-                    <span class="visually-hidden">启用该事件</span>
+                    <span class="visually-hidden">启用${escapeHTML(name)}</span>
                 </label>
+                <button class="ghost event-template-remove" type="button" data-event-template-remove="${index}" aria-label="移除${escapeHTML(name)}">×</button>
             `;
             eventTemplateList.appendChild(row);
         });
+        renderEventTemplatePresetOptions();
     }
 
     function fillEventConfigForm() {
@@ -3391,6 +4667,56 @@
         eventConfigForm.elements.burst.value = String(eventConfig.burst ?? 0);
         eventConfigForm.elements.permanent.checked = Boolean(eventConfig.permanent);
         renderEventTemplates();
+    }
+
+    function appendEventTemplate(template) {
+        const normalized = normalizeEventTemplatePreset(template);
+        if (!normalized.topic) {
+            throw new Error('请填写事件 Topic。');
+        }
+        eventConfig.templates = [...(eventConfig.templates || []), normalized];
+        renderEventTemplates();
+        updateEventSummary({
+            ...eventConfig,
+            enabled: eventConfigForm.elements.enabled.checked,
+            interval: eventConfigForm.elements.interval.value.trim() || eventConfig.interval,
+        });
+    }
+
+    function addSelectedEventTemplate() {
+        const topic = eventTemplatePreset.value;
+        const preset = configuredEventTemplatePresets().find(template => template.topic === topic);
+        if (!preset) return;
+        appendEventTemplate(preset);
+        setEventConfigStatus(`已添加“${preset.name}”，保存并重启后生效。`);
+    }
+
+    function clearCustomEventFields() {
+        eventCustomName.value = '';
+        eventCustomTopic.value = '';
+        eventCustomStartOperation.value = '';
+        eventCustomEndOperation.value = '';
+        eventCustomSourceData.value = '';
+        eventCustomStartData.value = '';
+        eventCustomEndData.value = '';
+    }
+
+    function addCustomEventTemplate() {
+        const name = eventCustomName.value.trim();
+        const topic = eventCustomTopic.value.trim();
+        if (!name) throw new Error('请填写中文事件名称。');
+        if (!topic) throw new Error('请填写 ONVIF Topic。');
+        appendEventTemplate({
+            name,
+            topic,
+            sourceData: eventCustomSourceData.value.trim(),
+            startData: eventCustomStartData.value.trim(),
+            endData: eventCustomEndData.value.trim(),
+            startOperation: eventCustomStartOperation.value.trim() || 'Changed',
+            endOperation: eventCustomEndOperation.value.trim() || 'Deleted',
+        });
+        clearCustomEventFields();
+        setEventConfigStatus(`已添加自定义事件“${name}”，保存并重启后生效。`);
     }
 
     async function loadEventConfig() {
@@ -3708,9 +5034,14 @@
         return parsed.file || '未识别本地文件';
     }
 
-    function rtspURL(name) {
+    function rtspURL(name, {maskPassword = false} = {}) {
         const {hostname} = splitHostPort(meta.host || location.host);
-        return `rtsp://${hostname}:${meta.rtsp_port}/${encodeURIComponent(name)}`;
+        const username = String(meta.rtsp_username || '').trim();
+        const password = String(meta.rtsp_password || '').trim();
+        const credentials = username
+            ? `${encodeURIComponent(username)}${password ? `:${maskPassword ? '******' : encodeURIComponent(password)}` : ''}@`
+            : '';
+        return `rtsp://${credentials}${hostname}:${meta.rtsp_port}/${encodeURIComponent(name)}`;
     }
 
     function onvifURL(channel = 0) {
@@ -3832,13 +5163,20 @@
         form.reset();
         localFileInput.value = '';
         rtspInput.value = '';
+        form.elements.rtsp_username.value = '';
+        form.elements.rtsp_password.value = '';
         form.elements.camera_size.value = '';
         form.elements.camera_framerate.value = '';
         form.elements.video.value = 'h264';
         form.elements.audio.value = '';
+        form.elements.custom_width.value = '';
+        form.elements.custom_height.value = '';
         form.elements.loop.checked = true;
         if (!uploadBusy) setUploadBusy(false, 0);
         setSourceMode('file');
+        syncCustomSelect(form.elements.video);
+        setONVIFQualitySelection([{}]);
+        updateQualityControls();
         setEditingMode('');
         setStatus('');
         updatePreview();
@@ -3877,6 +5215,13 @@
     function updateONVIFIdentitySummary(config) {
         document.getElementById('onvif-device-name').textContent = config?.name || 'go2rtc';
         document.getElementById('onvif-device-model').textContent = config?.model || 'go2rtc';
+        const servicePort = config?.service_port || splitHostPort(meta.host || location.host).port || location.port || '';
+        const rtspPort = config?.rtsp_port || meta.rtsp_port || '';
+        if (rtspPort) meta.rtsp_port = String(rtspPort);
+        meta.rtsp_username = config?.rtsp_username || '';
+        meta.rtsp_password = config?.rtsp_password || '';
+        document.getElementById('onvif-service-port-label').textContent = servicePort || '--';
+        document.getElementById('rtsp-publish-port').textContent = rtspPort || '--';
     }
 
     async function loadONVIFConfig() {
@@ -3890,12 +5235,28 @@
             input.value = config[field] || '';
             if (field !== 'serial') input.placeholder = defaults[field] || '';
         }
+        onvifConfigForm.elements.service_port.value = config.service_port || data.effective?.service_port || '';
+        onvifConfigForm.elements.service_port.placeholder = defaults.service_port || '2984';
+        onvifConfigForm.elements.rtsp_port.value = config.rtsp_port || data.effective?.rtsp_port || meta.rtsp_port || '';
+        onvifConfigForm.elements.rtsp_port.placeholder = defaults.rtsp_port || '9554';
+        onvifConfigForm.elements.rtsp_username.value = config.rtsp_username || '';
+        onvifConfigForm.elements.rtsp_password.value = config.rtsp_password || '';
         updateONVIFIdentitySummary(data.effective || config);
 
         const savedMessage = sessionStorage.getItem('onvif-config-saved');
         sessionStorage.removeItem('onvif-config-saved');
         onvifConfigFeedback.textContent = savedMessage || '';
         return data;
+    }
+
+    function readPortField(formElement, name, label) {
+        const raw = String(formElement.elements[name]?.value || '').trim();
+        if (!raw) return 0;
+        const port = Number(raw);
+        if (!Number.isInteger(port) || port < 1 || port > 65535) {
+            throw new Error(`${label}必须在 1-65535 之间。`);
+        }
+        return port;
     }
 
     async function openONVIFConfig() {
@@ -3971,7 +5332,9 @@
 
         form.elements.name.value = name;
         form.elements.file.value = parsed.mode === 'file' ? parsed.file : '';
-        rtspInput.value = parsed.mode === 'rtsp' ? (parsed.rtsp || parsed.file) : '';
+        rtspInput.value = parsed.mode === 'rtsp' ? stripRTSPCredentials(parsed.rtsp || parsed.file) : '';
+        form.elements.rtsp_username.value = parsed.mode === 'rtsp' ? (parsed.rtspUsername || '') : '';
+        form.elements.rtsp_password.value = parsed.mode === 'rtsp' ? (parsed.rtspPassword || '') : '';
         form.elements.camera_size.value = parsed.cameraSize;
         form.elements.camera_framerate.value = parsed.cameraFramerate;
         form.elements.video.value = [...form.elements.video.options].some(option => option.value === parsed.video)
@@ -3984,7 +5347,11 @@
         form.elements.maxrate.value = parsed.maxrate;
         form.elements.bufsize.value = parsed.bufsize;
         form.elements.loop.checked = true;
-        setSourceMode(parsed.mode, {cameraDevice: parsed.cameraDevice});
+        setSourceMode(parsed.mode, {cameraDevice: parsed.cameraDevice, preserveCodec: true});
+        setONVIFQualitySelection(streamONVIFQualities(name, parsed));
+        syncCustomSelect(form.elements.video);
+        syncCustomSelect(form.elements.audio);
+        updateQualityControls();
         setEditingMode(name);
         highlightStream(name);
         setStatus(`已回填任务 ${name}，可直接修改后保存。`);
@@ -4000,10 +5367,14 @@
         if (!meta.configured_streams || typeof meta.configured_streams !== 'object') {
             meta.configured_streams = {};
         }
+        if (!meta.onvif_quality || typeof meta.onvif_quality !== 'object') {
+            meta.onvif_quality = {};
+        }
+        if (!meta.onvif_qualities || typeof meta.onvif_qualities !== 'object') {
+            meta.onvif_qualities = {};
+        }
         if (!Array.isArray(meta.configured_order)) meta.configured_order = [];
         if (!Array.isArray(meta.disabled_streams)) meta.disabled_streams = [];
-        document.getElementById('api-host').textContent = meta.host || location.host;
-        document.getElementById('rtsp-port').textContent = meta.rtsp_port;
         document.getElementById('onvif-path').textContent = meta.onvif_path;
         document.getElementById('onvif-service').textContent = onvifURL();
         document.getElementById('streams-api').textContent = meta.streams_api;
@@ -4048,9 +5419,12 @@
             const online = consumerInfo.consumers;
             const consumerIPText = consumerIPSummary(consumerInfo);
             const rtsp = rtspURL(name);
+            const rtspDisplay = rtspURL(name, {maskPassword: true});
             const onvifChannel = onvifChannels.get(name) || 0;
             const onvif = onvifURL(onvifChannel);
             const disabled = isStreamDisabled(name) || stream?.disabled;
+            const onvifQualityLabel = qualityItemsLabel(streamONVIFQualities(name, parsed));
+            const directRTSP = /^rtsp:\/\//i.test(src);
 
             const card = document.createElement('article');
             card.className = 'sim-card';
@@ -4081,7 +5455,7 @@
                 </div>
 
                 <div class="rtsp-inline">
-                    <code>${escapeHTML(rtsp)}</code>
+                    <code>${escapeHTML(rtspDisplay)}</code>
                     <button class="copy-btn inline" type="button" data-copy="${encodeURIComponent(rtsp)}" data-copy-label="RTSP 地址" aria-label="复制 RTSP 地址">
                         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                     </button>
@@ -4092,15 +5466,19 @@
                 <div class="task-cards">
                     <div class="task-card">
                         <strong>编码与音频</strong>
-                        <div class="helper">${parsed.mode === 'rtsp'
+                        <div class="helper">${directRTSP
                             ? '保持上游视频 / 保持上游音频'
                             : `${escapeHTML((parsed.video || '未指定').toUpperCase())} / ${escapeHTML(audioLabel(parsed.audio))}`}</div>
                     </div>
                     <div class="task-card">
                         <strong>码率控制</strong>
-                        <div class="helper">${parsed.mode === 'rtsp'
+                        <div class="helper">${directRTSP
                             ? '直接转发，不进行重复编码'
                             : `目标 ${escapeHTML(parsed.bitrate ? `${parsed.bitrate} kbps` : '默认')} / 最大 ${escapeHTML(parsed.maxrate ? `${parsed.maxrate} kbps` : '跟随目标')} / 缓冲 ${escapeHTML(parsed.bufsize ? `${parsed.bufsize} kbps` : '跟随目标')}`}</div>
+                    </div>
+                    <div class="task-card">
+                        <strong>ONVIF 清晰度</strong>
+                        <div class="helper">${escapeHTML(onvifQualityLabel)}</div>
                     </div>
                     <div class="task-card">
                         <div class="task-card-top">
@@ -4229,9 +5607,16 @@
     }
 
     form.addEventListener('input', updatePreview);
+    form.addEventListener('change', updatePreview);
+    qualityOptions.addEventListener('change', () => {
+        updateQualityControls();
+        updatePreview();
+    });
+    form.elements.camera_size.addEventListener('input', updateQualityControls);
 
     cameraDeviceSelect.addEventListener('change', () => {
         applyCameraDefaults(cameraDeviceSelect.value, true);
+        updateQualityControls();
         const defaults = cameraDefaultsDescription(cameraDeviceSelect.value);
         setCameraDeviceState(`已选择 ${cameraDeviceLabel(cameraDeviceSelect.value)}${defaults ? `；${defaults}` : ''}。`);
     });
@@ -4289,7 +5674,9 @@
 
     document.addEventListener('keydown', event => {
         if (event.key !== 'Escape') return;
-        if (!consumerPopover.hidden) {
+        if (!selectPopover.hidden) {
+            closeCustomSelect();
+        } else if (!consumerPopover.hidden) {
             closeConsumerPopover();
         } else if (!resourcePopover.hidden) {
             closeResourcePopover();
@@ -4330,11 +5717,43 @@
         const index = Number(input.dataset.eventTemplateIndex);
         if (!Number.isInteger(index) || !eventConfig.templates[index]) return;
         eventConfig.templates[index].enabled = input.checked;
+        renderEventTemplates();
         updateEventSummary({
             ...eventConfig,
             enabled: eventConfigForm.elements.enabled.checked,
             interval: eventConfigForm.elements.interval.value.trim() || eventConfig.interval,
         });
+    });
+
+    eventTemplateList.addEventListener('click', event => {
+        const removeButton = event.target.closest('button[data-event-template-remove]');
+        if (!removeButton) return;
+        const index = Number(removeButton.dataset.eventTemplateRemove);
+        if (!Number.isInteger(index) || !eventConfig.templates[index]) return;
+        const [removed] = eventConfig.templates.splice(index, 1);
+        renderEventTemplates();
+        updateEventSummary({
+            ...eventConfig,
+            enabled: eventConfigForm.elements.enabled.checked,
+            interval: eventConfigForm.elements.interval.value.trim() || eventConfig.interval,
+        });
+        setEventConfigStatus(`已移除“${eventTemplateLabel(removed, index)}”，保存并重启后生效。`);
+    });
+
+    addEventTemplateBtn.addEventListener('click', () => {
+        try {
+            addSelectedEventTemplate();
+        } catch (error) {
+            setEventConfigStatus(error.message, true);
+        }
+    });
+
+    addCustomEventTemplateBtn.addEventListener('click', () => {
+        try {
+            addCustomEventTemplate();
+        } catch (error) {
+            setEventConfigStatus(error.message, true);
+        }
     });
 
     eventConfigForm.addEventListener('input', () => {
@@ -4369,14 +5788,12 @@
             if (!response.ok) throw new Error(await response.text() || '保存事件推送配置失败');
             eventConfig = normalizeEventConfig(await response.json());
             updateEventSummary(eventConfig);
-            setEventConfigStatus('配置已保存，正在重启...');
-
-            const restartResponse = await fetch(baseURL('api/restart'), {method: 'POST'});
-            if (!restartResponse.ok) throw new Error(await restartResponse.text() || '重启失败');
-            sessionStorage.setItem('event-config-saved', '事件推送配置已保存');
-            window.setTimeout(() => location.reload(), 1500);
+            const restarted = await saveAndRestart('事件推送配置保存成功，服务已重启', message => setEventConfigStatus(message));
+            if (!restarted) saveEventConfigBtn.disabled = false;
         } catch (error) {
-            setEventConfigStatus(error.message, true);
+            const message = saveFailureMessage(error, '保存事件推送配置失败');
+            setEventConfigStatus(message, true);
+            showToast(message, 'error');
             saveEventConfigBtn.disabled = false;
         }
     });
@@ -4387,6 +5804,8 @@
         setONVIFConfigStatus('正在保存...');
         try {
             const config = Object.fromEntries(new FormData(onvifConfigForm).entries());
+            config.service_port = readPortField(onvifConfigForm, 'service_port', 'ONVIF 服务端口');
+            config.rtsp_port = readPortField(onvifConfigForm, 'rtsp_port', 'RTSP 端口');
             const response = await fetch(baseURL(meta.onvif_config_api), {
                 method: 'PUT',
                 headers: {'Content-Type': 'application/json'},
@@ -4395,14 +5814,12 @@
             if (!response.ok) throw new Error(await response.text() || '保存 ONVIF 设备信息失败');
             const data = await response.json();
             updateONVIFIdentitySummary(data.effective || data.config);
-            setONVIFConfigStatus('配置已保存，正在重启...');
-
-            const restartResponse = await fetch(baseURL('api/restart'), {method: 'POST'});
-            if (!restartResponse.ok) throw new Error(await restartResponse.text() || '重启失败');
-            sessionStorage.setItem('onvif-config-saved', '设备信息已保存');
-            window.setTimeout(() => location.reload(), 1500);
+            const restarted = await saveAndRestart('设备信息保存成功，服务已重启', message => setONVIFConfigStatus(message));
+            if (!restarted) saveONVIFConfigBtn.disabled = false;
         } catch (error) {
-            setONVIFConfigStatus(error.message, true);
+            const message = saveFailureMessage(error, '保存 ONVIF 设备信息失败');
+            setONVIFConfigStatus(message, true);
+            showToast(message, 'error');
             saveONVIFConfigBtn.disabled = false;
         }
     });
@@ -4420,6 +5837,20 @@
     streamSort.addEventListener('change', () => {
         localStorage.setItem('go2rtc-simulate-sort', streamSort.value);
         renderStreams(cachedStreams);
+    });
+
+    simList.addEventListener('change', async event => {
+        const toggle = event.target.closest('input[data-stream-toggle]');
+        if (!toggle) return;
+        const name = decodeURIComponent(toggle.dataset.streamToggle);
+        toggle.disabled = true;
+        try {
+            await setStreamEnabled(name, toggle.checked);
+        } catch (error) {
+            toggle.checked = !toggle.checked;
+            toggle.disabled = false;
+            setStatus(error.message, true);
+        }
     });
 
     consumerSummaryCard.addEventListener('click', event => {
@@ -4442,6 +5873,9 @@
     resourcePopoverClose.addEventListener('click', closeResourcePopover);
 
     document.addEventListener('click', event => {
+        if (!selectPopover.hidden && !selectPopover.contains(event.target) && !activeCustomSelect?.button.contains(event.target)) {
+            closeCustomSelect();
+        }
         if (!consumerPopover.hidden && !consumerPopover.contains(event.target) && !consumerSummaryCard.contains(event.target)) {
             closeConsumerPopover();
         }
@@ -4451,11 +5885,13 @@
     });
 
     window.addEventListener('resize', () => {
+        closeCustomSelect();
         if (!consumerPopover.hidden) positionConsumerPopover();
         if (!resourcePopover.hidden) positionResourcePopover();
     });
 
     window.addEventListener('scroll', () => {
+        closeCustomSelect();
         if (!consumerPopover.hidden) positionConsumerPopover();
         if (!resourcePopover.hidden) positionResourcePopover();
     }, true);
@@ -4480,6 +5916,12 @@
         const url = new URL(baseURL(meta.streams_api));
         url.searchParams.set('name', name);
         url.searchParams.append('src', source);
+        const onvifQualities = sourceMode === 'rtsp' ? ['original'] : selectedONVIFQualityValues();
+        for (const quality of onvifQualities) {
+            url.searchParams.append('onvif_quality', quality);
+        }
+        url.searchParams.set('onvif_custom_width', form.elements.custom_width.value.trim());
+        url.searchParams.set('onvif_custom_height', form.elements.custom_height.value.trim());
 
         try {
             const response = await fetch(url, {method: 'PUT'});
@@ -4521,20 +5963,6 @@
             return;
         }
 
-        const toggle = event.target.closest('input[data-stream-toggle]');
-        if (toggle) {
-            const name = decodeURIComponent(toggle.dataset.streamToggle);
-            toggle.disabled = true;
-            try {
-                await setStreamEnabled(name, toggle.checked);
-            } catch (error) {
-                toggle.checked = !toggle.checked;
-                toggle.disabled = false;
-                setStatus(error.message, true);
-            }
-            return;
-        }
-
         const deleteButton = event.target.closest('button[data-delete]');
         if (!deleteButton) return;
         try {
@@ -4548,11 +5976,17 @@
         resetFormState();
         closeModal();
         closeONVIFConfig();
+        showSavedToast();
+        enhanceCustomSelect(streamSort, {minWidth: 178});
+        enhanceCustomSelect(eventTemplatePreset, {minWidth: 240});
+        enhanceCustomSelect(form.elements.video, {minWidth: 180});
+        enhanceCustomSelect(form.elements.audio, {minWidth: 180});
         updateHighlightLabel('');
         const savedSort = localStorage.getItem('go2rtc-simulate-sort');
         if ([...streamSort.options].some(option => option.value === savedSort)) {
             streamSort.value = savedSort;
         }
+        syncCustomSelect(streamSort);
         await loadMeta();
         await refreshRuntimeState();
         startStreamAutoRefresh();

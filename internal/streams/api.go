@@ -3,8 +3,10 @@ package streams
 import (
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"os"
 	"sort"
+	"strings"
 
 	"github.com/AlexxIT/go2rtc/internal/api"
 	"github.com/AlexxIT/go2rtc/internal/app"
@@ -13,6 +15,11 @@ import (
 	"github.com/AlexxIT/go2rtc/pkg/probe"
 	"github.com/AlexxIT/go2rtc/pkg/yaml"
 )
+
+type onvifStreamQuality struct {
+	Width  int `yaml:"width"`
+	Height int `yaml:"height"`
+}
 
 func apiStreams(w http.ResponseWriter, r *http.Request) {
 	w = creds.SecretResponse(w)
@@ -69,6 +76,10 @@ func apiStreams(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if err := app.PatchConfig([]string{"streams", name}, sources); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if err := patchONVIFStreamQualities(name, query); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -134,8 +145,74 @@ func apiStreams(w http.ResponseWriter, r *http.Request) {
 		sort.Strings(disabledNames)
 		if err := app.PatchConfig([]string{"simulate", "disabled_streams"}, disabledNames); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if err := patchConfigIgnoreMissingPath([]string{"simulate", "onvif_quality", src}, nil); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if err := patchConfigIgnoreMissingPath([]string{"simulate", "onvif_qualities", src}, nil); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
 	}
+}
+
+func patchONVIFStreamQualities(name string, query url.Values) error {
+	values, ok := query["onvif_quality"]
+	if !ok {
+		return nil
+	}
+
+	qualities := make([]onvifStreamQuality, 0, len(values))
+	seen := map[onvifStreamQuality]bool{}
+	for _, item := range values {
+		var quality onvifStreamQuality
+		switch item {
+		case "", "original":
+			quality = onvifStreamQuality{}
+		case "custom":
+			quality = onvifStreamQuality{
+				Width:  core.Atoi(query.Get("onvif_custom_width")),
+				Height: core.Atoi(query.Get("onvif_custom_height")),
+			}
+		default:
+			quality = onvifStreamQuality{Height: core.Atoi(item)}
+		}
+		if quality.Width < 0 || quality.Height < 0 {
+			continue
+		}
+		if seen[quality] {
+			continue
+		}
+		seen[quality] = true
+		qualities = append(qualities, quality)
+	}
+	var value any = qualities
+	if len(qualities) == 0 {
+		value = nil
+	}
+	if err := app.PatchConfig([]string{"simulate", "onvif_qualities", name}, value); err != nil {
+		if value != nil && isYAMLPathNotExist(err) {
+			if err = app.PatchConfig([]string{"simulate", "onvif_qualities"}, map[string][]onvifStreamQuality{name: qualities}); err != nil {
+				return err
+			}
+			return patchConfigIgnoreMissingPath([]string{"simulate", "onvif_quality", name}, nil)
+		}
+		return err
+	}
+	return patchConfigIgnoreMissingPath([]string{"simulate", "onvif_quality", name}, nil)
+}
+
+func patchConfigIgnoreMissingPath(path []string, value any) error {
+	err := app.PatchConfig(path, value)
+	if err != nil && value == nil && isYAMLPathNotExist(err) {
+		return nil
+	}
+	return err
+}
+
+func isYAMLPathNotExist(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "yaml: path not exist")
 }
 
 type streamStateRequest struct {

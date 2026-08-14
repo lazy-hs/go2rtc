@@ -5,6 +5,7 @@ import (
 	"io"
 	"net"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/AlexxIT/go2rtc/internal/app"
@@ -179,6 +180,11 @@ func tcpHandler(conn *rtsp.Conn) {
 			conn.SessionName = app.UserAgent
 
 			query := conn.URL.Query()
+			if stream = onvifQualityStream(name, query, stream); stream == nil {
+				return
+			}
+			query.Del("onvif_width")
+			query.Del("onvif_height")
 			conn.Medias = ParseQuery(query)
 			if conn.Medias == nil {
 				for _, media := range defaultMedias {
@@ -285,6 +291,24 @@ func tcpHandler(conn *rtsp.Conn) {
 	}
 
 	_ = conn.Close()
+}
+
+func onvifQualityStream(name string, query url.Values, fallback *streams.Stream) *streams.Stream {
+	width := core.Atoi(query.Get("onvif_width"))
+	height := core.Atoi(query.Get("onvif_height"))
+	if width <= 0 && height <= 0 {
+		return fallback
+	}
+
+	params := []string{"video=h264", "audio=copy"}
+	if width > 0 {
+		params = append(params, "width="+strconv.Itoa(width))
+	}
+	if height > 0 {
+		params = append(params, "height="+strconv.Itoa(height))
+	}
+	stream := streams.NewStream([]string{"ffmpeg:" + name + "#" + strings.Join(params, "#")})
+	return stream
 }
 
 func ParseQuery(query map[string][]string) []*core.Media {

@@ -22,6 +22,16 @@ func TestPatch(t *testing.T) {
 			expect: "streams:\n  camera1: val1\n",
 		},
 		{
+			name: "replace top level key",
+			src:  "event:\n  interval: 1m\n  templates:\n    #old\n    - topic: old\n  #misindented but still inside event\n    - topic: old2\nstreams:\n  camera1: url1\n",
+			path: []string{"event"},
+			value: map[string]any{
+				"interval":  "30s",
+				"templates": []map[string]string{{"topic": "new"}},
+			},
+			expect: "event:\n  interval: 30s\n  templates:\n    - topic: new\nstreams:\n  camera1: url1\n",
+		},
+		{
 			name:   "empty main key",
 			src:    "#dummy",
 			path:   []string{"streams", "camera1"},

@@ -67,6 +67,41 @@ func TestConfiguredDisabledStreamsFromFile(t *testing.T) {
 	require.Equal(t, []string{"camera2", "rtsp-main"}, configuredDisabledStreamsFromFile(configPath))
 }
 
+func TestConfiguredONVIFQualitiesFromFile(t *testing.T) {
+	configPath := filepath.Join(t.TempDir(), "go2rtc.yaml")
+	require.NoError(t, os.WriteFile(configPath, []byte(`simulate:
+  onvif_qualities:
+    camera1:
+      - {}
+      - height: 720
+    camera2:
+      - width: 1280
+        height: 720
+    empty:
+      []
+`), 0644))
+
+	qualities := configuredONVIFQualitiesFromFile(configPath)
+	require.Equal(t, []simulateONVIFStreamQuality{{}, {Height: 720}}, qualities["camera1"])
+	require.Equal(t, []simulateONVIFStreamQuality{{Width: 1280, Height: 720}}, qualities["camera2"])
+	require.NotContains(t, qualities, "empty")
+}
+
+func TestConfiguredONVIFQualitiesFromFileLegacy(t *testing.T) {
+	configPath := filepath.Join(t.TempDir(), "go2rtc.yaml")
+	require.NoError(t, os.WriteFile(configPath, []byte(`simulate:
+  onvif_quality:
+    camera1:
+      height: 720
+    empty:
+      height: 0
+`), 0644))
+
+	qualities := configuredONVIFQualitiesFromFile(configPath)
+	require.Equal(t, []simulateONVIFStreamQuality{{Height: 720}}, qualities["camera1"])
+	require.NotContains(t, qualities, "empty")
+}
+
 func TestSimulateHandlerUsesConfiguredRTSPPort(t *testing.T) {
 	oldConfigPath := app.ConfigPath
 	oldRTSP, hadRTSP := app.Info["rtsp"]

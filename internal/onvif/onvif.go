@@ -16,8 +16,19 @@ import (
 	"github.com/AlexxIT/go2rtc/internal/streams"
 	"github.com/AlexxIT/go2rtc/pkg/core"
 	"github.com/AlexxIT/go2rtc/pkg/onvif"
+	"github.com/AlexxIT/go2rtc/pkg/yaml"
 	"github.com/rs/zerolog"
 )
+
+type onvifStreamQuality struct {
+	Width  int `yaml:"width"`
+	Height int `yaml:"height"`
+}
+
+type rtspAuthConfig struct {
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+}
 
 func Init() {
 	log = app.GetLogger("onvif")
@@ -167,11 +178,15 @@ func onvifDeviceService(w http.ResponseWriter, r *http.Request) {
 
 	case onvif.MediaGetProfiles:
 		// important for Hass: H264 codec, width, height
-		b = onvif.GetProfilesResponse(streams.GetAllNames())
+		b = onvif.GetProfilesResponseWithProfiles(configuredONVIFProfiles(streams.GetAllNames()))
 
 	case onvif.MediaGetProfile:
 		token := onvif.FindTagValue(b, "ProfileToken")
-		b = onvif.GetProfileResponse(token)
+		if profile, ok := configuredONVIFProfile(token); ok {
+			b = onvif.GetProfileResponseWithProfile(profile)
+		} else {
+			b = onvif.GetProfileResponse(token)
+		}
 
 	case onvif.MediaGetVideoSourceConfigurations:
 		// important for Happytime Onvif Client
@@ -187,11 +202,22 @@ func onvifDeviceService(w http.ResponseWriter, r *http.Request) {
 			host = r.Host // in case of Host without port
 		}
 
-		uri := "rtsp://" + host + ":" + rtsp.Port + "/" + onvif.FindTagValue(b, "ProfileToken")
+		token := onvif.FindTagValue(b, "ProfileToken")
+		profile, ok := configuredONVIFProfile(token)
+		if !ok {
+			profile = onvif.Profile{Name: token, Token: token, SourceToken: token}
+		}
+		uri := "rtsp://" + host + ":" + rtsp.Port + "/" + profile.SourceToken
+		uri = applyRTSPAuth(uri, configuredRTSPAuth())
+		uri = applyONVIFStreamQuality(uri, onvifStreamQuality{Width: profile.Width, Height: profile.Height})
 		b = onvif.GetStreamUriResponse(uri)
 
 	case onvif.MediaGetSnapshotUri:
-		uri := "http://" + r.Host + "/api/frame.jpeg?src=" + onvif.FindTagValue(b, "ProfileToken")
+		token := onvif.FindTagValue(b, "ProfileToken")
+		if profile, ok := configuredONVIFProfile(token); ok {
+			token = profile.SourceToken
+		}
+		uri := "http://" + r.Host + "/api/frame.jpeg?src=" + token
 		b = onvif.GetSnapshotUriResponse(uri)
 
 	default:
@@ -204,6 +230,157 @@ func onvifDeviceService(w http.ResponseWriter, r *http.Request) {
 	log.Trace().Msgf("[onvif] server response:\n%s", b)
 
 	writeSOAPResponse(w, b)
+}
+
+func configuredONVIFProfiles(names []string) []onvif.Profile {
+	profiles := make([]onvif.Profile, 0, len(names))
+	for _, name := range names {
+		qualities := configuredONVIFStreamQualities(name)
+		if len(qualities) == 0 {
+			qualities = []onvifStreamQuality{{}}
+		}
+		seen := map[string]bool{}
+		for _, quality := range qualities {
+			profile := onvifProfileForQuality(name, quality)
+			if seen[profile.Token] {
+				continue
+			}
+			seen[profile.Token] = true
+			profiles = append(profiles, profile)
+		}
+	}
+	return profiles
+}
+
+func configuredONVIFProfile(token string) (onvif.Profile, bool) {
+	for _, profile := range configuredONVIFProfiles(streams.GetAllNames()) {
+		if profile.Token == token {
+			return profile, true
+		}
+	}
+	return onvif.Profile{}, false
+}
+
+func configuredONVIFStreamQualities(name string) []onvifStreamQuality {
+	if app.ConfigPath == "" || name == "" {
+		return nil
+	}
+	data, err := os.ReadFile(app.ConfigPath)
+	if err != nil {
+		return nil
+	}
+	var cfg struct {
+		Simulate struct {
+			ONVIFQuality   map[string]onvifStreamQuality   `yaml:"onvif_quality"`
+			ONVIFQualities map[string][]onvifStreamQuality `yaml:"onvif_qualities"`
+		} `yaml:"simulate"`
+	}
+	if yaml.Unmarshal(data, &cfg) != nil {
+		return nil
+	}
+	if qualities, ok := cfg.Simulate.ONVIFQualities[name]; ok {
+		return qualities
+	}
+	if quality, ok := cfg.Simulate.ONVIFQuality[name]; ok {
+		return []onvifStreamQuality{quality}
+	}
+	return nil
+}
+
+func onvifProfileForQuality(name string, quality onvifStreamQuality) onvif.Profile {
+	if quality.Width <= 0 && quality.Height <= 0 {
+		return onvif.Profile{Name: name, Token: name, SourceToken: name}
+	}
+	label := onvifQualityLabel(quality)
+	return onvif.Profile{
+		Name:        name + " " + label,
+		Token:       name + "__onvif_" + onvifQualityToken(quality),
+		SourceToken: name,
+		Width:       quality.Width,
+		Height:      quality.Height,
+	}
+}
+
+func onvifQualityLabel(quality onvifStreamQuality) string {
+	if quality.Width > 0 && quality.Height > 0 {
+		return strconv.Itoa(quality.Width) + "x" + strconv.Itoa(quality.Height)
+	}
+	if quality.Height > 0 {
+		return strconv.Itoa(quality.Height) + "p"
+	}
+	if quality.Width > 0 {
+		return strconv.Itoa(quality.Width) + "w"
+	}
+	return "原始"
+}
+
+func onvifQualityToken(quality onvifStreamQuality) string {
+	label := strings.ToLower(onvifQualityLabel(quality))
+	label = strings.NewReplacer(" ", "_", "×", "x").Replace(label)
+	var b strings.Builder
+	for _, r := range label {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '_' || r == '-' {
+			b.WriteRune(r)
+		}
+	}
+	if b.Len() == 0 {
+		return "original"
+	}
+	return b.String()
+}
+
+func configuredRTSPAuth() rtspAuthConfig {
+	if app.ConfigPath == "" {
+		return rtspAuthConfig{}
+	}
+	data, err := os.ReadFile(app.ConfigPath)
+	if err != nil {
+		return rtspAuthConfig{}
+	}
+	var cfg struct {
+		RTSP rtspAuthConfig `yaml:"rtsp"`
+	}
+	if yaml.Unmarshal(data, &cfg) != nil {
+		return rtspAuthConfig{}
+	}
+	return cfg.RTSP
+}
+
+func applyRTSPAuth(rawURL string, auth rtspAuthConfig) string {
+	if strings.TrimSpace(auth.Username) == "" {
+		return rawURL
+	}
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return rawURL
+	}
+	username := strings.TrimSpace(auth.Username)
+	password := strings.TrimSpace(auth.Password)
+	if password == "" {
+		u.User = url.User(username)
+	} else {
+		u.User = url.UserPassword(username, password)
+	}
+	return u.String()
+}
+
+func applyONVIFStreamQuality(rawURL string, quality onvifStreamQuality) string {
+	if quality.Width <= 0 && quality.Height <= 0 {
+		return rawURL
+	}
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return rawURL
+	}
+	query := u.Query()
+	if quality.Width > 0 {
+		query.Set("onvif_width", strconv.Itoa(quality.Width))
+	}
+	if quality.Height > 0 {
+		query.Set("onvif_height", strconv.Itoa(quality.Height))
+	}
+	u.RawQuery = query.Encode()
+	return u.String()
 }
 
 func writeSOAPResponse(w http.ResponseWriter, b []byte) {

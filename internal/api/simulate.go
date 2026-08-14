@@ -15,24 +15,31 @@ import (
 )
 
 type simulateInfo struct {
-	BasePath          string              `json:"base_path"`
-	ConfiguredOrder   []string            `json:"configured_order"`
-	ConfiguredStreams map[string][]string `json:"configured_streams"`
-	DevicesAPI        string              `json:"devices_api"`
-	FilesAPI          string              `json:"files_api"`
-	Host              string              `json:"host"`
-	LogAPI            string              `json:"log_api"`
-	MetricsAPI        string              `json:"metrics_api"`
-	ONVIFConfigAPI    string              `json:"onvif_config_api"`
-	ONVIFPath         string              `json:"onvif_path"`
-	RTSPPath          string              `json:"rtsp_path"`
-	RTSPPort          string              `json:"rtsp_port"`
-	StreamStateAPI    string              `json:"stream_state_api"`
-	EventsAPI         string              `json:"events_api"`
-	DisabledStreams   []string            `json:"disabled_streams"`
-	StreamsAPI        string              `json:"streams_api"`
-	UploadAPI         string              `json:"upload_api"`
-	UploadDir         string              `json:"upload_dir"`
+	BasePath          string                                  `json:"base_path"`
+	ConfiguredOrder   []string                                `json:"configured_order"`
+	ConfiguredStreams map[string][]string                     `json:"configured_streams"`
+	DevicesAPI        string                                  `json:"devices_api"`
+	FilesAPI          string                                  `json:"files_api"`
+	Host              string                                  `json:"host"`
+	LogAPI            string                                  `json:"log_api"`
+	MetricsAPI        string                                  `json:"metrics_api"`
+	ONVIFConfigAPI    string                                  `json:"onvif_config_api"`
+	ONVIFPath         string                                  `json:"onvif_path"`
+	RTSPPath          string                                  `json:"rtsp_path"`
+	RTSPPort          string                                  `json:"rtsp_port"`
+	StreamStateAPI    string                                  `json:"stream_state_api"`
+	EventsAPI         string                                  `json:"events_api"`
+	DisabledStreams   []string                                `json:"disabled_streams"`
+	ONVIFQuality      map[string]simulateONVIFStreamQuality   `json:"onvif_quality,omitempty"`
+	ONVIFQualities    map[string][]simulateONVIFStreamQuality `json:"onvif_qualities"`
+	StreamsAPI        string                                  `json:"streams_api"`
+	UploadAPI         string                                  `json:"upload_api"`
+	UploadDir         string                                  `json:"upload_dir"`
+}
+
+type simulateONVIFStreamQuality struct {
+	Width  int `json:"width" yaml:"width"`
+	Height int `json:"height" yaml:"height"`
 }
 
 func simulateHandler(w http.ResponseWriter, r *http.Request) {
@@ -53,6 +60,7 @@ func simulateHandler(w http.ResponseWriter, r *http.Request) {
 		StreamStateAPI:    simulateEndpoint("api/streams/state"),
 		EventsAPI:         simulateEndpoint("api/simulate/events"),
 		DisabledStreams:   configuredDisabledStreamsFromFile(app.ConfigPath),
+		ONVIFQualities:    configuredONVIFQualitiesFromFile(app.ConfigPath),
 		StreamsAPI:        simulateEndpoint("api/streams"),
 		UploadAPI:         simulateEndpoint("api/simulate/upload"),
 		UploadDir:         filepath.ToSlash(simulateUploadDir),
@@ -79,6 +87,39 @@ func configuredDisabledStreamsFromFile(configPath string) []string {
 	}
 
 	return cfg.Simulate.DisabledStreams
+}
+
+func configuredONVIFQualitiesFromFile(configPath string) map[string][]simulateONVIFStreamQuality {
+	qualities := map[string][]simulateONVIFStreamQuality{}
+	if configPath == "" {
+		return qualities
+	}
+
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		return qualities
+	}
+
+	var cfg struct {
+		Simulate struct {
+			ONVIFQuality   map[string]simulateONVIFStreamQuality   `yaml:"onvif_quality"`
+			ONVIFQualities map[string][]simulateONVIFStreamQuality `yaml:"onvif_qualities"`
+		} `yaml:"simulate"`
+	}
+	if yaml.Unmarshal(data, &cfg) != nil {
+		return qualities
+	}
+	for name, items := range cfg.Simulate.ONVIFQualities {
+		if len(items) > 0 {
+			qualities[name] = items
+		}
+	}
+	for name, quality := range cfg.Simulate.ONVIFQuality {
+		if _, ok := qualities[name]; !ok && (quality.Width > 0 || quality.Height > 0) {
+			qualities[name] = []simulateONVIFStreamQuality{quality}
+		}
+	}
+	return qualities
 }
 
 func simulateRTSPPort(configPath string) string {
@@ -126,18 +167,27 @@ func simulateListenPort(listen string) string {
 	if listen == "" {
 		return ""
 	}
+	return strconv.Itoa(simulateListenPortWithDefault(listen, 8554))
+}
+
+func simulateListenPortWithDefault(listen string, defaultPort int) int {
+	if listen == "" {
+		return 0
+	}
 	if _, port, err := net.SplitHostPort(listen); err == nil {
-		return port
+		if value, err := strconv.Atoi(port); err == nil && value > 0 && value <= 65535 {
+			return value
+		}
 	}
 	if port := strings.TrimPrefix(listen, ":"); port != listen {
 		if value, err := strconv.Atoi(port); err == nil && value > 0 && value <= 65535 {
-			return port
+			return value
 		}
 	}
 	if value, err := strconv.Atoi(listen); err == nil && value > 0 && value <= 65535 {
-		return listen
+		return value
 	}
-	return "8554"
+	return defaultPort
 }
 
 func simulateEndpoint(path string) string {

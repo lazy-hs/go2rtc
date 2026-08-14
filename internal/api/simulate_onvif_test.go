@@ -22,6 +22,10 @@ func TestSimulateONVIFConfigHandlerGet(t *testing.T) {
   firmware: 2.1.0
   serial: CAM-001
   hardware: Virtual IPC
+api:
+  listen: ":2984"
+rtsp:
+  listen: ":9554"
 `)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/simulate/onvif", nil)
@@ -34,6 +38,8 @@ func TestSimulateONVIFConfigHandlerGet(t *testing.T) {
 	require.Equal(t, "Warehouse Camera", response.Config.Name)
 	require.Equal(t, "HuangSheng", response.Config.Manufacturer)
 	require.Equal(t, "Virtual IPC-9000", response.Effective.Model)
+	require.Equal(t, 2984, response.Config.ServicePort)
+	require.Equal(t, 9554, response.Config.RTSPPort)
 	require.FileExists(t, configPath)
 }
 
@@ -43,9 +49,13 @@ onvif:
   name: Old Camera
   manufacturer: Old Vendor
   custom: keep-me
+api:
+  listen: ":2984"
+rtsp:
+  listen: ":9554"
 `)
 
-	body := bytes.NewBufferString(`{"name":"仓库模拟摄像机","manufacturer":"HuangSheng","model":"Virtual IPC-9000","firmware":"2.1.0","serial":"CAM-001","hardware":"Virtual IPC"}`)
+	body := bytes.NewBufferString(`{"name":"仓库模拟摄像机","manufacturer":"HuangSheng","model":"Virtual IPC-9000","firmware":"2.1.0","serial":"CAM-001","hardware":"Virtual IPC","service_port":3984,"rtsp_port":10554}`)
 	req := httptest.NewRequest(http.MethodPut, "/api/simulate/onvif", body)
 	res := httptest.NewRecorder()
 	simulateONVIFConfigHandler(res, req)
@@ -57,12 +67,16 @@ onvif:
 
 	var document struct {
 		ONVIF map[string]string `yaml:"onvif"`
+		API   map[string]string `yaml:"api"`
+		RTSP  map[string]string `yaml:"rtsp"`
 	}
 	require.NoError(t, yaml.Unmarshal(data, &document))
 	require.Equal(t, "仓库模拟摄像机", document.ONVIF["name"])
 	require.Equal(t, "HuangSheng", document.ONVIF["manufacturer"])
 	require.Equal(t, "Virtual IPC-9000", document.ONVIF["model"])
 	require.Equal(t, "keep-me", document.ONVIF["custom"])
+	require.Equal(t, ":3984", document.API["listen"])
+	require.Equal(t, ":10554", document.RTSP["listen"])
 }
 
 func TestSimulateONVIFConfigHandlerRemovesEmptyOverride(t *testing.T) {

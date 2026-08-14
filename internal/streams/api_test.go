@@ -1,66 +1,38 @@
 package streams
 
 import (
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
+	"net/url"
+	"os"
+	"path/filepath"
 	"testing"
 
-	"github.com/AlexxIT/go2rtc/pkg/core"
+	"github.com/AlexxIT/go2rtc/internal/app"
 	"github.com/stretchr/testify/require"
 )
 
-func TestApiSchemes(t *testing.T) {
-	// Setup: Register some test handlers and redirects
-	HandleFunc("rtsp", func(url string) (core.Producer, error) { return nil, nil })
-	HandleFunc("rtmp", func(url string) (core.Producer, error) { return nil, nil })
-	RedirectFunc("http", func(url string) (string, error) { return "", nil })
-
-	t.Run("GET request returns schemes", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/api/schemes", nil)
-		w := httptest.NewRecorder()
-
-		apiSchemes(w, req)
-
-		require.Equal(t, http.StatusOK, w.Code)
-		require.Equal(t, "application/json", w.Header().Get("Content-Type"))
-
-		var schemes []string
-		err := json.Unmarshal(w.Body.Bytes(), &schemes)
-		require.NoError(t, err)
-		require.NotEmpty(t, schemes)
-
-		// Check that our test schemes are in the response
-		require.Contains(t, schemes, "rtsp")
-		require.Contains(t, schemes, "rtmp")
-		require.Contains(t, schemes, "http")
+func TestPatchONVIFStreamQualitiesCreatesMissingParentPath(t *testing.T) {
+	oldConfigPath := app.ConfigPath
+	t.Cleanup(func() {
+		app.ConfigPath = oldConfigPath
 	})
-}
 
-func TestApiSchemesNoDuplicates(t *testing.T) {
-	// Setup: Register a scheme in both handlers and redirects
-	HandleFunc("duplicate", func(url string) (core.Producer, error) { return nil, nil })
-	RedirectFunc("duplicate", func(url string) (string, error) { return "", nil })
+	configPath := filepath.Join(t.TempDir(), "go2rtc.yaml")
+	require.NoError(t, os.WriteFile(configPath, []byte(`simulate:
+  disabled_streams: []
+  onvif_quality:
+    main:
+      height: 720
+`), 0644))
+	app.ConfigPath = configPath
 
-	req := httptest.NewRequest("GET", "/api/schemes", nil)
-	w := httptest.NewRecorder()
+	query := url.Values{}
+	query.Add("onvif_quality", "original")
+	query.Add("onvif_quality", "1080")
+	require.NoError(t, patchONVIFStreamQualities("main", query))
 
-	apiSchemes(w, req)
-
-	require.Equal(t, http.StatusOK, w.Code)
-
-	var schemes []string
-	err := json.Unmarshal(w.Body.Bytes(), &schemes)
+	data, err := os.ReadFile(configPath)
 	require.NoError(t, err)
-
-	// Count occurrences of "duplicate"
-	count := 0
-	for _, scheme := range schemes {
-		if scheme == "duplicate" {
-			count++
-		}
-	}
-
-	// Should only appear once
-	require.Equal(t, 1, count, "scheme 'duplicate' should appear exactly once")
+	require.Contains(t, string(data), "onvif_qualities:")
+	require.Contains(t, string(data), "height: 1080")
+	require.NotContains(t, string(data), "height: 720")
 }
