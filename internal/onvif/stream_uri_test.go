@@ -32,5 +32,7 @@ func TestONVIFProfileForQuality(t *testing.T) {
 	require.Equal(t, "camera1 720p", profile.Name)
 	require.Equal(t, "camera1__onvif_720p", profile.Token)
 	require.Equal(t, "camera1", profile.SourceToken)
+	require.Equal(t, 1280, profile.Width)
 	require.Equal(t, 720, profile.Height)
+	require.Equal(t, "camera1_720p", rtspPathForONVIFProfile(profile))
 }

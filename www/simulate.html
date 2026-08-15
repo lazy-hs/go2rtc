@@ -318,6 +318,57 @@
             white-space: nowrap;
         }
 
+        .ops-status-combo {
+            display: grid;
+            grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .ops-status-pill {
+            min-width: 0;
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            border-radius: 14px;
+            background: rgba(2, 6, 23, 0.2);
+            padding: 10px 12px;
+        }
+
+        .ops-status-pill strong {
+            display: block;
+            color: white;
+            font-size: 12px;
+            line-height: 1.2;
+        }
+
+        .ops-status-pill small {
+            display: block;
+            margin-top: 5px;
+            color: rgba(219, 234, 254, 0.7);
+            font-size: 11px;
+            line-height: 1.45;
+        }
+
+        .ops-status-pill.is-disabled {
+            border-color: rgba(251, 191, 36, 0.25);
+            background: rgba(251, 191, 36, 0.07);
+        }
+
+        .ops-status-pill.is-consumers {
+            border-color: rgba(34, 211, 238, 0.22);
+            background: rgba(8, 145, 178, 0.08);
+        }
+
+        .ops-status-pill .ops-consumer-list {
+            margin-top: 6px;
+            max-height: 78px;
+        }
+
+        .ops-consumer-empty {
+            color: rgba(219, 234, 254, 0.62);
+            font-size: 12px;
+            line-height: 1.45;
+        }
+
         .ops-dot {
             margin-top: 4px;
             width: 10px;
@@ -406,7 +457,8 @@
         }
 
         .consumer-popover,
-        .resource-popover {
+        .resource-popover,
+        .quality-popover {
             position: fixed;
             z-index: 30;
             width: min(320px, calc(100vw - 32px));
@@ -418,12 +470,14 @@
         }
 
         .consumer-popover[hidden],
-        .resource-popover[hidden] {
+        .resource-popover[hidden],
+        .quality-popover[hidden] {
             display: none;
         }
 
         .consumer-popover-head,
-        .resource-popover-head {
+        .resource-popover-head,
+        .quality-popover-head {
             display: flex;
             align-items: flex-start;
             justify-content: space-between;
@@ -432,12 +486,14 @@
         }
 
         .consumer-popover-title,
-        .resource-popover-title {
+        .resource-popover-title,
+        .quality-popover-title {
             min-width: 0;
         }
 
         .consumer-popover-title strong,
-        .resource-popover-title strong {
+        .resource-popover-title strong,
+        .quality-popover-title strong {
             display: block;
             color: white;
             font-size: 14px;
@@ -445,7 +501,8 @@
         }
 
         .consumer-popover-title span,
-        .resource-popover-title span {
+        .resource-popover-title span,
+        .quality-popover-title span {
             display: block;
             margin-top: 3px;
             color: var(--text-muted);
@@ -453,7 +510,8 @@
         }
 
         .consumer-popover-close,
-        .resource-popover-close {
+        .resource-popover-close,
+        .quality-popover-close {
             width: 28px;
             height: 28px;
             padding: 0;
@@ -464,11 +522,40 @@
         }
 
         .consumer-ip-list,
-        .resource-process-list {
+        .resource-process-list,
+        .quality-url-list {
             display: grid;
             gap: 6px;
             max-height: 220px;
             overflow: auto;
+        }
+
+        .quality-url-row {
+            display: grid;
+            grid-template-columns: minmax(58px, auto) minmax(0, 1fr) auto;
+            gap: 8px;
+            align-items: center;
+            padding: 8px 9px;
+            border: 1px solid rgba(34, 211, 238, 0.10);
+            border-radius: 10px;
+            background: rgba(2, 6, 23, 0.26);
+        }
+
+        .quality-url-row strong {
+            color: #e0f2fe;
+            font-size: 12px;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .quality-url-row code {
+            min-width: 0;
+            overflow: hidden;
+            color: #dbeafe;
+            font-family: Consolas, Monaco, monospace;
+            font-size: 11px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .consumer-ip-row,
@@ -1107,6 +1194,11 @@
             gap: 4px;
         }
 
+        .task-card.is-compact {
+            justify-content: center;
+            min-height: 50px;
+        }
+
         .mini-item strong,
         .sim-link strong,
         .task-card strong {
@@ -1406,6 +1498,11 @@
         .sim-card .task-card {
             padding: 9px 11px;
             border-radius: 11px;
+        }
+
+        .sim-card .task-card.is-compact {
+            padding-top: 8px;
+            padding-bottom: 8px;
         }
 
         .sim-card .task-card strong {
@@ -2157,6 +2254,68 @@
             background: rgba(15, 23, 42, 0.95);
         }
 
+        .password-field {
+            position: relative;
+            display: grid;
+        }
+
+        .modal-form .password-field input {
+            padding-right: 46px;
+        }
+
+        .password-toggle {
+            position: absolute;
+            top: 50%;
+            right: 8px;
+            width: 30px;
+            height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            border: 1px solid transparent;
+            border-radius: 9px;
+            color: rgba(203, 213, 225, 0.76);
+            background: transparent;
+            transform: translateY(-50%);
+            cursor: pointer;
+        }
+
+        .password-toggle:hover {
+            color: #e0f2fe;
+            background: rgba(34, 211, 238, 0.08);
+            border-color: rgba(34, 211, 238, 0.18);
+        }
+
+        .password-toggle:focus-visible {
+            outline: none;
+            color: #e0f2fe;
+            border-color: rgba(34, 211, 238, 0.45);
+            box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.14);
+        }
+
+        .password-toggle svg {
+            width: 17px;
+            height: 17px;
+            stroke: currentColor;
+            stroke-width: 1.9;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .password-toggle .eye-off {
+            display: none;
+        }
+
+        .password-toggle[aria-pressed="true"] .eye-on {
+            display: none;
+        }
+
+        .password-toggle[aria-pressed="true"] .eye-off {
+            display: block;
+        }
+
         .modal-form .toggle-row {
             border-style: solid;
             border-color: rgba(71, 85, 105, 0.55);
@@ -2670,6 +2829,10 @@
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
 
+            .ops-status-combo {
+                grid-template-columns: 1fr;
+            }
+
             .access-card .mini-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
@@ -2853,9 +3016,9 @@
                             <small id="summary-memory-note">进程树总计</small>
                         </button>
                         <div class="ops-metric">
-                            <span>协程</span>
+                            <span>Go 协程</span>
                             <strong id="summary-goroutines">0</strong>
-                            <small>运行中的 Go 协程</small>
+                            <small>go2rtc 内部并发任务</small>
                         </div>
                         <div class="ops-metric">
                             <span>运行时长</span>
@@ -2886,6 +3049,16 @@
                     <button class="resource-popover-close ghost" id="resource-popover-close" type="button" aria-label="关闭资源占用明细">×</button>
                 </div>
                 <div class="resource-process-list" id="resource-process-list"></div>
+            </div>
+            <div class="quality-popover" id="quality-popover" role="dialog" aria-label="RTSP 清晰度地址" hidden>
+                <div class="quality-popover-head">
+                    <div class="quality-popover-title">
+                        <strong id="quality-popover-title">RTSP 清晰度地址</strong>
+                        <span id="quality-popover-subtitle">暂无清晰度档位</span>
+                    </div>
+                    <button class="quality-popover-close ghost" id="quality-popover-close" type="button" aria-label="关闭 RTSP 清晰度地址">×</button>
+                </div>
+                <div class="quality-url-list" id="quality-url-list"></div>
             </div>
 
             <div class="dashboard">
@@ -3249,7 +3422,13 @@
                         </div>
                         <div class="field">
                             <label for="onvif-rtsp-password">视频流访问密码</label>
-                            <input id="onvif-rtsp-password" name="rtsp_password" type="password" maxlength="256" autocomplete="new-password" placeholder="留空则不鉴权">
+                            <div class="password-field">
+                                <input id="onvif-rtsp-password" name="rtsp_password" type="password" maxlength="256" autocomplete="new-password" placeholder="留空则不鉴权">
+                                <button class="password-toggle" id="onvif-rtsp-password-toggle" type="button" aria-label="显示视频流访问密码" aria-controls="onvif-rtsp-password" aria-pressed="false" title="显示密码">
+                                    <svg class="eye-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg>
+                                    <svg class="eye-off" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 3 18 18"/><path d="M10.6 10.6A2.5 2.5 0 0 0 12 14.5c.7 0 1.3-.3 1.8-.7"/><path d="M6.4 6.8C3.9 8.5 2.5 12 2.5 12s3.4 6 9.5 6c1.7 0 3.2-.5 4.5-1.2"/><path d="M19.1 15.1c1.5-1.4 2.4-3.1 2.4-3.1S18.1 6 12 6c-.9 0-1.8.1-2.6.4"/></svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div class="helper">端口保存后会写入 api.listen 和 rtsp.listen；视频流访问用户名/密码用于 ONVIF 返回的取流地址和 RTSP 访问鉴权，留空则不启用鉴权。</div>
@@ -3418,7 +3597,12 @@
     const resourcePopoverTitle = document.getElementById('resource-popover-title');
     const resourcePopoverSubtitle = document.getElementById('resource-popover-subtitle');
     const resourceProcessList = document.getElementById('resource-process-list');
-    document.body.append(consumerPopover, resourcePopover);
+    const qualityPopover = document.getElementById('quality-popover');
+    const qualityPopoverClose = document.getElementById('quality-popover-close');
+    const qualityPopoverTitle = document.getElementById('quality-popover-title');
+    const qualityPopoverSubtitle = document.getElementById('quality-popover-subtitle');
+    const qualityURLList = document.getElementById('quality-url-list');
+    document.body.append(consumerPopover, resourcePopover, qualityPopover);
     const streamSort = document.getElementById('stream-sort');
     const modal = document.getElementById('task-modal');
     const openCreateBtn = document.getElementById('open-create');
@@ -3446,6 +3630,8 @@
     const saveONVIFConfigBtn = document.getElementById('save-onvif-config');
     const onvifConfigStatus = document.getElementById('onvif-config-status');
     const onvifConfigFeedback = document.getElementById('onvif-config-feedback');
+    const onvifRTSPPasswordInput = document.getElementById('onvif-rtsp-password');
+    const onvifRTSPPasswordToggle = document.getElementById('onvif-rtsp-password-toggle');
     const openEventConfigBtn = document.getElementById('open-event-config');
     const eventSummaryTitle = document.getElementById('event-summary-title');
     const eventSummaryDetail = document.getElementById('event-summary-detail');
@@ -3499,6 +3685,7 @@
     let latestConsumerSummary = {consumers: 0, ipCount: 0, ipEntries: [], topIPs: []};
     let latestResourceMetrics = {cpu_percent: 0, memory_alloc: 0, process_count: 0, processes: []};
     let activeResourceKind = 'cpu';
+    let activeQualityStreamName = '';
     let processSourceIndex = new Map();
     let eventConfig = {enabled: true, interval: '1m', burst: 10, permanent: true, templates: []};
     let toastTimer = 0;
@@ -3971,6 +4158,47 @@
             return [{width: Number(parsed.customWidth) || 0, height: Number(parsed.customHeight || parsed.quality) || 0}];
         }
         return [{}];
+    }
+
+    function rtspQualityLabel(item = {}) {
+        const width = Number(item.width) || 0;
+        const height = Number(item.height) || 0;
+        if (width > 0 && height > 0) return `${width}×${height}`;
+        if (height > 0) return `${height}p`;
+        if (width > 0) return `${width}w`;
+        return '原始';
+    }
+
+    function rtspQualityToken(item = {}) {
+        const width = Number(item.width) || 0;
+        const height = Number(item.height) || 0;
+        if (width > 0 && height > 0) return `${width}x${height}`;
+        if (height > 0) return `${height}p`;
+        if (width > 0) return `${width}w`;
+        return '';
+    }
+
+    function rtspQualityAlias(name, item = {}) {
+        const token = rtspQualityToken(item);
+        return token ? `${name}_${token}` : name;
+    }
+
+    function rtspQualityURLs(name, parsed = {}) {
+        const items = normalizeONVIFQualityItems(streamONVIFQualities(name, parsed));
+        const rows = [];
+        const seen = new Set();
+        for (const item of items.length ? items : [{}]) {
+            const alias = rtspQualityAlias(name, item);
+            if (seen.has(alias)) continue;
+            seen.add(alias);
+            rows.push({
+                label: rtspQualityLabel(item),
+                alias,
+                url: rtspURL(alias),
+                displayURL: rtspURL(alias, {maskPassword: true}),
+            });
+        }
+        return rows;
     }
 
     function stripRTSPCredentials(value) {
@@ -4520,6 +4748,23 @@
         opsStatusDetail.className = 'ops-status-detail';
     }
 
+    function appendOpsConsumerRows(container, ipEntries) {
+        if (!ipEntries.length) {
+            const empty = document.createElement('div');
+            empty.className = 'ops-consumer-empty';
+            empty.textContent = '暂无消费者 IP 明细';
+            container.appendChild(empty);
+            return;
+        }
+
+        for (const [ip, count] of ipEntries) {
+            const row = document.createElement('div');
+            row.className = 'ops-consumer-row';
+            row.innerHTML = `<code title="${escapeHTML(ip)}">${escapeHTML(ip)}</code><span>${count} 个连接</span>`;
+            container.appendChild(row);
+        }
+    }
+
     function fallbackEventTopicName(topic) {
         const last = String(topic || '').split('/').filter(Boolean).pop();
         return last ? `自定义事件：${last}` : '自定义事件';
@@ -4735,13 +4980,31 @@
         opsStatusTitle.textContent = `${consumerCount} 个消费者`;
         opsStatusDetail.className = 'ops-status-detail ops-consumer-list';
         opsStatusDetail.replaceChildren();
+        appendOpsConsumerRows(opsStatusDetail, ipEntries);
+    }
 
-        for (const [ip, count] of ipEntries) {
-            const row = document.createElement('div');
-            row.className = 'ops-consumer-row';
-            row.innerHTML = `<code title="${escapeHTML(ip)}">${escapeHTML(ip)}</code><span>${count} 个连接</span>`;
-            opsStatusDetail.appendChild(row);
-        }
+    function setOpsDisabledConsumerStatus(disabledCount, consumerCount, ipEntries) {
+        opsStatusDot.className = 'ops-dot is-busy';
+        opsStatusTitle.textContent = `${disabledCount} 路已停用 · ${consumerCount} 个消费者`;
+        opsStatusDetail.className = 'ops-status-detail ops-status-combo';
+        opsStatusDetail.replaceChildren();
+
+        const disabledBlock = document.createElement('div');
+        disabledBlock.className = 'ops-status-pill is-disabled';
+        disabledBlock.innerHTML = `
+            <strong>${disabledCount} 路已停用</strong>
+            <small>配置仍保留，可在任务卡片右下角打开开关恢复推流。</small>
+        `;
+
+        const consumerBlock = document.createElement('div');
+        consumerBlock.className = 'ops-status-pill is-consumers';
+        const consumerList = document.createElement('div');
+        consumerList.className = 'ops-consumer-list';
+        consumerBlock.innerHTML = `<strong>${consumerCount} 个消费者</strong>`;
+        appendOpsConsumerRows(consumerList, ipEntries);
+        consumerBlock.appendChild(consumerList);
+
+        opsStatusDetail.append(disabledBlock, consumerBlock);
     }
 
     function renderMetrics(data) {
@@ -4849,6 +5112,7 @@
 
     function openConsumerPopover() {
         closeResourcePopover();
+        closeQualityPopover();
         renderConsumerPopover();
         consumerPopover.hidden = false;
         consumerSummaryCard.setAttribute('aria-expanded', 'true');
@@ -4940,6 +5204,7 @@
 
     function openResourcePopover(kind) {
         closeConsumerPopover();
+        closeQualityPopover();
         activeResourceKind = kind;
         renderResourcePopover(kind);
         resourcePopover.hidden = false;
@@ -4959,6 +5224,50 @@
             openResourcePopover(kind);
         } else {
             closeResourcePopover();
+        }
+    }
+
+    function renderQualityPopover(name, parsed = {}) {
+        const rows = rtspQualityURLs(name, parsed);
+        qualityPopoverTitle.textContent = `${name} 的 RTSP 地址`;
+        qualityPopoverSubtitle.textContent = rows.length > 1
+            ? `${rows.length} 个清晰度档位，直接复制给 RTSP 客户端`
+            : '仅原始清晰度地址';
+        qualityURLList.replaceChildren();
+
+        for (const row of rows) {
+            const item = document.createElement('div');
+            item.className = 'quality-url-row';
+            item.innerHTML = `
+                <strong>${escapeHTML(row.label)}</strong>
+                <code title="${escapeHTML(row.displayURL)}">${escapeHTML(row.displayURL)}</code>
+                <button class="copy-btn inline" type="button" data-copy="${encodeURIComponent(row.url)}" data-copy-label="${escapeHTML(row.label)} RTSP 地址" aria-label="复制 ${escapeHTML(row.label)} RTSP 地址">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+            `;
+            qualityURLList.appendChild(item);
+        }
+    }
+
+    function positionQualityPopover() {
+        const target = simList.querySelector(`[data-rtsp-quality="${CSS.escape(encodeURIComponent(activeQualityStreamName))}"]`);
+        if (target) positionAnchoredPopover(qualityPopover, target);
+    }
+
+    function openQualityPopover(name, parsed, target) {
+        closeConsumerPopover();
+        closeResourcePopover();
+        activeQualityStreamName = name;
+        renderQualityPopover(name, parsed);
+        qualityPopover.hidden = false;
+        target?.setAttribute('aria-expanded', 'true');
+        positionAnchoredPopover(qualityPopover, target);
+    }
+
+    function closeQualityPopover() {
+        qualityPopover.hidden = true;
+        for (const button of simList.querySelectorAll('[data-rtsp-quality]')) {
+            button.setAttribute('aria-expanded', 'false');
         }
     }
 
@@ -5000,6 +5309,8 @@
 
         if (errorCount > 0) {
             setOpsStatus('error', `发现 ${errorCount} 路异常来源`, '请检查任务卡片里的 Source、上游地址或 FFmpeg 参数。');
+        } else if (disabledCount > 0 && consumerCount > 0) {
+            setOpsDisabledConsumerStatus(disabledCount, consumerCount, ipEntries);
         } else if (disabledCount > 0) {
             setOpsStatus('busy', `${disabledCount} 路已停用`, '配置仍保留，需要时可在任务卡片右下角打开开关恢复推流。');
         } else if (runtimeMissing > 0) {
@@ -5212,6 +5523,13 @@
         onvifConfigStatus.classList.toggle('error', isError);
     }
 
+    function setONVIFPasswordVisible(visible) {
+        onvifRTSPPasswordInput.type = visible ? 'text' : 'password';
+        onvifRTSPPasswordToggle.setAttribute('aria-pressed', visible ? 'true' : 'false');
+        onvifRTSPPasswordToggle.setAttribute('aria-label', visible ? '隐藏视频流访问密码' : '显示视频流访问密码');
+        onvifRTSPPasswordToggle.title = visible ? '隐藏密码' : '显示密码';
+    }
+
     function updateONVIFIdentitySummary(config) {
         document.getElementById('onvif-device-name').textContent = config?.name || 'go2rtc';
         document.getElementById('onvif-device-model').textContent = config?.model || 'go2rtc';
@@ -5241,6 +5559,7 @@
         onvifConfigForm.elements.rtsp_port.placeholder = defaults.rtsp_port || '9554';
         onvifConfigForm.elements.rtsp_username.value = config.rtsp_username || '';
         onvifConfigForm.elements.rtsp_password.value = config.rtsp_password || '';
+        setONVIFPasswordVisible(false);
         updateONVIFIdentitySummary(data.effective || config);
 
         const savedMessage = sessionStorage.getItem('onvif-config-saved');
@@ -5423,7 +5742,7 @@
             const onvifChannel = onvifChannels.get(name) || 0;
             const onvif = onvifURL(onvifChannel);
             const disabled = isStreamDisabled(name) || stream?.disabled;
-            const onvifQualityLabel = qualityItemsLabel(streamONVIFQualities(name, parsed));
+            const rtspQualityRows = rtspQualityURLs(name, parsed);
             const directRTSP = /^rtsp:\/\//i.test(src);
 
             const card = document.createElement('article');
@@ -5476,23 +5795,21 @@
                             ? '直接转发，不进行重复编码'
                             : `目标 ${escapeHTML(parsed.bitrate ? `${parsed.bitrate} kbps` : '默认')} / 最大 ${escapeHTML(parsed.maxrate ? `${parsed.maxrate} kbps` : '跟随目标')} / 缓冲 ${escapeHTML(parsed.bufsize ? `${parsed.bufsize} kbps` : '跟随目标')}`}</div>
                     </div>
-                    <div class="task-card">
-                        <strong>ONVIF 清晰度</strong>
-                        <div class="helper">${escapeHTML(onvifQualityLabel)}</div>
-                    </div>
-                    <div class="task-card">
+                    <div class="task-card is-compact">
                         <div class="task-card-top">
-                            <strong>ONVIF 入口 · 通道 ${onvifChannel}</strong>
+                            <strong>清晰度档位</strong>
+                            <button class="copy-btn inline" type="button" data-rtsp-quality="${encodeURIComponent(name)}" aria-expanded="false" aria-haspopup="dialog" aria-controls="quality-popover" title="查看 RTSP 清晰度地址" aria-label="查看 RTSP 清晰度地址">
+                                ${rtspQualityRows.length}
+                            </button>
+                        </div>
+                    </div>
+                    <div class="task-card is-compact">
+                        <div class="task-card-top">
+                            <strong>ONVIF 入口</strong>
                             <button class="copy-btn inline" type="button" data-copy="${encodeURIComponent(onvif)}" data-copy-label="ONVIF 地址" aria-label="复制 ONVIF 地址">
                                 <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                             </button>
                         </div>
-                        <code class="onvif-link" title="${escapeHTML(onvif)}">${escapeHTML(onvif)}</code>
-                        <div class="helper">通道号 ${onvifChannel} · Profile Token：${escapeHTML(name)}</div>
-                    </div>
-                    <div class="task-card">
-                        <strong>发布协议</strong>
-                        <div class="helper">RTSP / ONVIF</div>
                     </div>
                 </div>
 
@@ -5680,6 +5997,8 @@
             closeConsumerPopover();
         } else if (!resourcePopover.hidden) {
             closeResourcePopover();
+        } else if (!qualityPopover.hidden) {
+            closeQualityPopover();
         } else if (fileBrowser.classList.contains('is-open')) {
             closeFileBrowser();
         } else if (eventConfigModal.classList.contains('is-open')) {
@@ -5700,6 +6019,10 @@
     openONVIFConfigBtn.addEventListener('click', openONVIFConfig);
     closeONVIFConfigBtn.addEventListener('click', closeONVIFConfig);
     cancelONVIFConfigBtn.addEventListener('click', closeONVIFConfig);
+    onvifRTSPPasswordToggle.addEventListener('click', () => {
+        setONVIFPasswordVisible(onvifRTSPPasswordInput.type === 'password');
+        onvifRTSPPasswordInput.focus({preventScroll: true});
+    });
     onvifConfigModal.addEventListener('click', event => {
         if (event.target === onvifConfigModal) closeONVIFConfig();
     });
@@ -5871,6 +6194,7 @@
     });
 
     resourcePopoverClose.addEventListener('click', closeResourcePopover);
+    qualityPopoverClose.addEventListener('click', closeQualityPopover);
 
     document.addEventListener('click', event => {
         if (!selectPopover.hidden && !selectPopover.contains(event.target) && !activeCustomSelect?.button.contains(event.target)) {
@@ -5882,18 +6206,23 @@
         if (!resourcePopover.hidden && !resourcePopover.contains(event.target) && !cpuSummaryCard.contains(event.target) && !memorySummaryCard.contains(event.target)) {
             closeResourcePopover();
         }
+        if (!qualityPopover.hidden && !qualityPopover.contains(event.target) && !event.target.closest('button[data-rtsp-quality]')) {
+            closeQualityPopover();
+        }
     });
 
     window.addEventListener('resize', () => {
         closeCustomSelect();
         if (!consumerPopover.hidden) positionConsumerPopover();
         if (!resourcePopover.hidden) positionResourcePopover();
+        if (!qualityPopover.hidden) positionQualityPopover();
     });
 
     window.addEventListener('scroll', () => {
         closeCustomSelect();
         if (!consumerPopover.hidden) positionConsumerPopover();
         if (!resourcePopover.hidden) positionResourcePopover();
+        if (!qualityPopover.hidden) positionQualityPopover();
     }, true);
 
     resetBtn.addEventListener('click', () => {
@@ -5949,6 +6278,15 @@
             } catch {
                 setStatus('复制失败，请手动复制。', true);
             }
+            return;
+        }
+
+        const qualityButton = event.target.closest('button[data-rtsp-quality]');
+        if (qualityButton) {
+            const name = decodeURIComponent(qualityButton.dataset.rtspQuality);
+            const stream = cachedStreams[name];
+            const source = getManagedSources(stream)[0];
+            openQualityPopover(name, parseSource(source) || {}, qualityButton);
             return;
         }
 

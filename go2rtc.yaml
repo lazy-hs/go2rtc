@@ -36,6 +36,8 @@ onvif:
   hardware: "Virtual IPC"
 rtsp:
   listen: ":9554"
+  username: lazy
+  password: Aa123456
 
 webrtc:
   listen: ":9555"
@@ -108,14 +110,14 @@ event:
       topic: tns1:RuleEngine/FieldDetector/Outside
       startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
       endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
-    - enabled: false
+    - enabled: true
       name: 咳嗽声
       topic: tns1:RuleEngine/AudioAnalytics/Cough
       startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
       endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
       startOperation: Changed
       endOperation: Deleted
-    - enabled: false
+    - enabled: true
       name: 哭声
       topic: tns1:RuleEngine/AudioAnalytics/Cry
       startData: <tt:SimpleItem Value="true" Name="IsMotion"/>

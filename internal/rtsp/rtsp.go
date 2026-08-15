@@ -5,6 +5,7 @@ import (
 	"io"
 	"net"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 
@@ -13,8 +14,14 @@ import (
 	"github.com/AlexxIT/go2rtc/pkg/core"
 	"github.com/AlexxIT/go2rtc/pkg/rtsp"
 	"github.com/AlexxIT/go2rtc/pkg/tcp"
+	"github.com/AlexxIT/go2rtc/pkg/yaml"
 	"github.com/rs/zerolog"
 )
+
+type streamQuality struct {
+	Width  int `yaml:"width"`
+	Height int `yaml:"height"`
+}
 
 func Init() {
 	var conf struct {
@@ -70,8 +77,7 @@ func Init() {
 
 			c := rtsp.NewServer(conn)
 			c.PacketSize = conf.Mod.PacketSize
-			// skip check auth for localhost
-			if conf.Mod.Username != "" && !conn.RemoteAddr().(*net.TCPAddr).IP.IsLoopback() {
+			if conf.Mod.Username != "" {
 				c.Auth(conf.Mod.Username, conf.Mod.Password)
 			}
 			go tcpHandler(c)
@@ -169,8 +175,21 @@ func tcpHandler(conn *rtsp.Conn) {
 			}
 
 			name = conn.URL.Path[1:]
+			query := conn.URL.Query()
 
 			stream := streams.Get(name)
+			if stream == nil {
+				if baseName, quality, ok := resolveRTSPQualityAlias(name, streams.GetAllNames()); ok {
+					name = baseName
+					if quality.Width > 0 {
+						query.Set("onvif_width", strconv.Itoa(quality.Width))
+					}
+					if quality.Height > 0 {
+						query.Set("onvif_height", strconv.Itoa(quality.Height))
+					}
+					stream = streams.Get(name)
+				}
+			}
 			if stream == nil {
 				return
 			}
@@ -179,7 +198,6 @@ func tcpHandler(conn *rtsp.Conn) {
 
 			conn.SessionName = app.UserAgent
 
-			query := conn.URL.Query()
 			if stream = onvifQualityStream(name, query, stream); stream == nil {
 				return
 			}
@@ -299,16 +317,87 @@ func onvifQualityStream(name string, query url.Values, fallback *streams.Stream)
 	if width <= 0 && height <= 0 {
 		return fallback
 	}
+	quality := normalizeRTSPQuality(streamQuality{Width: width, Height: height})
 
 	params := []string{"video=h264", "audio=copy"}
-	if width > 0 {
-		params = append(params, "width="+strconv.Itoa(width))
+	if quality.Width > 0 {
+		params = append(params, "width="+strconv.Itoa(quality.Width))
 	}
-	if height > 0 {
-		params = append(params, "height="+strconv.Itoa(height))
+	if quality.Height > 0 {
+		params = append(params, "height="+strconv.Itoa(quality.Height))
 	}
 	stream := streams.NewStream([]string{"ffmpeg:" + name + "#" + strings.Join(params, "#")})
 	return stream
+}
+
+func resolveRTSPQualityAlias(alias string, names []string) (string, streamQuality, bool) {
+	for _, name := range names {
+		prefix := name + "_"
+		if !strings.HasPrefix(alias, prefix) {
+			continue
+		}
+		token := alias[len(prefix):]
+		for _, quality := range configuredRTSPStreamQualities(name) {
+			if quality.Width <= 0 && quality.Height <= 0 {
+				continue
+			}
+			if rtspQualityToken(quality) == token {
+				return name, normalizeRTSPQuality(quality), true
+			}
+		}
+	}
+	return "", streamQuality{}, false
+}
+
+func configuredRTSPStreamQualities(name string) []streamQuality {
+	if app.ConfigPath == "" || name == "" {
+		return nil
+	}
+	data, err := os.ReadFile(app.ConfigPath)
+	if err != nil {
+		return nil
+	}
+	var cfg struct {
+		Simulate struct {
+			ONVIFQuality   map[string]streamQuality   `yaml:"onvif_quality"`
+			ONVIFQualities map[string][]streamQuality `yaml:"onvif_qualities"`
+		} `yaml:"simulate"`
+	}
+	if yaml.Unmarshal(data, &cfg) != nil {
+		return nil
+	}
+	if qualities, ok := cfg.Simulate.ONVIFQualities[name]; ok {
+		return qualities
+	}
+	if quality, ok := cfg.Simulate.ONVIFQuality[name]; ok {
+		return []streamQuality{quality}
+	}
+	return nil
+}
+
+func normalizeRTSPQuality(quality streamQuality) streamQuality {
+	if quality.Width > 0 || quality.Height <= 0 {
+		return quality
+	}
+	width := (quality.Height*16 + 4) / 9
+	if width%2 != 0 {
+		width++
+	}
+	quality.Width = width
+	return quality
+}
+
+func rtspQualityToken(quality streamQuality) string {
+	if quality.Width > 0 && quality.Height > 0 {
+		return strconv.Itoa(quality.Width) + "x" + strconv.Itoa(quality.Height)
+	}
+	if quality.Height > 0 {
+		return strconv.Itoa(quality.Height) + "p"
+	}
+	if quality.Width > 0 {
+		return strconv.Itoa(quality.Width) + "w"
+	}
+	return "original"
 }
 
 func ParseQuery(query map[string][]string) []*core.Media {

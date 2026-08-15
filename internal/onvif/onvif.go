@@ -104,6 +104,13 @@ func onvifDeviceService(w http.ResponseWriter, r *http.Request) {
 
 	log.Trace().Msgf("[onvif] server request %s %s:\n%s", r.Method, r.RequestURI, b)
 
+	auth := configuredRTSPAuth()
+	if onvifAuthRequired(operation, auth) && !validateONVIFAuth(r, request, auth) {
+		writeONVIFAuthError(w)
+		log.Warn().Str("remote_addr", r.RemoteAddr).Str("operation", operation).Msg("[onvif] failed authentication")
+		return
+	}
+
 	if isEventRequest(r, operation) {
 		b, err = eventResponse(r, request, operation)
 		if err != nil {
@@ -207,9 +214,8 @@ func onvifDeviceService(w http.ResponseWriter, r *http.Request) {
 		if !ok {
 			profile = onvif.Profile{Name: token, Token: token, SourceToken: token}
 		}
-		uri := "rtsp://" + host + ":" + rtsp.Port + "/" + profile.SourceToken
+		uri := "rtsp://" + host + ":" + rtsp.Port + "/" + rtspPathForONVIFProfile(profile)
 		uri = applyRTSPAuth(uri, configuredRTSPAuth())
-		uri = applyONVIFStreamQuality(uri, onvifStreamQuality{Width: profile.Width, Height: profile.Height})
 		b = onvif.GetStreamUriResponse(uri)
 
 	case onvif.MediaGetSnapshotUri:
@@ -296,9 +302,34 @@ func onvifProfileForQuality(name string, quality onvifStreamQuality) onvif.Profi
 		Name:        name + " " + label,
 		Token:       name + "__onvif_" + onvifQualityToken(quality),
 		SourceToken: name,
-		Width:       quality.Width,
+		Width:       onvifQualityProfileWidth(quality),
 		Height:      quality.Height,
 	}
+}
+
+func rtspPathForONVIFProfile(profile onvif.Profile) string {
+	if profile.Width <= 0 && profile.Height <= 0 {
+		return profile.SourceToken
+	}
+	prefix := profile.SourceToken + "__onvif_"
+	if token, ok := strings.CutPrefix(profile.Token, prefix); ok && token != "" {
+		return profile.SourceToken + "_" + token
+	}
+	return profile.SourceToken + "_" + onvifQualityToken(onvifStreamQuality{Width: profile.Width, Height: profile.Height})
+}
+
+func onvifQualityProfileWidth(quality onvifStreamQuality) int {
+	if quality.Width > 0 {
+		return quality.Width
+	}
+	if quality.Height <= 0 {
+		return 0
+	}
+	width := (quality.Height*16 + 4) / 9
+	if width%2 != 0 {
+		width++
+	}
+	return width
 }
 
 func onvifQualityLabel(quality onvifStreamQuality) string {
