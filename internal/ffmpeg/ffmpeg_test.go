@@ -1,8 +1,14 @@
 package ffmpeg
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
+	"github.com/AlexxIT/go2rtc/internal/app"
+	"github.com/AlexxIT/go2rtc/internal/rtsp"
+	"github.com/AlexxIT/go2rtc/internal/streams"
+	"github.com/AlexxIT/go2rtc/pkg/core"
 	"github.com/AlexxIT/go2rtc/pkg/ffmpeg"
 	"github.com/stretchr/testify/require"
 )
@@ -50,6 +56,31 @@ func TestParseArgsFile(t *testing.T) {
 			require.Equal(t, test.expect, args.String())
 		})
 	}
+}
+
+func TestParseArgsInternalStreamUsesRTSPAuth(t *testing.T) {
+	oldConfigPath := app.ConfigPath
+	oldRTSPPort := rtsp.Port
+	t.Cleanup(func() {
+		app.ConfigPath = oldConfigPath
+		rtsp.Port = oldRTSPPort
+		streams.Delete("main")
+	})
+
+	configPath := filepath.Join(t.TempDir(), "go2rtc.yaml")
+	require.NoError(t, os.WriteFile(configPath, []byte(`rtsp:
+  username: lazy
+  password: Aa123456
+`), 0644))
+	app.ConfigPath = configPath
+	rtsp.Port = "9554"
+
+	streams.HandleFunc("testauth", func(string) (core.Producer, error) { return nil, nil })
+	_, err := streams.New("main", "testauth://source")
+	require.NoError(t, err)
+
+	args := parseArgs("main#video=h264#audio=copy#width=854#height=480")
+	require.Contains(t, args.String(), "-i rtsp://lazy:Aa123456@127.0.0.1:9554/main?video&audio&source=ffmpeg:main%23video%3Dh264%23audio%3Dcopy%23width%3D854%23height%3D480")
 }
 
 func TestParseArgsDevice(t *testing.T) {

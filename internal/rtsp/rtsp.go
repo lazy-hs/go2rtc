@@ -23,6 +23,11 @@ type streamQuality struct {
 	Height int `yaml:"height"`
 }
 
+type authConfig struct {
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+}
+
 func Init() {
 	var conf struct {
 		Mod struct {
@@ -92,6 +97,51 @@ func HandleFunc(handler Handler) {
 }
 
 var Port string
+
+func LocalURL(path string) string {
+	if path == "" || path[0] != '/' {
+		path = "/" + path
+	}
+	rawURL := "rtsp://127.0.0.1:" + Port + path
+	auth := configuredAuth()
+	if strings.TrimSpace(auth.Username) == "" {
+		return rawURL
+	}
+
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return rawURL
+	}
+
+	username := strings.TrimSpace(auth.Username)
+	password := strings.TrimSpace(auth.Password)
+	if password == "" {
+		u.User = url.User(username)
+	} else {
+		u.User = url.UserPassword(username, password)
+	}
+	return u.String()
+}
+
+func configuredAuth() authConfig {
+	var cfg struct {
+		RTSP authConfig `yaml:"rtsp"`
+	}
+	app.LoadConfig(&cfg)
+
+	if app.ConfigPath == "" {
+		return cfg.RTSP
+	}
+
+	data, err := os.ReadFile(app.ConfigPath)
+	if err != nil {
+		return cfg.RTSP
+	}
+	if yaml.Unmarshal(data, &cfg) != nil {
+		return cfg.RTSP
+	}
+	return cfg.RTSP
+}
 
 // internal
 

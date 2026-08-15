@@ -50,3 +50,23 @@ func TestNormalizeRTSPQualityUsesEvenWidth(t *testing.T) {
 	require.Equal(t, streamQuality{Width: 3642, Height: 2048}, normalizeRTSPQuality(streamQuality{Height: 2048}))
 	require.Equal(t, streamQuality{Width: 1280, Height: 720}, normalizeRTSPQuality(streamQuality{Height: 720}))
 }
+
+func TestLocalURLUsesConfiguredAuth(t *testing.T) {
+	oldConfigPath := app.ConfigPath
+	oldPort := Port
+	t.Cleanup(func() {
+		app.ConfigPath = oldConfigPath
+		Port = oldPort
+	})
+
+	configPath := filepath.Join(t.TempDir(), "go2rtc.yaml")
+	require.NoError(t, os.WriteFile(configPath, []byte(`rtsp:
+  username: lazy
+  password: Aa123456
+`), 0644))
+	app.ConfigPath = configPath
+	Port = "9554"
+
+	require.Equal(t, "rtsp://lazy:Aa123456@127.0.0.1:9554/main", LocalURL("main"))
+	require.Equal(t, "rtsp://lazy:Aa123456@127.0.0.1:9554/internal/path", LocalURL("/internal/path"))
+}

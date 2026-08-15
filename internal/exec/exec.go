@@ -79,7 +79,7 @@ func execHandle(rawURL string) (prod core.Producer, err error) {
 
 		sum := md5.Sum([]byte(rawURL))
 		path = "/" + hex.EncodeToString(sum[:])
-		rawURL = rawURL[:i] + "rtsp://127.0.0.1:" + rtsp.Port + path + rawURL[i+8:]
+		rawURL = rawURL[:i] + rtsp.LocalURL(path) + rawURL[i+8:]
 	}
 
 	cmd := shell.NewCommand(rawURL[5:]) // remove `exec:`
