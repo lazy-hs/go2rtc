@@ -1,7 +1,9 @@
 package ffmpeg
 
 import (
+	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/AlexxIT/go2rtc/internal/api"
@@ -281,7 +283,34 @@ func parseArgs(s string) *ffmpeg.Args {
 			} else {
 				filter += "-1"
 			}
+			if query.Get("ptz_endpoint") != "" {
+				filter += ":eval=frame"
+			}
 			args.AddFilter(filter)
+		}
+
+		if endpoint := query.Get("ptz_endpoint"); endpoint != "" {
+			pan := parseNormalizedPTZValue(query.Get("ptz_pan"), -1, 1)
+			tilt := parseNormalizedPTZValue(query.Get("ptz_tilt"), -1, 1)
+			zoom := parseNormalizedPTZValue(query.Get("ptz_zoom"), 0, 1)
+			maxZoom := parsePositivePTZValue(query.Get("ptz_max_zoom"), 4)
+			width := core.Atoi(query.Get("width"))
+			height := core.Atoi(query.Get("height"))
+			if width <= 0 {
+				width = 1920
+			}
+			if height <= 0 {
+				height = 1080
+			}
+			args.AddFilter(ptzZoomFilter(zoom, maxZoom))
+			args.AddFilter(ptzCropFilter(pan, tilt, width, height))
+			if fps := core.Atoi(query.Get("ptz_fps")); fps > 0 {
+				if fps > 120 {
+					fps = 120
+				}
+				args.AddFilter("fps=" + strconv.Itoa(fps))
+			}
+			args.AddFilter("zmq=bind_address=" + escapeZMQFilterEndpoint(endpoint))
 		}
 
 		if query["rotate"] != nil {
@@ -401,4 +430,41 @@ func parseArgs(s string) *ffmpeg.Args {
 	}
 
 	return args
+}
+
+func parseNormalizedPTZValue(value string, min, max float64) float64 {
+	n, err := strconv.ParseFloat(value, 64)
+	if err != nil {
+		return 0
+	}
+	if n < min {
+		return min
+	}
+	if n > max {
+		return max
+	}
+	return n
+}
+
+func parsePositivePTZValue(value string, fallback float64) float64 {
+	n, err := strconv.ParseFloat(value, 64)
+	if err != nil || n <= 1 {
+		return fallback
+	}
+	return n
+}
+
+func ptzZoomFilter(zoom, maxZoom float64) string {
+	factor := 1 + zoom*(maxZoom-1)
+	return fmt.Sprintf("scale@ptz=floor(iw*%.6f/2)*2:-2:eval=frame", factor)
+}
+
+func ptzCropFilter(pan, tilt float64, width, height int) string {
+	x := (pan + 1) / 2
+	y := (1 - tilt) / 2
+	return fmt.Sprintf("crop@ptz=%d:%d:(iw-ow)*%.6f:(ih-oh)*%.6f", width, height, x, y)
+}
+
+func escapeZMQFilterEndpoint(endpoint string) string {
+	return strings.ReplaceAll(endpoint, ":", "\\\\:")
 }

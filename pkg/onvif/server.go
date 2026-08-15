@@ -43,6 +43,25 @@ const (
 	MediaGetVideoSourceConfigurations        = "GetVideoSourceConfigurations"
 )
 
+const (
+	PTZAbsoluteMove            = "AbsoluteMove"
+	PTZContinuousMove          = "ContinuousMove"
+	PTZGetConfiguration        = "GetConfiguration"
+	PTZGetConfigurations       = "GetConfigurations"
+	PTZGetConfigurationOptions = "GetConfigurationOptions"
+	PTZGetNode                 = "GetNode"
+	PTZGetNodes                = "GetNodes"
+	PTZGetPresets              = "GetPresets"
+	PTZGetStatus               = "GetStatus"
+	PTZGotoHomePosition        = "GotoHomePosition"
+	PTZGotoPreset              = "GotoPreset"
+	PTZRelativeMove            = "RelativeMove"
+	PTZRemovePreset            = "RemovePreset"
+	PTZSetHomePosition         = "SetHomePosition"
+	PTZSetPreset               = "SetPreset"
+	PTZStop                    = "Stop"
+)
+
 func GetRequestAction(b []byte) string {
 	// <soap-env:Body><ns0:GetCapabilities xmlns:ns0="http://www.onvif.org/ver10/device/wsdl">
 	// <v:Body><GetSystemDateAndTime xmlns="http://www.onvif.org/ver10/device/wsdl" /></v:Body>
@@ -62,6 +81,10 @@ func GetCapabilitiesResponse(host string) []byte {
 }
 
 func GetCapabilitiesResponseWithQuery(host, query string) []byte {
+	return GetCapabilitiesResponseWithQueryAndPTZ(host, query, true)
+}
+
+func GetCapabilitiesResponseWithQueryAndPTZ(host, query string, ptz bool) []byte {
 	e := NewEnvelope()
 	e.Appendf(`<tds:GetCapabilitiesResponse>
 	<tds:Capabilities>
@@ -81,9 +104,15 @@ func GetCapabilitiesResponseWithQuery(host, query string) []byte {
 			<tt:WSSubscriptionPolicySupport>true</tt:WSSubscriptionPolicySupport>
 			<tt:WSPullPointSupport>true</tt:WSPullPointSupport>
 			<tt:WSPausableSubscriptionManagerInterfaceSupport>false</tt:WSPausableSubscriptionManagerInterfaceSupport>
-		</tt:Events>
+		</tt:Events>`, host, query, host, query, host, query)
+	if ptz {
+		e.Appendf(`<tt:PTZ>
+			<tt:XAddr>http://%s/onvif/ptz_service%s</tt:XAddr>
+		</tt:PTZ>`, host, query)
+	}
+	e.Append(`
 	</tds:Capabilities>
-</tds:GetCapabilitiesResponse>`, host, query, host, query, host, query)
+</tds:GetCapabilitiesResponse>`)
 	return e.Bytes()
 }
 
@@ -92,6 +121,10 @@ func GetServicesResponse(host string) []byte {
 }
 
 func GetServicesResponseWithQuery(host, query string) []byte {
+	return GetServicesResponseWithQueryAndPTZ(host, query, true)
+}
+
+func GetServicesResponseWithQueryAndPTZ(host, query string, ptz bool) []byte {
 	e := NewEnvelope()
 	e.Appendf(`<tds:GetServicesResponse>
 	<tds:Service>
@@ -108,8 +141,16 @@ func GetServicesResponseWithQuery(host, query string) []byte {
 		<tds:Namespace>http://www.onvif.org/ver10/events/wsdl</tds:Namespace>
 		<tds:XAddr>http://%s/onvif/event%s</tds:XAddr>
 		<tds:Version><tt:Major>2</tt:Major><tt:Minor>5</tt:Minor></tds:Version>
-	</tds:Service>
-</tds:GetServicesResponse>`, host, query, host, query, host, query)
+	</tds:Service>`, host, query, host, query, host, query)
+	if ptz {
+		e.Appendf(`<tds:Service>
+		<tds:Namespace>http://www.onvif.org/ver20/ptz/wsdl</tds:Namespace>
+		<tds:XAddr>http://%s/onvif/ptz_service%s</tds:XAddr>
+		<tds:Version><tt:Major>2</tt:Major><tt:Minor>5</tt:Minor></tds:Version>
+	</tds:Service>`, host, query)
+	}
+	e.Append(`
+</tds:GetServicesResponse>`)
 	return e.Bytes()
 }
 
@@ -207,6 +248,8 @@ type Profile struct {
 	SourceToken string
 	Width       int
 	Height      int
+	PTZToken    string
+	PTZNode     string
 }
 
 func GetProfilesResponse(names []string) []byte {
@@ -246,6 +289,9 @@ func appendProfile(e *Envelope, tag string, profile Profile) {
 	e.Appendf(`<tt:Name>%s</tt:Name>`, profile.Name)
 	appendVideoSourceConfiguration(e, "VideoSourceConfiguration", profile.SourceToken)
 	appendVideoEncoderConfiguration(e, "VideoEncoderConfiguration", profile)
+	if profile.PTZToken != "" {
+		appendPTZConfiguration(e, "PTZConfiguration", profile.PTZToken, profile.PTZNode)
+	}
 	e.Appendf(`</trt:%s>`, tag)
 }
 

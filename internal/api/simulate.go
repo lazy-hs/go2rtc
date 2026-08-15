@@ -25,6 +25,8 @@ type simulateInfo struct {
 	MetricsAPI        string                                  `json:"metrics_api"`
 	ONVIFConfigAPI    string                                  `json:"onvif_config_api"`
 	ONVIFPath         string                                  `json:"onvif_path"`
+	PTZAPI            string                                  `json:"ptz_api"`
+	PTZEnabled        bool                                    `json:"ptz_enabled"`
 	RTSPPath          string                                  `json:"rtsp_path"`
 	RTSPPort          string                                  `json:"rtsp_port"`
 	StreamStateAPI    string                                  `json:"stream_state_api"`
@@ -55,6 +57,8 @@ func simulateHandler(w http.ResponseWriter, r *http.Request) {
 		MetricsAPI:        simulateEndpoint("api/simulate/metrics"),
 		ONVIFConfigAPI:    simulateEndpoint("api/simulate/onvif"),
 		ONVIFPath:         simulateEndpoint("onvif/device_service"),
+		PTZAPI:            simulateEndpoint("api/simulate/ptz"),
+		PTZEnabled:        configuredPTZEnabledFromFile(app.ConfigPath),
 		RTSPPath:          "/",
 		RTSPPort:          simulateRTSPPort(app.ConfigPath),
 		StreamStateAPI:    simulateEndpoint("api/streams/state"),
@@ -65,6 +69,29 @@ func simulateHandler(w http.ResponseWriter, r *http.Request) {
 		UploadAPI:         simulateEndpoint("api/simulate/upload"),
 		UploadDir:         filepath.ToSlash(simulateUploadDir),
 	})
+}
+
+func configuredPTZEnabledFromFile(configPath string) bool {
+	if configPath == "" {
+		return false
+	}
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		return false
+	}
+	var cfg struct {
+		Simulate struct {
+			PTZEnabled *bool          `yaml:"ptz_enabled"`
+			PTZ        map[string]any `yaml:"ptz"`
+		} `yaml:"simulate"`
+	}
+	if yaml.Unmarshal(data, &cfg) != nil {
+		return false
+	}
+	if cfg.Simulate.PTZEnabled != nil {
+		return *cfg.Simulate.PTZEnabled && len(cfg.Simulate.PTZ) > 0
+	}
+	return len(cfg.Simulate.PTZ) > 0
 }
 
 func configuredDisabledStreamsFromFile(configPath string) []string {

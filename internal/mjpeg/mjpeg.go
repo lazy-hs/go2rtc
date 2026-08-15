@@ -13,6 +13,7 @@ import (
 	"github.com/AlexxIT/go2rtc/internal/api/ws"
 	"github.com/AlexxIT/go2rtc/internal/app"
 	"github.com/AlexxIT/go2rtc/internal/ffmpeg"
+	internalrtsp "github.com/AlexxIT/go2rtc/internal/rtsp"
 	"github.com/AlexxIT/go2rtc/internal/streams"
 	"github.com/AlexxIT/go2rtc/pkg/ascii"
 	"github.com/AlexxIT/go2rtc/pkg/core"
@@ -38,7 +39,12 @@ var log zerolog.Logger
 
 func handlerKeyframe(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	stream, _ := streams.GetOrPatch(query)
+	var stream *streams.Stream
+	if query.Get("onvif_ptz") == "1" {
+		stream = internalrtsp.ONVIFPTZStream(query.Get("src"), core.Atoi(query.Get("onvif_width")), core.Atoi(query.Get("onvif_height")))
+	} else {
+		stream, _ = streams.GetOrPatch(query)
+	}
 	if stream == nil {
 		http.Error(w, api.StreamNotFound, http.StatusNotFound)
 		return

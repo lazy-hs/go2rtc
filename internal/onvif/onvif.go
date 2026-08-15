@@ -34,11 +34,24 @@ func Init() {
 	log = app.GetLogger("onvif")
 
 	var cfg struct {
-		Event  eventConfig  `yaml:"event"`
-		Device deviceConfig `yaml:"onvif"`
+		Event    eventConfig  `yaml:"event"`
+		Device   deviceConfig `yaml:"onvif"`
+		Simulate struct {
+			PTZEnabled *bool                      `yaml:"ptz_enabled"`
+			PTZ        map[string]ptzStreamConfig `yaml:"ptz"`
+		} `yaml:"simulate"`
 	}
 	app.LoadConfig(&cfg)
 	device = cfg.Device.withDefaults(app.Version)
+	ptzEnabled := len(cfg.Simulate.PTZ) > 0
+	if cfg.Simulate.PTZEnabled != nil {
+		ptzEnabled = *cfg.Simulate.PTZEnabled
+	}
+	ptz = newPTZManagerWithEnabled(cfg.Simulate.PTZ, ptzEnabled)
+	ptzPositionChanged = func(source string, state ptzState) {
+		rtsp.UpdateONVIFPTZ(source, ptz.maxZoom(source), state.Pan, state.Tilt, state.Zoom)
+	}
+	applyPTZGlobalEnabled(ptz.globalEnabled())
 	events = newEventManager(cfg.Event)
 	events.start()
 	if len(events.templates) == 0 {
@@ -55,6 +68,7 @@ func Init() {
 	// ONVIF server on all suburls
 	api.HandleFunc("/onvif/", onvifDeviceService)
 	api.HandleFunc("api/simulate/events", apiSimulateEvents)
+	api.HandleFunc("api/simulate/ptz", apiSimulatePTZ)
 	startDiscovery(api.Port)
 
 	// ONVIF client autodiscovery
@@ -111,6 +125,17 @@ func onvifDeviceService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if isPTZRequest(r.URL.Path, operation) {
+		b, err = ptzResponse(r.URL.Path, request, operation)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			log.Warn().Err(err).Str("operation", operation).Msg("[onvif] ptz request")
+			return
+		}
+		writeSOAPResponse(w, b)
+		return
+	}
+
 	if isEventRequest(r, operation) {
 		b, err = eventResponse(r, request, operation)
 		if err != nil {
@@ -150,10 +175,10 @@ func onvifDeviceService(w http.ResponseWriter, r *http.Request) {
 
 	case onvif.DeviceGetCapabilities:
 		// important for Hass: Media section
-		b = onvif.GetCapabilitiesResponseWithQuery(r.Host, onvifServiceQuery(r))
+		b = onvif.GetCapabilitiesResponseWithQueryAndPTZ(r.Host, onvifServiceQuery(r), ptz.globalEnabled())
 
 	case onvif.DeviceGetServices:
-		b = onvif.GetServicesResponseWithQuery(r.Host, onvifServiceQuery(r))
+		b = onvif.GetServicesResponseWithQueryAndPTZ(r.Host, onvifServiceQuery(r), ptz.globalEnabled())
 
 	case onvif.DeviceGetDeviceInformation:
 		// important for Hass: SerialNumber (unique server ID)
@@ -215,15 +240,29 @@ func onvifDeviceService(w http.ResponseWriter, r *http.Request) {
 			profile = onvif.Profile{Name: token, Token: token, SourceToken: token}
 		}
 		uri := "rtsp://" + host + ":" + rtsp.Port + "/" + rtspPathForONVIFProfile(profile)
+		if ptz.enabled(profile.SourceToken) {
+			uri += "?onvif_ptz=1"
+		}
 		uri = applyRTSPAuth(uri, configuredRTSPAuth())
 		b = onvif.GetStreamUriResponse(uri)
 
 	case onvif.MediaGetSnapshotUri:
 		token := onvif.FindTagValue(b, "ProfileToken")
-		if profile, ok := configuredONVIFProfile(token); ok {
+		profile, ok := configuredONVIFProfile(token)
+		if ok {
 			token = profile.SourceToken
 		}
-		uri := "http://" + r.Host + "/api/frame.jpeg?src=" + token
+		query := url.Values{"src": []string{token}}
+		if ptz.enabled(token) {
+			query.Set("onvif_ptz", "1")
+			if profile.Width > 0 {
+				query.Set("onvif_width", strconv.Itoa(profile.Width))
+			}
+			if profile.Height > 0 {
+				query.Set("onvif_height", strconv.Itoa(profile.Height))
+			}
+		}
+		uri := "http://" + r.Host + "/api/frame.jpeg?" + query.Encode()
 		b = onvif.GetSnapshotUriResponse(uri)
 
 	default:
@@ -236,6 +275,20 @@ func onvifDeviceService(w http.ResponseWriter, r *http.Request) {
 	log.Trace().Msgf("[onvif] server response:\n%s", b)
 
 	writeSOAPResponse(w, b)
+}
+
+func applyPTZGlobalEnabled(enabled bool) {
+	ptz.setGlobalEnabled(enabled)
+	rtsp.SetONVIFPTZEnabled(ptz.globalEnabled())
+	if !ptz.globalEnabled() {
+		return
+	}
+	for source := range ptz.controllers {
+		state, err := ptz.snapshot(source)
+		if err == nil {
+			rtsp.ConfigureONVIFPTZ(source, ptz.maxZoom(source), state.Pan, state.Tilt, state.Zoom)
+		}
+	}
 }
 
 func configuredONVIFProfiles(names []string) []onvif.Profile {
@@ -294,8 +347,13 @@ func configuredONVIFStreamQualities(name string) []onvifStreamQuality {
 }
 
 func onvifProfileForQuality(name string, quality onvifStreamQuality) onvif.Profile {
+	ptzToken, ptzNode := "", ""
+	if ptz.enabled(name) {
+		ptzToken = ptzConfigurationToken(name)
+		ptzNode = ptzNodeToken(name)
+	}
 	if quality.Width <= 0 && quality.Height <= 0 {
-		return onvif.Profile{Name: name, Token: name, SourceToken: name}
+		return onvif.Profile{Name: name, Token: name, SourceToken: name, PTZToken: ptzToken, PTZNode: ptzNode}
 	}
 	label := onvifQualityLabel(quality)
 	return onvif.Profile{
@@ -304,6 +362,8 @@ func onvifProfileForQuality(name string, quality onvifStreamQuality) onvif.Profi
 		SourceToken: name,
 		Width:       onvifQualityProfileWidth(quality),
 		Height:      quality.Height,
+		PTZToken:    ptzToken,
+		PTZNode:     ptzNode,
 	}
 }
 

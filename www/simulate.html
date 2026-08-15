@@ -1982,6 +1982,12 @@
             min-width: 0;
         }
 
+        .ptz-switch-status {
+            min-height: 18px;
+            margin-top: 4px;
+            font-size: 11px;
+        }
+
         .modal-head {
             padding: 18px 22px 14px;
             border-bottom: 1px solid rgba(34, 50, 77, 0.82);
@@ -3408,6 +3414,20 @@
                     </div>
                 </div>
                 <div class="modal-section">
+                    <h3>云台能力</h3>
+                    <div class="toggle-row">
+                        <div>
+                            <label class="switch-control">
+                                <input id="onvif-ptz-enabled" type="checkbox">
+                                <span class="switch-track" aria-hidden="true"></span>
+                                <span>启用模拟云台</span>
+                            </label>
+                            <div class="helper">关闭后不再发布 PTZ 能力，并立即停止 PTZ 派生转码以节省 CPU。</div>
+                            <div id="onvif-ptz-status" class="status ptz-switch-status" role="status" aria-live="polite"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-section">
                     <h3>发布配置</h3>
                     <div class="form-grid publish-config-grid">
                         <div class="publish-config-note">
@@ -3636,6 +3656,8 @@
     const saveONVIFConfigBtn = document.getElementById('save-onvif-config');
     const onvifConfigStatus = document.getElementById('onvif-config-status');
     const onvifConfigFeedback = document.getElementById('onvif-config-feedback');
+    const onvifPTZEnabled = document.getElementById('onvif-ptz-enabled');
+    const onvifPTZStatus = document.getElementById('onvif-ptz-status');
     const onvifRTSPPasswordInput = document.getElementById('onvif-rtsp-password');
     const onvifRTSPPasswordToggle = document.getElementById('onvif-rtsp-password-toggle');
     const openEventConfigBtn = document.getElementById('open-event-config');
@@ -3721,6 +3743,8 @@
         onvif_path: '/onvif/device_service',
         onvif_config_api: 'api/simulate/onvif',
         stream_state_api: 'api/streams/state',
+        ptz_api: 'api/simulate/ptz',
+        ptz_enabled: false,
         events_api: 'api/simulate/events',
         disabled_streams: [],
         onvif_quality: {},
@@ -5529,6 +5553,29 @@
         onvifConfigStatus.classList.toggle('error', isError);
     }
 
+    function setONVIFPTZStatus(message, isError = false) {
+        onvifPTZStatus.textContent = message;
+        onvifPTZStatus.classList.toggle('error', isError);
+    }
+
+    async function loadONVIFPTZState() {
+        onvifPTZEnabled.disabled = true;
+        setONVIFPTZStatus('正在读取云台状态...');
+        try {
+            const response = await fetch(`${baseURL(meta.ptz_api)}?global=1`, {cache: 'no-cache'});
+            if (!response.ok) throw new Error(await response.text() || '读取云台状态失败');
+            const state = await response.json();
+            meta.ptz_enabled = Boolean(state.enabled);
+            onvifPTZEnabled.checked = meta.ptz_enabled;
+            setONVIFPTZStatus(meta.ptz_enabled ? '当前已开启，即时生效。' : '当前已关闭，PTZ 派生转码不会运行。');
+        } catch (error) {
+            onvifPTZEnabled.checked = Boolean(meta.ptz_enabled);
+            setONVIFPTZStatus(error.message || '读取云台状态失败', true);
+        } finally {
+            onvifPTZEnabled.disabled = false;
+        }
+    }
+
     function setONVIFPasswordVisible(visible) {
         onvifRTSPPasswordInput.type = visible ? 'text' : 'password';
         onvifRTSPPasswordToggle.setAttribute('aria-pressed', visible ? 'true' : 'false');
@@ -5567,6 +5614,7 @@
         onvifConfigForm.elements.rtsp_password.value = config.rtsp_password || '';
         setONVIFPasswordVisible(false);
         updateONVIFIdentitySummary(data.effective || config);
+        await loadONVIFPTZState();
 
         const savedMessage = sessionStorage.getItem('onvif-config-saved');
         sessionStorage.removeItem('onvif-config-saved');
@@ -6150,6 +6198,36 @@
             setONVIFConfigStatus(message, true);
             showToast(message, 'error');
             saveONVIFConfigBtn.disabled = false;
+        }
+    });
+
+    onvifPTZEnabled.addEventListener('change', async () => {
+        const requested = onvifPTZEnabled.checked;
+        const previous = !requested;
+        onvifPTZEnabled.disabled = true;
+        setONVIFPTZStatus(requested ? '正在开启模拟云台...' : '正在关闭并释放云台转码资源...');
+        try {
+            const response = await fetch(baseURL(meta.ptz_api), {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({enabled: requested}),
+            });
+            if (!response.ok) throw new Error(await response.text() || '更新云台状态失败');
+            const state = await response.json();
+            meta.ptz_enabled = Boolean(state.enabled);
+            onvifPTZEnabled.checked = meta.ptz_enabled;
+            const message = meta.ptz_enabled
+                ? '模拟云台已开启，ONVIF PTZ 能力已恢复。'
+                : '模拟云台已关闭，PTZ 派生转码已停止。';
+            setONVIFPTZStatus(message);
+            showToast(message);
+        } catch (error) {
+            onvifPTZEnabled.checked = previous;
+            const message = saveFailureMessage(error, '更新云台状态失败');
+            setONVIFPTZStatus(message, true);
+            showToast(message, 'error');
+        } finally {
+            onvifPTZEnabled.disabled = false;
         }
     });
 

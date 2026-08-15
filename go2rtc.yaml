@@ -8,7 +8,7 @@ streams:
   # main:
   # - ffmpeg:device?video=0&video_size=1280x720&framerate=30#video=h264
   main:
-    - ffmpeg:C:/Users/8054/Videos/2026.06.21-第12期下-4K.高码率.mp4#video=h264#input=file#audio=aac
+    - ffmpeg:C:/Users/8054/Videos/2026.06.21-第12期下-4K.高码率.mp4#video=h264#width=1920#height=1080#input=file#audio=aac
   car:
   - ffmpeg:C:/Users/8054/Videos/监控中心二期算法测试数据/监控中心二期算法测试数据/人脸/光线充足/car.mp4#video=h264#audio=aac#input=file
   package:
@@ -36,8 +36,6 @@ onvif:
   hardware: "Virtual IPC"
 rtsp:
   listen: ":9554"
-  username: lazy
-  password: Aa123456
 
 webrtc:
   listen: ":9555"
@@ -64,30 +62,6 @@ event:
   permanent: true
   templates:
     - enabled: true
-      name: 画面变化
-      topic: tns1:VideoSource/MotionAlarm
-      sourceData: <tt:SimpleItem Value="analytics_video_source_audio_source" Name="VideoAnalyticsConfigurationToken"/><tt:SimpleItem Value="MyMotionDetectorRule" Name="Rule"/>
-      startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
-      endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
-      startOperation: Changed
-      endOperation: Deleted
-    - enabled: true
-      name: 包裹检测
-      topic: tns1:RuleEngine/PackageDetector
-      sourceData: <tt:SimpleItem Value="analytics_video_source_audio_source" Name="VideoAnalyticsConfigurationToken"/><tt:SimpleItem Value="MyMotionDetectorRule" Name="Rule"/>
-      startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
-      endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
-      startOperation: Changed
-      endOperation: Deleted
-    - enabled: true
-      name: '#车辆检测'
-      topic: tns1:RuleEngine/MyRuleDetector/VehicleDetect
-      sourceData: <tt:SimpleItem Value="analytics_video_source_audio_source" Name="VideoAnalyticsConfigurationToken"/><tt:SimpleItem Value="MyMotionDetectorRule" Name="Rule"/>
-      startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
-      endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
-      startOperation: Changed
-      endOperation: Deleted
-    - enabled: true
       name: 火焰检测
       topic: tns1:RuleEngine/FlameDetector
       sourceData: <tt:SimpleItem Value="analytics_video_source_audio_source" Name="VideoAnalyticsConfigurationToken"/><tt:SimpleItem Value="MyMotionDetectorRule" Name="Rule"/>
@@ -95,21 +69,6 @@ event:
       endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
       startOperation: Changed
       endOperation: Deleted
-    - enabled: true
-      name: 区域闯入
-      topic: tns1:RuleEngine/FieldDetector/ObjectsInside
-      startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
-      endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
-    - enabled: true
-      name: 越线 (LineCrossing)
-      topic: tns1:RuleEngine/LineDetector/Crossed
-      startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
-      endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
-    - enabled: true
-      name: 区域离开 (FieldExit)
-      topic: tns1:RuleEngine/FieldDetector/Outside
-      startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
-      endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
     - enabled: true
       name: 咳嗽声
       topic: tns1:RuleEngine/AudioAnalytics/Cough
@@ -124,23 +83,65 @@ event:
       endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
       startOperation: Changed
       endOperation: Deleted
+    - enabled: true
+      name: 包裹检测
+      topic: tns1:RuleEngine/PackageDetector
+      sourceData: <tt:SimpleItem Value="analytics_video_source_audio_source" Name="VideoAnalyticsConfigurationToken"/><tt:SimpleItem Value="MyMotionDetectorRule" Name="Rule"/>
+      startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
+      endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
+      startOperation: Changed
+      endOperation: Deleted
+    - enabled: true
+      name: 画面变化
+      topic: tns1:VideoSource/MotionAlarm
+      sourceData: <tt:SimpleItem Value="analytics_video_source_audio_source" Name="VideoAnalyticsConfigurationToken"/><tt:SimpleItem Value="MyMotionDetectorRule" Name="Rule"/>
+      startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
+      endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
+      startOperation: Changed
+      endOperation: Deleted
+    - enabled: true
+      name: 车辆检测
+      topic: tns1:RuleEngine/MyRuleDetector/VehicleDetect
+      sourceData: <tt:SimpleItem Value="analytics_video_source_audio_source" Name="VideoAnalyticsConfigurationToken"/><tt:SimpleItem Value="MyMotionDetectorRule" Name="Rule"/>
+      startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
+      endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
+      startOperation: Changed
+      endOperation: Deleted
+    - enabled: true
+      name: 区域闯入
+      topic: tns1:RuleEngine/FieldDetector/ObjectsInside
+      startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
+      endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
+      startOperation: Changed
+      endOperation: Deleted
+    - enabled: true
+      name: 越线
+      topic: tns1:RuleEngine/LineDetector/Crossed
+      startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
+      endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
+      startOperation: Changed
+      endOperation: Deleted
+    - enabled: true
+      name: 区域离开
+      topic: tns1:RuleEngine/FieldDetector/Outside
+      startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
+      endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
+      startOperation: Changed
+      endOperation: Deleted
 simulate:
+  ptz_enabled: false
+  ptz:
+    main:
+      max_zoom: 4
+      pan_speed: 0.6
+      tilt_speed: 0.6
+      zoom_speed: 0.5
   onvif_qualities:
     main:
       - width: 0
         height: 0
       - width: 0
-        height: 360
-      - width: 0
-        height: 480
-      - width: 0
-        height: 720
-      - width: 0
         height: 1080
-      - width: 0
-        height: 1440
-      - width: 0
-        height: 2048
   disabled_streams:
     - animal
     - car

@@ -364,6 +364,9 @@ func tcpHandler(conn *rtsp.Conn) {
 func onvifQualityStream(name string, query url.Values, fallback *streams.Stream) *streams.Stream {
 	width := core.Atoi(query.Get("onvif_width"))
 	height := core.Atoi(query.Get("onvif_height"))
+	if query.Get("onvif_ptz") == "1" {
+		return onvifPTZStreamFor(name, streamQuality{Width: width, Height: height})
+	}
 	if width <= 0 && height <= 0 {
 		return fallback
 	}

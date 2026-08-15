@@ -48,6 +48,7 @@ func TestSimulateHandlerUsesRequestHostAndBasePath(t *testing.T) {
 	require.Equal(t, "/rtc/api/simulate/metrics", info.MetricsAPI)
 	require.Equal(t, "/rtc/api/ffmpeg/devices", info.DevicesAPI)
 	require.Equal(t, "/rtc/api/simulate/onvif", info.ONVIFConfigAPI)
+	require.Equal(t, "/rtc/api/simulate/ptz", info.PTZAPI)
 	require.Equal(t, "/rtc/api/streams/state", info.StreamStateAPI)
 	require.Equal(t, "/rtc/api/simulate/events", info.EventsAPI)
 	require.Equal(t, "/rtc/api/simulate/files", info.FilesAPI)
@@ -65,6 +66,22 @@ func TestConfiguredDisabledStreamsFromFile(t *testing.T) {
 `), 0644))
 
 	require.Equal(t, []string{"camera2", "rtsp-main"}, configuredDisabledStreamsFromFile(configPath))
+}
+
+func TestConfiguredPTZEnabledFromFile(t *testing.T) {
+	configPath := filepath.Join(t.TempDir(), "go2rtc.yaml")
+	require.NoError(t, os.WriteFile(configPath, []byte(`simulate:
+  ptz_enabled: false
+  ptz:
+    main: {}
+`), 0644))
+	require.False(t, configuredPTZEnabledFromFile(configPath))
+
+	require.NoError(t, os.WriteFile(configPath, []byte(`simulate:
+  ptz:
+    main: {}
+`), 0644))
+	require.True(t, configuredPTZEnabledFromFile(configPath))
 }
 
 func TestConfiguredONVIFQualitiesFromFile(t *testing.T) {

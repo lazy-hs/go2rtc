@@ -6,6 +6,7 @@ require (
 	github.com/asticode/go-astits v1.14.0
 	github.com/eclipse/paho.mqtt.golang v1.5.1
 	github.com/expr-lang/expr v1.17.7
+	github.com/go-zeromq/zmq4 v0.17.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/mattn/go-isatty v0.0.20
@@ -32,6 +33,7 @@ require (
 require (
 	github.com/asticode/go-astikit v0.57.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/go-zeromq/goczmq/v4 v4.2.2 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/pion/datachannel v1.6.0 // indirect
@@ -47,6 +49,7 @@ require (
 	golang.org/x/mod v0.32.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/sys v0.40.0 // indirect
+	golang.org/x/text v0.33.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
 	golang.org/x/tools v0.41.0 // indirect
 )
