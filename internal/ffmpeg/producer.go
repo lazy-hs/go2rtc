@@ -21,6 +21,10 @@ type Producer struct {
 
 // NewProducer - FFmpeg producer with auto selection video/audio codec based on client capabilities
 func NewProducer(url string) (core.Producer, error) {
+	if isRTSPAudioCopySource(url) {
+		return newRTSPAudioCopyProducer(url)
+	}
+
 	p := &Producer{}
 
 	i := strings.IndexByte(url, '#')

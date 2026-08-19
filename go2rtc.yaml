@@ -3,6 +3,7 @@ ffmpeg:
   file: "-re -stream_loop -1 -i {input}"
 log:
   level: info
+  onvif: debug
 
 streams:
   # main:
@@ -57,75 +58,99 @@ app:
 
 event:
   enabled: true
-  interval: 1m
+  interval: 10s
   burst: 10
   permanent: true
   templates:
     - enabled: true
-      name: 火焰检测
-      topic: tns1:RuleEngine/FlameDetector
-      sourceData: <tt:SimpleItem Value="analytics_video_source_audio_source" Name="VideoAnalyticsConfigurationToken"/><tt:SimpleItem Value="MyMotionDetectorRule" Name="Rule"/>
-      startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
-      endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
-      startOperation: Changed
-      endOperation: Deleted
-    - enabled: true
-      name: 咳嗽声
-      topic: tns1:RuleEngine/AudioAnalytics/Cough
-      startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
-      endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
-      startOperation: Changed
-      endOperation: Deleted
-    - enabled: true
-      name: 哭声
-      topic: tns1:RuleEngine/AudioAnalytics/Cry
-      startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
-      endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
-      startOperation: Changed
-      endOperation: Deleted
-    - enabled: true
-      name: 包裹检测
-      topic: tns1:RuleEngine/PackageDetector
-      sourceData: <tt:SimpleItem Value="analytics_video_source_audio_source" Name="VideoAnalyticsConfigurationToken"/><tt:SimpleItem Value="MyMotionDetectorRule" Name="Rule"/>
-      startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
-      endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
-      startOperation: Changed
-      endOperation: Deleted
-    - enabled: true
-      name: 画面变化
-      topic: tns1:VideoSource/MotionAlarm
-      sourceData: <tt:SimpleItem Value="analytics_video_source_audio_source" Name="VideoAnalyticsConfigurationToken"/><tt:SimpleItem Value="MyMotionDetectorRule" Name="Rule"/>
-      startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
-      endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
-      startOperation: Changed
-      endOperation: Deleted
-    - enabled: true
-      name: 车辆检测
-      topic: tns1:RuleEngine/MyRuleDetector/VehicleDetect
-      sourceData: <tt:SimpleItem Value="analytics_video_source_audio_source" Name="VideoAnalyticsConfigurationToken"/><tt:SimpleItem Value="MyMotionDetectorRule" Name="Rule"/>
-      startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
-      endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
+      name: 烟雾火焰
+      topic: "tns1:RuleEngine/FlameDetector"
+      startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
+      endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
       startOperation: Changed
       endOperation: Deleted
     - enabled: true
       name: 区域闯入
-      topic: tns1:RuleEngine/FieldDetector/ObjectsInside
-      startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
-      endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
+      topic: "tns1:RuleEngine/FieldDetector/ObjectsInside"
+      startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
+      endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
       startOperation: Changed
       endOperation: Deleted
     - enabled: true
       name: 越线
-      topic: tns1:RuleEngine/LineDetector/Crossed
-      startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
-      endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
+      topic: "tns1:RuleEngine/LineDetector/Crossed"
+      startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
+      endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
       startOperation: Changed
       endOperation: Deleted
     - enabled: true
       name: 区域离开
-      topic: tns1:RuleEngine/FieldDetector/Outside
-      startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
-      endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
+      topic: "tns1:RuleEngine/FieldDetector/Outside"
+      startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
+      endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
+      startOperation: Changed
+      endOperation: Deleted
+    - enabled: true
+      name: 物品丢失
+      topic: "tns1:RuleEngine/RemovedObjectDetector"
+      startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
+      endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
+      startOperation: Changed
+      endOperation: Deleted
+    - enabled: true
+      name: 人脸检测
+      topic: "tns1:RuleEngine/FaceDetector"
+      startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
+      endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
+      startOperation: Changed
+      endOperation: Deleted
+    - enabled: true
+      name: 画面变化
+      topic: "tns1:VideoSource/MotionAlarm"
+      startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
+      endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
+      startOperation: Changed
+      endOperation: Deleted
+    - enabled: true
+      name: 人形检测
+      topic: "tns1:RuleEngine/MyRuleDetector/PeopleDetect"
+      startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
+      endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
+      startOperation: Changed
+      endOperation: Deleted
+    - enabled: true
+      name: 车辆检测
+      topic: "tns1:RuleEngine/MyRuleDetector/VehicleDetect"
+      startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
+      endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
+      startOperation: Changed
+      endOperation: Deleted
+    - enabled: true
+      name: 包裹检测
+      topic: "tns1:RuleEngine/PackageDetector"
+      startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
+      endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
+      startOperation: Changed
+      endOperation: Deleted
+    - enabled: true
+      name: 设备故障
+      topic: "tns1:Device/HardwareFailure"
+      startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
+      endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
+      startOperation: Changed
+      endOperation: Deleted
+    - enabled: true
+      name: 镜头遮挡
+      topic: "tns1:VideoSource/GlobalSceneChange"
+      startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
+      endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
+      startOperation: Changed
+      endOperation: Deleted
+    - enabled: true
+      name: 设备移动
+      topic: "tns1:RuleEngine/MyRuleDetector/ShockDetection"
+      startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
+      endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
       startOperation: Changed
       endOperation: Deleted
 simulate:

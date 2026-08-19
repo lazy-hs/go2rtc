@@ -1,6 +1,7 @@
 package ffmpeg
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -397,6 +398,82 @@ func TestAutoAudioProducerConstraints(t *testing.T) {
 
 	_, err = NewProducer("/media/bbb.mp4#video=h264#audio=auto")
 	require.EqualError(t, err, "ffmpeg: unsupported params: #video=h264#audio=auto")
+}
+
+type audioFallbackTestProducer struct {
+	core.Connection
+}
+
+func (p *audioFallbackTestProducer) Start() error {
+	return nil
+}
+
+func TestRTSPAudioCopyFallback(t *testing.T) {
+	source := "ffmpeg:/media/dts.mp4#video=h264#input=file#audio=copy"
+	rtspAudioFallbacks.Delete(source)
+	t.Cleanup(func() { rtspAudioFallbacks.Delete(source) })
+
+	expected := &audioFallbackTestProducer{}
+	var locations []string
+	get := func(location string) (core.Producer, error) {
+		locations = append(locations, location)
+		if len(locations) == 1 {
+			return nil, errors.New("[rtp] Unsupported codec dts\nCould not write header")
+		}
+		return expected, nil
+	}
+
+	producer, err := getRTSPAudioCopyProducer(source, get)
+	require.NoError(t, err)
+	require.Same(t, expected, producer)
+	require.Len(t, locations, 2)
+	require.Contains(t, locations[0], "-c:a copy")
+	require.Contains(t, locations[1], "-c:a aac")
+
+	locations = nil
+	producer, err = getRTSPAudioCopyProducer(source, func(location string) (core.Producer, error) {
+		locations = append(locations, location)
+		return expected, nil
+	})
+	require.NoError(t, err)
+	require.Same(t, expected, producer)
+	require.Len(t, locations, 1)
+	require.Contains(t, locations[0], "-c:a aac")
+}
+
+func TestRTSPAudioCopyFallbackOnlyForMuxCodecErrors(t *testing.T) {
+	source := "ffmpeg:/media/missing.mp4#video=h264#input=file#audio=copy"
+	rtspAudioFallbacks.Delete(source)
+	t.Cleanup(func() { rtspAudioFallbacks.Delete(source) })
+
+	wantErr := errors.New("No such file or directory")
+	calls := 0
+	producer, err := getRTSPAudioCopyProducer(source, func(string) (core.Producer, error) {
+		calls++
+		return nil, wantErr
+	})
+	require.Nil(t, producer)
+	require.ErrorIs(t, err, wantErr)
+	require.Equal(t, 1, calls)
+}
+
+func TestRTSPAudioCopyKeepsCompatibleCodec(t *testing.T) {
+	source := "ffmpeg:/media/aac.mp4#video=h264#input=file#audio=copy"
+	rtspAudioFallbacks.Delete(source)
+	t.Cleanup(func() { rtspAudioFallbacks.Delete(source) })
+
+	expected := &audioFallbackTestProducer{}
+	calls := 0
+	producer, err := getRTSPAudioCopyProducer(source, func(location string) (core.Producer, error) {
+		calls++
+		require.Contains(t, location, "-c:a copy")
+		return expected, nil
+	})
+	require.NoError(t, err)
+	require.Same(t, expected, producer)
+	require.Equal(t, 1, calls)
+	_, cached := rtspAudioFallbacks.Load(source)
+	require.False(t, cached)
 }
 
 func TestDrawText(t *testing.T) {

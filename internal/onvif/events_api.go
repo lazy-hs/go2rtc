@@ -31,6 +31,58 @@ type simulateEventConfig struct {
 	Templates []simulateEventTemplateConfig `json:"templates" yaml:"templates"`
 }
 
+type simulateEventResponse struct {
+	simulateEventConfig
+	Catalog []simulateEventTemplateConfig `json:"catalog"`
+}
+
+const (
+	simulateEventStartData = `<tt:SimpleItem Value="true" Name="IsMotion"/>`
+	simulateEventEndData   = `<tt:SimpleItem Value="false" Name="IsMotion"/>`
+)
+
+func simulateEventTemplateCatalog() []simulateEventTemplateConfig {
+	definitions := []struct {
+		name  string
+		topic string
+	}{
+		{"烟雾火焰", "tns1:RuleEngine/FlameDetector"},
+		{"区域闯入", "tns1:RuleEngine/FieldDetector/ObjectsInside"},
+		{"越线", "tns1:RuleEngine/LineDetector/Crossed"},
+		{"区域离开", "tns1:RuleEngine/FieldDetector/Outside"},
+		{"物品丢失", "tns1:RuleEngine/RemovedObjectDetector"},
+		{"人脸检测", "tns1:RuleEngine/FaceDetector"},
+		{"画面变化", "tns1:VideoSource/MotionAlarm"},
+		{"人形检测", "tns1:RuleEngine/MyRuleDetector/PeopleDetect"},
+		{"车辆检测", "tns1:RuleEngine/MyRuleDetector/VehicleDetect"},
+		{"包裹检测", "tns1:RuleEngine/PackageDetector"},
+		{"设备故障", "tns1:Device/HardwareFailure"},
+		{"镜头遮挡", "tns1:VideoSource/GlobalSceneChange"},
+		{"设备移动", "tns1:RuleEngine/MyRuleDetector/ShockDetection"},
+	}
+
+	catalog := make([]simulateEventTemplateConfig, len(definitions))
+	for i, definition := range definitions {
+		catalog[i] = simulateEventTemplateConfig{
+			Enabled:        true,
+			Name:           definition.name,
+			Topic:          definition.topic,
+			StartData:      simulateEventStartData,
+			EndData:        simulateEventEndData,
+			StartOperation: "Changed",
+			EndOperation:   "Deleted",
+		}
+	}
+	return catalog
+}
+
+func writeSimulateEventResponse(w http.ResponseWriter, cfg simulateEventConfig) {
+	api.ResponseJSON(w, simulateEventResponse{
+		simulateEventConfig: cfg,
+		Catalog:             simulateEventTemplateCatalog(),
+	})
+}
+
 func apiSimulateEvents(w http.ResponseWriter, r *http.Request) {
 	if app.ConfigPath == "" {
 		http.Error(w, "config file disabled", http.StatusGone)
@@ -44,7 +96,7 @@ func apiSimulateEvents(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
-		api.ResponseJSON(w, cfg)
+		writeSimulateEventResponse(w, cfg)
 
 	case http.MethodPut:
 		var cfg simulateEventConfig
@@ -65,7 +117,7 @@ func apiSimulateEvents(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		api.ResponseJSON(w, cfg)
+		writeSimulateEventResponse(w, cfg)
 
 	default:
 		w.Header().Set("Allow", "GET, PUT")
@@ -236,26 +288,10 @@ func simulateEventTemplateName(name, topic string) string {
 	if name = strings.TrimSpace(name); name != "" {
 		return name
 	}
-	switch topic {
-	case "tns1:VideoSource/MotionAlarm":
-		return "画面变化"
-	case "tns1:RuleEngine/PackageDetector":
-		return "包裹检测"
-	case "tns1:RuleEngine/MyRuleDetector/VehicleDetect":
-		return "车辆检测"
-	case "tns1:RuleEngine/FlameDetector":
-		return "火焰检测"
-	case "tns1:RuleEngine/FieldDetector/ObjectsInside":
-		return "区域闯入"
-	case "tns1:RuleEngine/LineDetector/Crossed":
-		return "越线"
-	case "tns1:RuleEngine/FieldDetector/Outside":
-		return "区域离开"
-	case "tns1:RuleEngine/AudioAnalytics/Cough":
-		return "咳嗽声"
-	case "tns1:RuleEngine/AudioAnalytics/Cry":
-		return "哭声"
-	default:
-		return "自定义事件"
+	for _, template := range simulateEventTemplateCatalog() {
+		if template.Topic == topic {
+			return template.Name
+		}
 	}
+	return "自定义事件"
 }

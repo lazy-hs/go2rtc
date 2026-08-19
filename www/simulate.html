@@ -469,6 +469,10 @@
             padding: 14px;
         }
 
+        .consumer-popover {
+            width: min(420px, calc(100vw - 32px));
+        }
+
         .consumer-popover[hidden],
         .resource-popover[hidden],
         .quality-popover[hidden] {
@@ -530,6 +534,10 @@
             overflow: auto;
         }
 
+        .consumer-ip-list {
+            max-height: 320px;
+        }
+
         .quality-url-row {
             display: grid;
             grid-template-columns: minmax(58px, auto) minmax(0, 1fr) auto;
@@ -560,14 +568,67 @@
 
         .consumer-ip-row,
         .resource-process-row {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) auto;
-            gap: 10px;
-            align-items: center;
             padding: 8px 10px;
             border: 1px solid rgba(34, 211, 238, 0.10);
             border-radius: 10px;
             background: rgba(2, 6, 23, 0.26);
+        }
+
+        .consumer-ip-row {
+            display: grid;
+            gap: 8px;
+        }
+
+        .consumer-ip-head,
+        .consumer-stream-row,
+        .resource-process-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .consumer-stream-list {
+            display: grid;
+            gap: 5px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(148, 163, 184, 0.12);
+        }
+
+        .consumer-stream-row {
+            width: 100%;
+            padding: 5px 6px 5px 10px;
+            border: 0;
+            border-radius: 7px;
+            background: transparent;
+            color: inherit;
+            font: inherit;
+            text-align: left;
+            cursor: pointer;
+            transition: background .15s ease, color .15s ease;
+        }
+
+        .consumer-stream-row:hover {
+            transform: none;
+            box-shadow: none;
+            background: rgba(34, 211, 238, 0.10);
+        }
+
+        .consumer-stream-row:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.42);
+            background: rgba(34, 211, 238, 0.10);
+        }
+
+        .consumer-ip-row .consumer-stream-row code {
+            color: rgba(219, 234, 254, 0.78);
+            font-size: 11px;
+        }
+
+        .consumer-ip-row .consumer-stream-row span {
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 600;
         }
 
         .consumer-ip-row code,
@@ -1557,6 +1618,11 @@
             border-color: rgba(34, 211, 238, 0.42);
             box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.10), 0 22px 46px rgba(34, 211, 238, 0.12);
             background: rgba(15, 23, 42, 0.98);
+        }
+
+        .sim-card.is-located {
+            border-color: rgba(103, 232, 249, 0.78);
+            box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.18), 0 22px 46px rgba(34, 211, 238, 0.16);
         }
 
         .sim-card.is-highlighted .sim-badges::before {
@@ -2945,7 +3011,9 @@
             .modal-shell,
             .modal-panel,
             .file-browser-shell,
-            .file-browser-panel {
+            .file-browser-panel,
+            .consumer-stream-row,
+            .sim-card {
                 transition: none;
             }
         }
@@ -3288,12 +3356,13 @@
                         <label for="audio">音频策略</label>
                         <select id="audio" name="audio">
                             <option value="">无音频</option>
-                            <option value="copy">自动跟随（复制源音频）</option>
+                            <option value="copy">自动兼容（优先复制）</option>
                             <option value="aac">AAC</option>
                             <option value="opus">Opus</option>
                             <option value="pcma">PCMA</option>
                             <option value="pcmu">PCMU</option>
                         </select>
+                        <div class="helper">自动兼容会优先复制源音频；DTS 等 RTSP 不支持的编码会自动转为 AAC。</div>
                     </div>
                     <div class="field wide">
                         <label>ONVIF 清晰度档位</label>
@@ -3534,7 +3603,7 @@
                             </div>
                             <div class="field">
                                 <label for="event-custom-topic">ONVIF Topic</label>
-                                <input id="event-custom-topic" type="text" placeholder="例如：tns1:RuleEngine/PetDetector">
+                                <input id="event-custom-topic" type="text" placeholder="请输入 ONVIF 事件 Topic">
                             </div>
                             <div class="field">
                                 <label for="event-custom-start-operation">开始动作</label>
@@ -3550,11 +3619,11 @@
                             </div>
                             <div class="field wide">
                                 <label for="event-custom-start-data">开始数据 XML（可选）</label>
-                                <textarea id="event-custom-start-data" rows="2" placeholder="例如：&lt;tt:SimpleItem Value=&quot;true&quot; Name=&quot;IsMotion&quot;/&gt;"></textarea>
+                                <textarea id="event-custom-start-data" rows="2" placeholder="请输入事件开始数据（可选）"></textarea>
                             </div>
                             <div class="field wide">
                                 <label for="event-custom-end-data">结束数据 XML（可选）</label>
-                                <textarea id="event-custom-end-data" rows="2" placeholder="例如：&lt;tt:SimpleItem Value=&quot;false&quot; Name=&quot;IsMotion&quot;/&gt;"></textarea>
+                                <textarea id="event-custom-end-data" rows="2" placeholder="请输入事件结束数据（可选）"></textarea>
                             </div>
                             <div class="event-custom-actions">
                                 <button class="secondary event-template-add" id="add-custom-event-template" type="button">添加自定义事件</button>
@@ -3697,6 +3766,8 @@
 
     let editingName = '';
     let highlightedStreamName = '';
+    let locatedStreamName = '';
+    let locatedStreamTimer = 0;
     let modalReturnFocus = null;
     let onvifConfigReturnFocus = null;
     let eventConfigReturnFocus = null;
@@ -3716,23 +3787,10 @@
     let activeQualityStreamName = '';
     let processSourceIndex = new Map();
     let eventConfig = {enabled: true, interval: '1m', burst: 10, permanent: true, templates: []};
+    let eventTemplateCatalog = [];
     let toastTimer = 0;
     let activeCustomSelect = null;
     const customSelectInstances = new Map();
-    const defaultEventSourceData = '<tt:SimpleItem Value="analytics_video_source_audio_source" Name="VideoAnalyticsConfigurationToken"/><tt:SimpleItem Value="MyMotionDetectorRule" Name="Rule"/>';
-    const defaultEventStartData = '<tt:SimpleItem Value="true" Name="IsMotion"/>';
-    const defaultEventEndData = '<tt:SimpleItem Value="false" Name="IsMotion"/>';
-    const eventTemplateCatalog = [
-        {name: '画面变化', topic: 'tns1:VideoSource/MotionAlarm'},
-        {name: '包裹检测', topic: 'tns1:RuleEngine/PackageDetector'},
-        {name: '车辆检测', topic: 'tns1:RuleEngine/MyRuleDetector/VehicleDetect'},
-        {name: '火焰检测', topic: 'tns1:RuleEngine/FlameDetector'},
-        {name: '区域闯入', topic: 'tns1:RuleEngine/FieldDetector/ObjectsInside', sourceData: ''},
-        {name: '越线', topic: 'tns1:RuleEngine/LineDetector/Crossed', sourceData: ''},
-        {name: '区域离开', topic: 'tns1:RuleEngine/FieldDetector/Outside', sourceData: ''},
-        {name: '咳嗽声', topic: 'tns1:RuleEngine/AudioAnalytics/Cough', sourceData: ''},
-        {name: '哭声', topic: 'tns1:RuleEngine/AudioAnalytics/Cry', sourceData: ''},
-    ].map(template => normalizeEventTemplatePreset(template));
     let meta = {
         host: location.host,
         base_path: '',
@@ -4808,16 +4866,13 @@
 
     function normalizeEventTemplatePreset(template = {}) {
         const topic = String(template.topic || '').trim();
-        const sourceData = template.sourceData === undefined ? defaultEventSourceData : String(template.sourceData || '');
-        const startData = template.startData === undefined ? defaultEventStartData : String(template.startData || '');
-        const endData = template.endData === undefined ? defaultEventEndData : String(template.endData || '');
         return {
             enabled: template.enabled !== false,
             name: String(template.name || '').trim() || fallbackEventTopicName(topic),
             topic,
-            sourceData,
-            startData,
-            endData,
+            sourceData: String(template.sourceData || ''),
+            startData: String(template.startData || ''),
+            endData: String(template.endData || ''),
             startOperation: String(template.startOperation || 'Changed').trim(),
             endOperation: String(template.endOperation || 'Deleted').trim(),
         };
@@ -4997,7 +5052,11 @@
     async function loadEventConfig() {
         const response = await fetch(baseURL(meta.events_api), {cache: 'no-cache'});
         if (!response.ok) throw new Error(await response.text() || '加载事件配置失败');
-        eventConfig = normalizeEventConfig(await response.json());
+        const payload = await response.json();
+        eventTemplateCatalog = Array.isArray(payload.catalog)
+            ? payload.catalog.map(template => normalizeEventTemplatePreset(template))
+            : [];
+        eventConfig = normalizeEventConfig(payload);
         updateEventSummary(eventConfig);
         const savedMessage = sessionStorage.getItem('event-config-saved');
         sessionStorage.removeItem('event-config-saved');
@@ -5064,13 +5123,15 @@
     function consumerIP(remoteAddr) {
         const value = String(remoteAddr || '').trim();
         if (!value) return '';
-        if (value.startsWith('[')) {
-            const end = value.indexOf(']');
-            return end > 0 ? value.slice(1, end) : value;
+        const forwarded = value.split(/\s+forwarded\s+/i);
+        const address = (forwarded.length > 1 ? forwarded[forwarded.length - 1].split(',')[0] : forwarded[0]).trim();
+        if (address.startsWith('[')) {
+            const end = address.indexOf(']');
+            return end > 0 ? address.slice(1, end) : address;
         }
-        const colon = value.lastIndexOf(':');
-        if (colon > 0 && value.indexOf(':') === colon) return value.slice(0, colon);
-        return value;
+        const colon = address.lastIndexOf(':');
+        if (colon > 0 && address.indexOf(':') === colon) return address.slice(0, colon);
+        return address;
     }
 
     function consumerStats(stream) {
@@ -5083,6 +5144,26 @@
         }
         const ipEntries = [...ips.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'zh-CN', {numeric: true}));
         return {consumers: consumers.length, ipCount: ips.size, ipEntries, topIPs: ipEntries.slice(0, 3)};
+    }
+
+    function consumerIPStreams(entries) {
+        const consumerIPs = new Map();
+        for (const [name, stream] of entries) {
+            for (const [ip, count] of consumerStats(stream).ipEntries) {
+                let item = consumerIPs.get(ip);
+                if (!item) {
+                    item = {connections: 0, streams: new Map()};
+                    consumerIPs.set(ip, item);
+                }
+                item.connections += count;
+                item.streams.set(name, (item.streams.get(name) || 0) + count);
+            }
+        }
+        return [...consumerIPs.entries()].map(([ip, item]) => [
+            ip,
+            item.connections,
+            [...item.streams.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'zh-CN', {numeric: true})),
+        ]).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'zh-CN', {numeric: true}));
     }
 
     function consumerIPSummary(stats) {
@@ -5106,10 +5187,22 @@
             return;
         }
 
-        for (const [ip, count] of latestConsumerSummary.ipEntries) {
+        for (const [ip, count, streams] of latestConsumerSummary.ipEntries) {
             const row = document.createElement('div');
             row.className = 'consumer-ip-row';
-            row.innerHTML = `<code title="${escapeHTML(ip)}">${escapeHTML(ip)}</code><span>${count} 个连接</span>`;
+            const streamRows = streams.map(([name, streamCount]) => `
+                <button class="consumer-stream-row" type="button" data-consumer-stream="${encodeURIComponent(name)}" aria-label="定位到视频流 ${escapeHTML(name)}">
+                    <code title="${escapeHTML(name)}">${escapeHTML(name)}</code>
+                    <span>${streamCount} 个连接</span>
+                </button>
+            `).join('');
+            row.innerHTML = `
+                <div class="consumer-ip-head">
+                    <code title="${escapeHTML(ip)}">${escapeHTML(ip)}</code>
+                    <span>${streams.length} 路视频流 · ${count} 个连接</span>
+                </div>
+                <div class="consumer-stream-list">${streamRows}</div>
+            `;
             consumerIPList.appendChild(row);
         }
     }
@@ -5304,7 +5397,6 @@
     function updateOpsOverview(entries, parsedByName) {
         const counts = {file: 0, camera: 0, rtsp: 0};
         let consumerCount = 0;
-        const consumerIPs = new Map();
         let runtimeMissing = 0;
         let disabledCount = 0;
         let errorCount = 0;
@@ -5314,17 +5406,14 @@
             counts[parsed.mode] = (counts[parsed.mode] || 0) + 1;
             const stats = consumerStats(stream);
             consumerCount += stats.consumers;
-            for (const [ip, count] of stats.ipEntries) {
-                consumerIPs.set(ip, (consumerIPs.get(ip) || 0) + count);
-            }
             if (isStreamDisabled(name) || stream?.disabled) disabledCount += 1;
             else if (stream?.runtime_present === false) runtimeMissing += 1;
             const src = getManagedSources(stream)[0] || '';
             if (src.includes('#error=') || src.includes('error=')) errorCount += 1;
         }
 
-        const ipEntries = [...consumerIPs.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'zh-CN', {numeric: true}));
-        latestConsumerSummary = {consumers: consumerCount, ipCount: consumerIPs.size, ipEntries, topIPs: ipEntries.slice(0, 3)};
+        const ipEntries = consumerIPStreams(entries);
+        latestConsumerSummary = {consumers: consumerCount, ipCount: ipEntries.length, ipEntries, topIPs: ipEntries.slice(0, 3)};
         const ipSummary = consumerIPSummary(latestConsumerSummary);
 
         document.getElementById('summary-file-count').textContent = String(counts.file || 0);
@@ -5429,6 +5518,32 @@
             card.classList.add('is-highlighted');
             if (scroll) card.scrollIntoView({behavior: 'smooth', block: 'center'});
         });
+    }
+
+    function locateStreamCard(name) {
+        const selector = `[data-stream-name="${CSS.escape(name)}"]`;
+        const card = simList.querySelector(selector);
+        if (!card) {
+            showToast(`未找到视频流 ${name} 的任务卡片。`, 'error');
+            return false;
+        }
+
+        closeConsumerPopover();
+        locatedStreamName = name;
+        if (locatedStreamTimer) window.clearTimeout(locatedStreamTimer);
+        card.classList.remove('is-located');
+        card.tabIndex = -1;
+        requestAnimationFrame(() => {
+            card.classList.add('is-located');
+            card.scrollIntoView({behavior: 'smooth', block: 'center'});
+            card.focus({preventScroll: true});
+            locatedStreamTimer = window.setTimeout(() => {
+                locatedStreamName = '';
+                locatedStreamTimer = 0;
+                simList.querySelector(selector)?.classList.remove('is-located');
+            }, 4000);
+        });
+        return true;
     }
 
     function copyTextFallback(text) {
@@ -5803,6 +5918,7 @@
             card.className = 'sim-card';
             card.dataset.streamName = name;
             if (highlightedStreamName === name) card.classList.add('is-highlighted');
+            if (locatedStreamName === name) card.classList.add('is-located');
             if (disabled) card.classList.add('is-disabled');
             const hasError = src.includes('#error=') || src.includes('error=');
             const runtimePresent = stream?.runtime_present !== false;
@@ -6163,7 +6279,11 @@
                 body: JSON.stringify(config),
             });
             if (!response.ok) throw new Error(await response.text() || '保存事件推送配置失败');
-            eventConfig = normalizeEventConfig(await response.json());
+            const payload = await response.json();
+            eventTemplateCatalog = Array.isArray(payload.catalog)
+                ? payload.catalog.map(template => normalizeEventTemplatePreset(template))
+                : eventTemplateCatalog;
+            eventConfig = normalizeEventConfig(payload);
             updateEventSummary(eventConfig);
             const restarted = await saveAndRestart('事件推送配置保存成功，服务已重启', message => setEventConfigStatus(message));
             if (!restarted) saveEventConfigBtn.disabled = false;
@@ -6266,6 +6386,12 @@
     });
 
     consumerPopoverClose.addEventListener('click', closeConsumerPopover);
+
+    consumerIPList.addEventListener('click', event => {
+        const streamButton = event.target.closest('button[data-consumer-stream]');
+        if (!streamButton) return;
+        locateStreamCard(decodeURIComponent(streamButton.dataset.consumerStream));
+    });
 
     cpuSummaryCard.addEventListener('click', event => {
         event.stopPropagation();
@@ -6416,6 +6542,7 @@
 
     window.addEventListener('beforeunload', () => {
         if (streamRefreshTimer) window.clearInterval(streamRefreshTimer);
+        if (locatedStreamTimer) window.clearTimeout(locatedStreamTimer);
     });
 
     init().catch(error => {
