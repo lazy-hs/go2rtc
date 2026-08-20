@@ -3346,11 +3346,12 @@
                     <div class="field">
                         <label for="video">视频编码</label>
                         <select id="video" name="video">
-                            <option value="copy">原始编码（复制）</option>
-                            <option value="h264">H.264</option>
+                            <option value="copy">原始编码（零转码，保留源规格）</option>
+                            <option value="h264">H.264（兼容 / 流畅）</option>
                             <option value="h265">H.265</option>
                             <option value="mjpeg">MJPEG</option>
                         </select>
+                        <div class="helper" id="video-helper">H.264 会使用低延迟参数重新编码，适合需要稳定兼容播放的场景。</div>
                     </div>
                     <div class="field">
                         <label for="audio">音频策略</label>
@@ -3754,6 +3755,7 @@
     const sourceModeButtons = [...document.querySelectorAll('[data-source-mode]')];
     const sourcePanels = [...document.querySelectorAll('[data-source-panel]')];
     const transcodeOptions = document.getElementById('transcode-options');
+    const videoHelper = document.getElementById('video-helper');
     const filePlaybackOptions = document.getElementById('file-playback-options');
     const cameraDeviceSelect = document.getElementById('camera-device');
     const cameraDeviceState = document.getElementById('camera-device-state');
@@ -4489,7 +4491,28 @@
         return value ? value.toUpperCase() : '无音频';
     }
 
+    function updateCodecGuidance() {
+        if (!videoHelper) return;
+        const video = form.elements.video.value;
+        if (video === 'copy') {
+            videoHelper.textContent = sourceMode === 'rtsp'
+                ? '直接透传上游视频，不会降低分辨率、帧率或码率；高码率、H.265 Main10 或含 B 帧的源若卡顿，请改用 H.264。'
+                : '原样保留源分辨率、帧率、码率和 B 帧；4K60、H.265 Main10 等高规格文件在部分客户端可能卡顿，需要流畅兼容时请选择 H.264。';
+            return;
+        }
+        if (video === 'h264') {
+            videoHelper.textContent = '使用低延迟参数重新编码为 H.264，适合需要稳定兼容播放的场景；设置码率后还能控制网络与解码压力。';
+            return;
+        }
+        if (video === 'h265') {
+            videoHelper.textContent = '重新编码为 H.265，可降低码率，但客户端必须支持 H.265；浏览器和部分 ONVIF 客户端兼容性弱于 H.264。';
+            return;
+        }
+        videoHelper.textContent = '重新编码为 MJPEG，兼容部分传统客户端，但带宽占用通常高于 H.264。';
+    }
+
     function updatePreview() {
+        updateCodecGuidance();
         const source = buildSource();
         const name = form.elements.name.value.trim();
         if (sourceValue) sourceValue.textContent = source || '点击“新建任务”后在弹窗中填写表单';
@@ -5602,6 +5625,21 @@
         }, 1200);
     }
 
+    async function copyFromButton(copyButton) {
+        const successMessage = `${copyButton.dataset.copyLabel || '内容'}已复制到剪贴板。`;
+        try {
+            await copyText(
+                decodeURIComponent(copyButton.dataset.copy),
+                successMessage,
+            );
+            flashCopiedIcon(copyButton);
+            showToast(successMessage);
+        } catch {
+            setStatus('复制失败，请手动复制。', true);
+            showToast('复制失败，请手动复制。', 'error');
+        }
+    }
+
     function setEditingMode(name = '') {
         editingName = name;
         if (name) {
@@ -6406,6 +6444,11 @@
     resourcePopoverClose.addEventListener('click', closeResourcePopover);
     qualityPopoverClose.addEventListener('click', closeQualityPopover);
 
+    qualityURLList.addEventListener('click', async event => {
+        const copyButton = event.target.closest('button[data-copy]');
+        if (copyButton) await copyFromButton(copyButton);
+    });
+
     document.addEventListener('click', event => {
         if (!selectPopover.hidden && !selectPopover.contains(event.target) && !activeCustomSelect?.button.contains(event.target)) {
             closeCustomSelect();
@@ -6482,12 +6525,7 @@
     simList.addEventListener('click', async event => {
         const copyButton = event.target.closest('button[data-copy]');
         if (copyButton) {
-            try {
-                await copyText(decodeURIComponent(copyButton.dataset.copy), `${copyButton.dataset.copyLabel || '内容'}已复制到剪贴板。`);
-                flashCopiedIcon(copyButton);
-            } catch {
-                setStatus('复制失败，请手动复制。', true);
-            }
+            await copyFromButton(copyButton);
             return;
         }
 
