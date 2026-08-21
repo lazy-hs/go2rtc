@@ -269,6 +269,31 @@ func parseArgs(s string) *ffmpeg.Args {
 			args.AddCodec(raw)
 		}
 
+		// Simulated file streams default to 30 FPS so their actual RTP frame
+		// rate matches the ONVIF metadata. Explicit fps=0 disables the limit,
+		// while another positive value overrides the default.
+		videoTranscode := false
+		for _, video := range query["video"] {
+			if video != "copy" {
+				videoTranscode = true
+				break
+			}
+		}
+		if videoTranscode && query.Get("ptz_endpoint") == "" {
+			fps := 0
+			if _, configured := query["fps"]; configured {
+				fps = core.Atoi(query.Get("fps"))
+			} else if query.Get("input") == "file" {
+				fps = 30
+			}
+			if fps > 120 {
+				fps = 120
+			}
+			if fps > 0 {
+				args.AddCodec("-r:v " + strconv.Itoa(fps))
+			}
+		}
+
 		// 2. Process video filters (resize and rotation)
 		if query["width"] != nil || query["height"] != nil {
 			filter := "scale="

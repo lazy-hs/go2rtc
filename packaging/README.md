@@ -20,6 +20,8 @@ CGO_ENABLED=0
 go build -ldflags "-s -w" -trimpath
 ```
 
+`amd64` 目标会额外固定 `GOAMD64=v1`，以兼容最基础的 x86-64 指令集。构建完成后脚本会检查产物中的 `GOOS`、`GOARCH`、`CGO_ENABLED` 和 `GOAMD64` 元数据，避免环境变量污染或误用旧产物。
+
 默认会先运行 `go test -count=1 ./internal/api`，再执行构建。可使用 `-SkipTest` 或 `--skip-test` 跳过测试。
 
 ## PowerShell 用法
@@ -35,6 +37,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\packaging\build.ps1
 ```cmd
 packaging\build.cmd linux-amd64
 ```
+
+不要在 `packaging/` 目录中直接执行 `go build .` 或 `go test ./internal/api`；`.` 和相对包路径会指向打包目录。若当前位于 `packaging/`，请先执行 `Set-Location ..` 返回项目根目录。
 
 常用示例：
 
@@ -104,3 +108,23 @@ chmod +x packaging/build.sh
 - `SHA256SUMS.txt` 校验清单。
 
 脚本不会复制 `go2rtc.yaml`、上传文件或视频文件，避免把本地路径、凭据或业务数据带入发布产物。部署时请按目标环境单独准备配置和静态文件。
+
+## Linux 运行诊断
+
+将产物复制到 Linux 后，先检查架构、权限和文件校验值：
+
+```bash
+uname -m
+uname -r
+file ./go2rtc_linux_amd64
+chmod +x ./go2rtc_linux_amd64
+sha256sum ./go2rtc_linux_amd64
+GOTRACEBACK=crash ./go2rtc_linux_amd64 -v
+```
+
+- `uname -m` 为 `x86_64` 时使用 `linux-amd64`；
+- `aarch64` 使用 `linux-arm64`；
+- `armv7l` 使用 `linux-armv7`；
+- `i386` 或 `i686` 使用 `linux-386`。
+
+若仍显示 `Segmentation fault`，继续执行 `dmesg | tail -n 30`（可能需要 root），并对照 `packaging/dist/SHA256SUMS.txt`。没有 Go 堆栈、只在 `dmesg` 中出现崩溃时，通常是目标架构、模拟器或旧内核兼容问题，而不是配置文件解析错误。

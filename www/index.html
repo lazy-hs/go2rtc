@@ -77,11 +77,8 @@
 
         const src = decodeURIComponent(ev.target.dataset.name);
 
-        const message = `Please type the name of the stream "${src}" to confirm its deletion from the configuration. This action is irreversible.`;
-        if (prompt(message) !== src) {
-            alert('Stream name does not match. Deletion cancelled.');
-            return;
-        }
+        const message = `Delete stream "${src}" from the configuration?\n\nThis action cannot be undone.`;
+        if (!confirm(message)) return;
 
         const url = new URL('api/streams', location.href);
         url.searchParams.set('src', src);

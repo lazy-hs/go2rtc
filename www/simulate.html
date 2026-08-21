@@ -1487,6 +1487,8 @@
             z-index: 1400;
             max-height: min(300px, calc(100vh - 24px));
             overflow: auto;
+            overscroll-behavior: contain;
+            scrollbar-gutter: stable;
             padding: 6px;
             border: 1px solid rgba(34, 50, 77, 0.96);
             border-radius: 12px;
@@ -2040,6 +2042,16 @@
             width: min(620px, 100%);
         }
 
+        .event-interval-control {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 112px;
+            gap: 8px;
+        }
+
+        .event-interval-control > * {
+            min-width: 0;
+        }
+
         .onvif-config-form .modal-form-scroll {
             align-content: start;
         }
@@ -2238,6 +2250,10 @@
         .upload-location {
             min-width: 0;
             overflow-wrap: anywhere;
+        }
+
+        .upload-path-field {
+            margin-top: 2px;
         }
 
         .upload-location code {
@@ -3002,7 +3018,8 @@
                 grid-template-columns: 1fr;
             }
 
-            .onvif-config-form .form-grid {
+            .onvif-config-form .form-grid,
+            .event-config-form .form-grid {
                 grid-template-columns: 1fr;
             }
         }
@@ -3295,7 +3312,11 @@
                 </div>
                 <input class="visually-hidden" id="local-file-input" type="file" accept="video/*,.3gp,.avi,.flv,.m2ts,.m4v,.mkv,.mov,.mp4,.mpeg,.mpg,.mts,.ts,.webm">
                 <progress class="upload-progress" id="upload-progress" max="100" value="0" hidden></progress>
-                <div class="helper upload-location">上传目录：<code id="upload-directory">加载中...</code></div>
+                <div class="field wide upload-path-field">
+                    <label for="upload-subdirectory">上传子目录 <small>自动记忆</small></label>
+                    <input id="upload-subdirectory" type="text" autocomplete="off" spellcheck="false" placeholder="留空使用默认目录，例如：camera-a/2026">
+                    <div class="helper upload-location">后端根目录：<code id="upload-directory">加载中...</code>；后续上传直接复用此设置。</div>
+                </div>
             </div>
 
             <div class="modal-section source-panel" data-source-panel="camera" hidden>
@@ -3567,7 +3588,13 @@
                     <div class="form-grid">
                         <div class="field">
                             <label for="event-interval">推送频率</label>
-                            <input id="event-interval" name="interval" type="text" placeholder="例如：1m、30s、PT1M">
+                            <div class="event-interval-control">
+                                <input id="event-interval" name="interval" type="number" min="0.001" step="any" inputmode="decimal" placeholder="例如：1" required>
+                                <select id="event-interval-unit" name="interval_unit" aria-label="推送频率单位">
+                                    <option value="m">分钟</option>
+                                    <option value="s">秒</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="field">
                             <label for="event-burst">初始事件数</label>
@@ -3712,6 +3739,7 @@
     const localFileInput = document.getElementById('local-file-input');
     const uploadProgress = document.getElementById('upload-progress');
     const uploadDirectory = document.getElementById('upload-directory');
+    const uploadSubdirectory = document.getElementById('upload-subdirectory');
     const fileBrowser = document.getElementById('file-browser');
     const fileBrowserList = document.getElementById('file-browser-list');
     const fileBrowserPath = document.getElementById('file-browser-path');
@@ -3739,6 +3767,7 @@
     const cancelEventConfigBtn = document.getElementById('cancel-event-config');
     const saveEventConfigBtn = document.getElementById('save-event-config');
     const eventConfigStatus = document.getElementById('event-config-status');
+    const eventIntervalUnit = document.getElementById('event-interval-unit');
     const eventTemplateList = document.getElementById('event-template-list');
     const eventTemplatePreset = document.getElementById('event-template-preset');
     const addEventTemplateBtn = document.getElementById('add-event-template');
@@ -3793,6 +3822,8 @@
     let toastTimer = 0;
     let activeCustomSelect = null;
     const customSelectInstances = new Map();
+    const backendBrowserPathStorageKey = 'go2rtc-simulate-browser-path';
+    const uploadPathStorageKey = 'go2rtc-simulate-upload-path';
     let meta = {
         host: location.host,
         base_path: '',
@@ -4538,16 +4569,36 @@
         uploadBusy = busy;
         uploadLocalBtn.disabled = busy;
         browseBackendBtn.disabled = busy;
+        uploadSubdirectory.disabled = busy;
         uploadProgress.hidden = !busy;
         uploadProgress.value = Math.max(0, Math.min(100, progress));
         uploadLocalBtn.textContent = busy ? `上传中 ${Math.round(uploadProgress.value)}%` : '上传本地文件';
+    }
+
+    function normalizedUploadSubdirectory() {
+        return uploadSubdirectory.value.trim().replace(/\\/g, '/');
+    }
+
+    function saveUploadSubdirectory(normalizeInput = true) {
+        const path = normalizedUploadSubdirectory();
+        if (normalizeInput) uploadSubdirectory.value = path;
+        if (path) {
+            localStorage.setItem(uploadPathStorageKey, path);
+        } else {
+            localStorage.removeItem(uploadPathStorageKey);
+        }
+        return path;
+    }
+
+    function restoreUploadSubdirectory() {
+        uploadSubdirectory.value = localStorage.getItem(uploadPathStorageKey) || '';
     }
 
     function uploadLocalFile(file) {
         return new Promise((resolve, reject) => {
             const request = new XMLHttpRequest();
             const body = new FormData();
-            body.append('path', '');
+            body.append('path', saveUploadSubdirectory());
             body.append('file', file, file.name);
 
             request.open('POST', baseURL(meta.upload_api));
@@ -4584,6 +4635,11 @@
     function renderBackendFiles(data) {
         currentBrowserPath = data.path || '';
         currentBrowserParent = data.parent || '';
+        if (currentBrowserPath) {
+            localStorage.setItem(backendBrowserPathStorageKey, currentBrowserPath);
+        } else {
+            localStorage.removeItem(backendBrowserPathStorageKey);
+        }
         fileBrowserPath.textContent = currentBrowserPath || '此电脑';
         fileBrowserPath.title = fileBrowserPath.textContent;
         fileBrowserUpBtn.disabled = !currentBrowserPath;
@@ -4625,7 +4681,7 @@
         }
     }
 
-    async function loadBackendFiles(path = '') {
+    async function loadBackendFiles(path = '', {fallbackToRoot = false} = {}) {
         setFileBrowserStatus('正在加载文件列表...');
         try {
             const url = new URL(baseURL(meta.files_api));
@@ -4634,6 +4690,11 @@
             if (!response.ok) throw new Error(await response.text() || '加载后端文件失败');
             renderBackendFiles(await response.json());
         } catch (error) {
+            if (fallbackToRoot && path) {
+                localStorage.removeItem(backendBrowserPathStorageKey);
+                await loadBackendFiles();
+                return;
+            }
             setFileBrowserStatus(error.message, true);
         }
     }
@@ -4643,7 +4704,8 @@
         fileBrowser.setAttribute('aria-hidden', 'false');
         currentBrowserPath = '';
         currentBrowserParent = '';
-        loadBackendFiles();
+        const savedPath = localStorage.getItem(backendBrowserPathStorageKey) || '';
+        loadBackendFiles(savedPath, {fallbackToRoot: Boolean(savedPath)});
     }
 
     function closeFileBrowser(restoreFocus = true) {
@@ -4964,13 +5026,52 @@
         };
     }
 
+    function parseEventInterval(interval) {
+        const source = String(interval || '').trim().toLowerCase();
+        if (!source) return null;
+
+        const unitSeconds = {ns: 1e-9, us: 1e-6, 'µs': 1e-6, 'μs': 1e-6, ms: 1e-3, s: 1, m: 60, h: 3600};
+        const pattern = /(\d+(?:\.\d+)?)(ns|us|µs|μs|ms|s|m|h)/g;
+        const units = [];
+        let seconds = 0;
+        let offset = 0;
+        let match;
+        while ((match = pattern.exec(source))) {
+            if (match.index !== offset) return null;
+            seconds += Number(match[1]) * unitSeconds[match[2]];
+            units.push(match[2]);
+            offset = pattern.lastIndex;
+        }
+        if (offset !== source.length || !Number.isFinite(seconds) || seconds <= 0) return null;
+
+        const minutesOnly = units.length > 0 && units.every(unit => unit === 'm' || unit === 'h');
+        const wholeMinutes = seconds >= 60 && Math.abs(seconds / 60 - Math.round(seconds / 60)) < 1e-9;
+        const unit = minutesOnly || wholeMinutes ? 'm' : 's';
+        const value = seconds / (unit === 'm' ? 60 : 1);
+        return {value: Number(value.toFixed(9)).toString(), unit};
+    }
+
+    function readEventIntervalForm(fallback = eventConfig.interval) {
+        const value = Number(eventConfigForm.elements.interval.value);
+        const unit = eventIntervalUnit.value === 's' ? 's' : 'm';
+        if (!Number.isFinite(value) || value <= 0) return fallback;
+        return `${Number(value.toFixed(9))}${unit}`;
+    }
+
+    function formatEventInterval(interval) {
+        const parsed = parseEventInterval(interval);
+        if (!parsed) return String(interval || '--');
+        return `${parsed.value} ${parsed.unit === 'm' ? '分钟' : '秒'}`;
+    }
+
     function updateEventSummary(config = eventConfig) {
         const templates = Array.isArray(config.templates) ? config.templates : [];
         const enabledCount = templates.filter(template => template.enabled !== false).length;
         const total = templates.length;
         eventSummaryTitle.textContent = `${config.enabled === false ? '已停用' : '已启用'} ${enabledCount}/${total} 个事件`;
-        eventSummaryDetail.textContent = `点击配置 · 频率 ${config.interval || '--'}`;
-        openEventConfigBtn.title = `${enabledCount} 个事件启用，推送频率 ${config.interval || '--'}`;
+        const interval = formatEventInterval(config.interval);
+        eventSummaryDetail.textContent = `点击配置 · 频率 ${interval}`;
+        openEventConfigBtn.title = `${enabledCount} 个事件启用，推送频率 ${interval}`;
     }
 
     function setEventConfigStatus(message, isError = false) {
@@ -5015,8 +5116,11 @@
     }
 
     function fillEventConfigForm() {
+        const interval = parseEventInterval(eventConfig.interval) || {value: '1', unit: 'm'};
         eventConfigForm.elements.enabled.checked = eventConfig.enabled !== false;
-        eventConfigForm.elements.interval.value = eventConfig.interval || '1m';
+        eventConfigForm.elements.interval.value = interval.value;
+        eventIntervalUnit.value = interval.unit;
+        syncCustomSelect(eventIntervalUnit);
         eventConfigForm.elements.burst.value = String(eventConfig.burst ?? 0);
         eventConfigForm.elements.permanent.checked = Boolean(eventConfig.permanent);
         renderEventTemplates();
@@ -5032,7 +5136,7 @@
         updateEventSummary({
             ...eventConfig,
             enabled: eventConfigForm.elements.enabled.checked,
-            interval: eventConfigForm.elements.interval.value.trim() || eventConfig.interval,
+            interval: readEventIntervalForm(),
         });
     }
 
@@ -5655,6 +5759,7 @@
 
     function resetFormState() {
         form.reset();
+        restoreUploadSubdirectory();
         localFileInput.value = '';
         rtspInput.value = '';
         form.elements.rtsp_username.value = '';
@@ -6096,7 +6201,7 @@
     }
 
     async function removeStream(name) {
-        if (prompt(`请输入流名称 ${name} 以确认删除。`) !== name) return;
+        if (!confirm(`确认删除视频任务“${name}”？\n\n删除后将从配置中移除，且无法恢复。`)) return;
 
         const url = new URL(baseURL(meta.streams_api));
         url.searchParams.set('src', name);
@@ -6158,6 +6263,9 @@
     uploadLocalBtn.addEventListener('click', () => {
         if (!uploadBusy) localFileInput.click();
     });
+
+    uploadSubdirectory.addEventListener('input', () => saveUploadSubdirectory(false));
+    uploadSubdirectory.addEventListener('change', () => saveUploadSubdirectory());
 
     localFileInput.addEventListener('change', async () => {
         const file = localFileInput.files?.[0];
@@ -6252,7 +6360,7 @@
         updateEventSummary({
             ...eventConfig,
             enabled: eventConfigForm.elements.enabled.checked,
-            interval: eventConfigForm.elements.interval.value.trim() || eventConfig.interval,
+            interval: readEventIntervalForm(),
         });
     });
 
@@ -6266,7 +6374,7 @@
         updateEventSummary({
             ...eventConfig,
             enabled: eventConfigForm.elements.enabled.checked,
-            interval: eventConfigForm.elements.interval.value.trim() || eventConfig.interval,
+            interval: readEventIntervalForm(),
         });
         setEventConfigStatus(`已移除“${eventTemplateLabel(removed, index)}”，保存并重启后生效。`);
     });
@@ -6291,7 +6399,7 @@
         updateEventSummary({
             ...eventConfig,
             enabled: eventConfigForm.elements.enabled.checked,
-            interval: eventConfigForm.elements.interval.value.trim() || eventConfig.interval,
+            interval: readEventIntervalForm(),
         });
     });
 
@@ -6304,9 +6412,11 @@
                 const input = eventTemplateList.querySelector(`input[data-event-template-index="${index}"]`);
                 return {...template, enabled: input ? input.checked : template.enabled !== false};
             });
+            const interval = readEventIntervalForm('');
+            if (!interval) throw new Error('推送频率必须大于 0。');
             const config = normalizeEventConfig({
                 enabled: eventConfigForm.elements.enabled.checked,
-                interval: eventConfigForm.elements.interval.value.trim(),
+                interval,
                 burst: Number(eventConfigForm.elements.burst.value),
                 permanent: eventConfigForm.elements.permanent.checked,
                 templates,
@@ -6471,8 +6581,10 @@
         if (!qualityPopover.hidden) positionQualityPopover();
     });
 
-    window.addEventListener('scroll', () => {
-        closeCustomSelect();
+    window.addEventListener('scroll', event => {
+        const selectPopoverScrolled = !selectPopover.hidden &&
+            (event.target === selectPopover || selectPopover.contains(event.target));
+        if (!selectPopoverScrolled) closeCustomSelect();
         if (!consumerPopover.hidden) positionConsumerPopover();
         if (!resourcePopover.hidden) positionResourcePopover();
         if (!qualityPopover.hidden) positionQualityPopover();
@@ -6565,6 +6677,7 @@
         showSavedToast();
         enhanceCustomSelect(streamSort, {minWidth: 178});
         enhanceCustomSelect(eventTemplatePreset, {minWidth: 240});
+        enhanceCustomSelect(eventIntervalUnit, {minWidth: 112});
         enhanceCustomSelect(form.elements.video, {minWidth: 180});
         enhanceCustomSelect(form.elements.audio, {minWidth: 180});
         updateHighlightLabel('');

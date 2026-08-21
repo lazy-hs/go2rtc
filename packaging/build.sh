@@ -148,7 +148,27 @@ for record in "${SELECTED_RECORDS[@]}"; do
   if [[ -n "${goarm}" ]]; then
     env_args+=("GOARM=${goarm}")
   fi
+  if [[ "${goarch}" == "amd64" ]]; then
+    env_args+=("GOAMD64=v1")
+  fi
   (cd "${REPO_ROOT}" && env "${env_args[@]}" go build -ldflags '-s -w' -trimpath -o "${DIST_DIR}/${output}" .)
+
+  artifact="${DIST_DIR}/${output}"
+  if [[ ! -s "${artifact}" ]]; then
+    printf '构建产物为空：%s\n' "${artifact}" >&2
+    exit 1
+  fi
+  metadata="$(go version -m "${artifact}")"
+  for expected in "GOOS=${goos}" "GOARCH=${goarch}" 'CGO_ENABLED=0'; do
+    if ! grep -Fq "${expected}" <<<"${metadata}"; then
+      printf '产物元数据缺少 %s：%s\n' "${expected}" "${artifact}" >&2
+      exit 1
+    fi
+  done
+  if [[ "${goarch}" == "amd64" ]] && ! grep -Fq 'GOAMD64=v1' <<<"${metadata}"; then
+    printf '产物元数据缺少 GOAMD64=v1：%s\n' "${artifact}" >&2
+    exit 1
+  fi
 done
 
 checksum_file="${DIST_DIR}/SHA256SUMS.txt"

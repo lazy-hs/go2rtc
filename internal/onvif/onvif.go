@@ -1,6 +1,7 @@
 package onvif
 
 import (
+	"errors"
 	"io"
 	"net"
 	"net/http"
@@ -139,11 +140,15 @@ func onvifDeviceService(w http.ResponseWriter, r *http.Request) {
 	if isEventRequest(r, operation) {
 		b, err = eventResponse(r, request, operation)
 		if err != nil {
-			status := http.StatusBadRequest
-			if err == errSubscriptionNotFound {
-				status = http.StatusNotFound
+			if errors.Is(err, errSubscriptionNotFound) {
+				subscription := eventSubscriptionID(r, request)
+				b = eventAddressedResponse(r, request, eventSubscriptionNotFoundFault(), eventFaultAction)
+				writeSOAPFaultAction(w, b, eventFaultAction, http.StatusInternalServerError)
+				log.Debug().Str("subscription", subscription).Str("remote_addr", r.RemoteAddr).
+					Str("operation", operation).Msg("[onvif] stale event subscription")
+				return
 			}
-			http.Error(w, err.Error(), status)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			log.Warn().Err(err).Str("operation", operation).Msg("[onvif] event request")
 			return
 		}
@@ -488,6 +493,15 @@ func writeSOAPResponseAction(w http.ResponseWriter, b []byte, action string) {
 	}
 	w.Header().Set("Content-Type", `application/soap+xml; charset=utf-8; action="`+action+`"`)
 	w.Header().Set("SOAPAction", `"`+action+`"`)
+	if _, err := w.Write(b); err != nil {
+		log.Error().Err(err).Caller().Send()
+	}
+}
+
+func writeSOAPFaultAction(w http.ResponseWriter, b []byte, action string, status int) {
+	w.Header().Set("Content-Type", `application/soap+xml; charset=utf-8; action="`+action+`"`)
+	w.Header().Set("SOAPAction", `"`+action+`"`)
+	w.WriteHeader(status)
 	if _, err := w.Write(b); err != nil {
 		log.Error().Err(err).Caller().Send()
 	}

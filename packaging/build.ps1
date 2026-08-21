@@ -15,18 +15,18 @@ $distDir = Join-Path $PSScriptRoot 'dist'
 $buildFlags = @('-ldflags', '-s -w', '-trimpath')
 
 $targets = @(
-    [pscustomobject]@{ Name = 'windows-amd64'; OS = 'windows'; Arch = 'amd64'; Arm = ''; Output = 'go2rtc_win64.exe' }
+    [pscustomobject]@{ Name = 'windows-amd64'; OS = 'windows'; Arch = 'amd64'; Arm = ''; AMD64 = 'v1'; Output = 'go2rtc_win64.exe' }
     [pscustomobject]@{ Name = 'windows-386'; OS = 'windows'; Arch = '386'; Arm = ''; Output = 'go2rtc_win32.exe' }
     [pscustomobject]@{ Name = 'windows-arm64'; OS = 'windows'; Arch = 'arm64'; Arm = ''; Output = 'go2rtc_win_arm64.exe' }
-    [pscustomobject]@{ Name = 'linux-amd64'; OS = 'linux'; Arch = 'amd64'; Arm = ''; Output = 'go2rtc_linux_amd64' }
+    [pscustomobject]@{ Name = 'linux-amd64'; OS = 'linux'; Arch = 'amd64'; Arm = ''; AMD64 = 'v1'; Output = 'go2rtc_linux_amd64' }
     [pscustomobject]@{ Name = 'linux-386'; OS = 'linux'; Arch = '386'; Arm = ''; Output = 'go2rtc_linux_i386' }
     [pscustomobject]@{ Name = 'linux-arm64'; OS = 'linux'; Arch = 'arm64'; Arm = ''; Output = 'go2rtc_linux_arm64' }
     [pscustomobject]@{ Name = 'linux-armv7'; OS = 'linux'; Arch = 'arm'; Arm = '7'; Output = 'go2rtc_linux_arm' }
     [pscustomobject]@{ Name = 'linux-armv6'; OS = 'linux'; Arch = 'arm'; Arm = '6'; Output = 'go2rtc_linux_armv6' }
     [pscustomobject]@{ Name = 'linux-mipsle'; OS = 'linux'; Arch = 'mipsle'; Arm = ''; Output = 'go2rtc_linux_mipsel' }
-    [pscustomobject]@{ Name = 'darwin-amd64'; OS = 'darwin'; Arch = 'amd64'; Arm = ''; Output = 'go2rtc_mac_amd64' }
+    [pscustomobject]@{ Name = 'darwin-amd64'; OS = 'darwin'; Arch = 'amd64'; Arm = ''; AMD64 = 'v1'; Output = 'go2rtc_mac_amd64' }
     [pscustomobject]@{ Name = 'darwin-arm64'; OS = 'darwin'; Arch = 'arm64'; Arm = ''; Output = 'go2rtc_mac_arm64' }
-    [pscustomobject]@{ Name = 'freebsd-amd64'; OS = 'freebsd'; Arch = 'amd64'; Arm = ''; Output = 'go2rtc_freebsd_amd64' }
+    [pscustomobject]@{ Name = 'freebsd-amd64'; OS = 'freebsd'; Arch = 'amd64'; Arm = ''; AMD64 = 'v1'; Output = 'go2rtc_freebsd_amd64' }
     [pscustomobject]@{ Name = 'freebsd-arm64'; OS = 'freebsd'; Arch = 'arm64'; Arm = ''; Output = 'go2rtc_freebsd_arm64' }
 )
 
@@ -78,6 +78,31 @@ function Restore-ProcessEnvironment {
     }
 }
 
+function Test-BuildArtifact {
+    param(
+        [Parameter(Mandatory = $true)]$Item,
+        [Parameter(Mandatory = $true)][string]$Path
+    )
+
+    $file = Get-Item -LiteralPath $Path -ErrorAction Stop
+    if ($file.Length -le 0) {
+        throw "Build produced an empty artifact: $Path"
+    }
+
+    $metadata = (& go version -m $Path 2>&1 | Out-String)
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to inspect build artifact: $Path`n$metadata"
+    }
+    foreach ($expected in @("GOOS=$($Item.OS)", "GOARCH=$($Item.Arch)", 'CGO_ENABLED=0')) {
+        if ($metadata -notmatch [regex]::Escape($expected)) {
+            throw "Artifact metadata is missing $expected`: $Path"
+        }
+    }
+    if ($Item.Arch -eq 'amd64' -and $metadata -notmatch [regex]::Escape("GOAMD64=$($Item.AMD64)")) {
+        throw "Artifact metadata is missing GOAMD64=$($Item.AMD64)`: $Path"
+    }
+}
+
 if ($List) {
     Show-Targets
     exit 0
@@ -100,7 +125,7 @@ if ($Clean) {
 }
 
 $originalEnvironment = @{}
-foreach ($name in @('CGO_ENABLED', 'GOOS', 'GOARCH', 'GOARM')) {
+foreach ($name in @('CGO_ENABLED', 'GOOS', 'GOARCH', 'GOARM', 'GOAMD64')) {
     $originalEnvironment[$name] = [System.Environment]::GetEnvironmentVariable($name, 'Process')
 }
 
@@ -131,11 +156,17 @@ try {
         } else {
             Remove-Item Env:GOARM -ErrorAction SilentlyContinue
         }
+        if ($item.Arch -eq 'amd64') {
+            $env:GOAMD64 = $item.AMD64
+        } else {
+            Remove-Item Env:GOAMD64 -ErrorAction SilentlyContinue
+        }
 
         & go build @buildFlags -o $outputPath .
         if ($LASTEXITCODE -ne 0) {
             throw "Build failed: $($item.Name)"
         }
+        Test-BuildArtifact -Item $item -Path $outputPath
     }
 } finally {
     if ($locationPushed) {

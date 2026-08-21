@@ -32,14 +32,16 @@ const (
 )
 
 const (
-	eventActionBase = "http://www.onvif.org/ver10/events/wsdl/"
-	wsnActionBase   = "http://docs.oasis-open.org/wsn/bw-2/"
+	eventActionBase  = "http://www.onvif.org/ver10/events/wsdl/"
+	wsnActionBase    = "http://docs.oasis-open.org/wsn/bw-2/"
+	eventFaultAction = "http://www.w3.org/2005/08/addressing/fault"
 )
 
 const (
 	defaultEventInterval    = time.Minute
 	defaultEventBurst       = 10
 	defaultSubscriptionTTL  = time.Hour
+	minimumEventDuration    = 10 * time.Second
 	maxPullMessages         = 100
 	maxPullTimeout          = 30 * time.Second
 	maxSubscriptionQueueLen = 512
@@ -106,6 +108,8 @@ type eventNotification struct {
 	SourceData string
 	Operation  string
 	Time       time.Time
+	StartTime  time.Time
+	EndTime    time.Time
 }
 
 type eventSubscription struct {
@@ -117,6 +121,7 @@ type eventSubscription struct {
 	TemplateIndexes []int
 	Queue           []eventNotification
 	Active          map[int]bool
+	StartedAt       map[int]time.Time
 	Notify          chan struct{}
 	Done            chan struct{}
 	doneOnce        sync.Once
@@ -129,6 +134,8 @@ type eventManager struct {
 	permanent     bool
 	enabled       bool
 	templates     []eventTemplate
+	active        map[int]bool
+	startedAt     map[int]time.Time
 	subscriptions map[string]*eventSubscription
 	stop          chan struct{}
 	stopOnce      sync.Once
@@ -155,6 +162,8 @@ func newEventManager(cfg eventConfig) *eventManager {
 		permanent:     cfg.Permanent,
 		enabled:       cfg.Enabled == nil || *cfg.Enabled,
 		templates:     append([]eventTemplate(nil), cfg.Templates...),
+		active:        make(map[int]bool),
+		startedAt:     make(map[int]time.Time),
 		subscriptions: make(map[string]*eventSubscription),
 		stop:          make(chan struct{}),
 	}
@@ -223,6 +232,7 @@ func (m *eventManager) createSubscription(source, filter, consumerURL string, tt
 		TopicFilter:     filter,
 		TemplateIndexes: m.matchingTemplateIndexes(filter),
 		Active:          make(map[int]bool),
+		StartedAt:       make(map[int]time.Time),
 		Notify:          make(chan struct{}, 1),
 		Done:            make(chan struct{}),
 	}
@@ -366,14 +376,66 @@ func (m *eventManager) generate(now time.Time) {
 	defer m.mu.Unlock()
 
 	m.cleanupLocked(now)
-	generated := 0
+	if !m.enabled {
+		return
+	}
+
+	pending := make(map[*eventSubscription]bool, len(m.subscriptions))
 	for _, sub := range m.subscriptions {
-		generated += m.enqueueLocked(sub, 1, now, "")
+		if len(sub.TemplateIndexes) > 0 {
+			pending[sub] = true
+		}
 	}
-	if generated > 0 {
-		log.Debug().Int("subscriptions", len(m.subscriptions)).Int("messages", generated).
-			Msg("[onvif] events generated")
+
+	generated := 0
+	delivered := 0
+	for len(pending) > 0 {
+		var target *eventSubscription
+		for sub := range pending {
+			target = sub
+			break
+		}
+
+		i := target.TemplateIndexes[rand.IntN(len(target.TemplateIndexes))]
+		notification := m.nextNotificationLocked(i, now)
+		generated++
+		for _, sub := range m.subscriptions {
+			if !subscriptionMatchesTemplate(sub, i) {
+				continue
+			}
+			notification.Source = sub.Source
+			m.appendNotificationLocked(sub, notification)
+			delete(pending, sub)
+			delivered++
+		}
 	}
+
+	if delivered > 0 {
+		log.Debug().Int("events", generated).Int("deliveries", delivered).
+			Int("subscriptions", len(m.subscriptions)).Msg("[onvif] events generated")
+	}
+}
+
+func (m *eventManager) nextNotificationLocked(i int, now time.Time) eventNotification {
+	template := m.templates[i]
+	active := m.active[i]
+	notification, startedAt := newEventNotification(template, "", now, active, m.startedAt[i], "")
+	m.active[i] = !active
+	if startedAt.IsZero() {
+		delete(m.startedAt, i)
+	} else {
+		m.startedAt[i] = startedAt
+	}
+	return notification
+}
+
+func subscriptionMatchesTemplate(sub *eventSubscription, index int) bool {
+	for _, i := range sub.TemplateIndexes {
+		if i == index {
+			return true
+		}
+	}
+	return false
 }
 
 func (m *eventManager) enqueueLocked(sub *eventSubscription, count int, now time.Time, operationOverride string) int {
@@ -382,43 +444,79 @@ func (m *eventManager) enqueueLocked(sub *eventSubscription, count int, now time
 	}
 
 	generated := 0
+	spacing := max(m.interval, minimumEventDuration)
+	firstNotificationTime := now.Add(-time.Duration(count-1) * spacing)
 	for range count {
-		if len(sub.Queue) >= maxSubscriptionQueueLen {
-			sub.Queue = sub.Queue[1:]
-		}
-
 		i := sub.TemplateIndexes[rand.IntN(len(sub.TemplateIndexes))]
 		template := m.templates[i]
 		active := sub.Active[i]
-		data := template.StartData
-		operation := template.StartOperation
-		if active {
-			data = template.EndData
-			operation = template.EndOperation
-		}
-		if operationOverride != "" {
-			operation = operationOverride
-		} else if operation == "" {
-			operation = "Changed"
-		}
+		notificationTime := firstNotificationTime.Add(time.Duration(generated) * spacing)
+		notification, startedAt := newEventNotification(
+			template, sub.Source, notificationTime, active, sub.StartedAt[i], operationOverride,
+		)
 		sub.Active[i] = !active
+		if startedAt.IsZero() {
+			delete(sub.StartedAt, i)
+		} else {
+			sub.StartedAt[i] = startedAt
+		}
 
-		sub.Queue = append(sub.Queue, eventNotification{
-			Topic:      template.Topic,
-			Data:       data,
-			Source:     sub.Source,
-			SourceData: template.SourceData,
-			Operation:  operation,
-			Time:       now,
-		})
+		m.appendNotificationLocked(sub, notification)
 		generated++
 	}
+	return generated
+}
+
+func newEventNotification(
+	template eventTemplate, source string, now time.Time, active bool, startedAt time.Time, operationOverride string,
+) (eventNotification, time.Time) {
+	if active {
+		if startedAt.IsZero() {
+			startedAt = now.Add(-minimumEventDuration)
+		}
+		if now.Sub(startedAt) < minimumEventDuration {
+			now = startedAt.Add(minimumEventDuration)
+		}
+	}
+
+	notification := eventNotification{
+		Topic:      template.Topic,
+		Data:       template.StartData,
+		Source:     source,
+		SourceData: template.SourceData,
+		Operation:  template.StartOperation,
+		Time:       now,
+		StartTime:  now,
+	}
+
+	if active {
+		notification.Data = template.EndData
+		notification.Operation = template.EndOperation
+		notification.StartTime = startedAt
+		notification.EndTime = now
+		startedAt = time.Time{}
+	} else {
+		startedAt = now
+	}
+
+	if operationOverride != "" {
+		notification.Operation = operationOverride
+	} else if notification.Operation == "" {
+		notification.Operation = "Changed"
+	}
+	return notification, startedAt
+}
+
+func (m *eventManager) appendNotificationLocked(sub *eventSubscription, notification eventNotification) {
+	if len(sub.Queue) >= maxSubscriptionQueueLen {
+		sub.Queue = sub.Queue[1:]
+	}
+	sub.Queue = append(sub.Queue, notification)
 
 	select {
 	case sub.Notify <- struct{}{}:
 	default:
 	}
-	return generated
 }
 
 func (m *eventManager) subscriptionLocked(id string, now time.Time) (*eventSubscription, bool) {
@@ -556,6 +654,8 @@ func logDeliveredEvents(delivery, subscription string, notifications []eventNoti
 			Str("topic", notification.Topic).
 			Str("source", notification.Source).
 			Str("operation", notification.Operation).
+			Time("start_time", notification.StartTime).
+			Time("end_time", notification.EndTime).
 			Str("data", notification.Data).
 			Msg("[onvif] event delivered")
 	}
@@ -726,6 +826,16 @@ func notificationMessageXML(notification eventNotification, subscriptionURL stri
 	body.WriteString(notification.SourceData)
 	body.WriteString(`</tt:Source><tt:Data>`)
 	body.WriteString(notification.Data)
+	if !notification.StartTime.IsZero() {
+		body.WriteString(`<tt:SimpleItem Name="StartTime" Value="`)
+		body.WriteString(notification.StartTime.UTC().Format(time.RFC3339Nano))
+		body.WriteString(`"/>`)
+	}
+	if !notification.EndTime.IsZero() {
+		body.WriteString(`<tt:SimpleItem Name="EndTime" Value="`)
+		body.WriteString(notification.EndTime.UTC().Format(time.RFC3339Nano))
+		body.WriteString(`"/>`)
+	}
 	body.WriteString(`</tt:Data></tt:Message></wsnt:Message></wsnt:NotificationMessage>`)
 	return body.String()
 }
@@ -752,6 +862,13 @@ func eventEnvelope(body string) []byte {
 	return e.Bytes()
 }
 
+func eventSubscriptionNotFoundFault() []byte {
+	return eventEnvelope(`<s:Fault xmlns:wsrf-r="http://docs.oasis-open.org/wsrf/r-2">
+	<s:Code><s:Value>s:Sender</s:Value><s:Subcode><s:Value>wsrf-r:ResourceUnknown</s:Value></s:Subcode></s:Code>
+	<s:Reason><s:Text xml:lang="en">ONVIF event subscription not found</s:Text></s:Reason>
+</s:Fault>`)
+}
+
 func eventSubscriptionURL(r *http.Request, id string) string {
 	scheme := "http"
 	if r.TLS != nil {
@@ -769,22 +886,42 @@ func eventSubscriptionURL(r *http.Request, id string) string {
 }
 
 func eventSubscriptionID(r *http.Request, request []byte) string {
-	if id := r.URL.Query().Get("Idx"); id != "" {
-		return id
-	}
-	if id := r.URL.Query().Get("subscription"); id != "" {
+	if id := eventSubscriptionURLID(r.URL); id != "" {
 		return id
 	}
 	if id := strings.TrimSpace(pkgonvif.FindTagValue(request, "SubscriptionId")); id != "" {
 		return id
 	}
+	if id := strings.TrimSpace(pkgonvif.FindTagValue(request, "SubscriptionID")); id != "" {
+		return id
+	}
 	if address := pkgonvif.FindTagValue(request, "To"); address != "" {
 		u, err := url.Parse(html.UnescapeString(address))
 		if err == nil {
-			if id := u.Query().Get("Idx"); id != "" {
-				return id
+			return eventSubscriptionURLID(u)
+		}
+	}
+	return ""
+}
+
+func eventSubscriptionURLID(u *url.URL) string {
+	for key, values := range u.Query() {
+		if !strings.EqualFold(key, "Idx") &&
+			!strings.EqualFold(key, "subscription") &&
+			!strings.EqualFold(key, "SubscriptionId") {
+			continue
+		}
+		for _, value := range values {
+			if value = strings.TrimSpace(value); value != "" {
+				return value
 			}
-			return u.Query().Get("subscription")
+		}
+	}
+
+	parts := strings.Split(strings.Trim(u.Path, "/"), "/")
+	for i := len(parts) - 2; i >= 0; i-- {
+		if strings.EqualFold(parts[i], "subscription") {
+			return strings.TrimSpace(parts[i+1])
 		}
 	}
 	return ""

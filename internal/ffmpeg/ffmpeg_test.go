@@ -31,6 +31,26 @@ func TestParseArgsFile(t *testing.T) {
 			expect: `ffmpeg -hide_banner -re -i /media/bbb.mp4 -c:v libx264 -g 50 -profile:v high -level:v 4.1 -preset:v superfast -tune:v zerolatency -pix_fmt:v yuv420p -an -user_agent ffmpeg/go2rtc -rtsp_transport tcp -f rtsp {output}`,
 		},
 		{
+			name:   "[FILE] simulated video defaults to 30 FPS",
+			source: "/media/bbb.mp4#video=h264#input=file",
+			expect: `ffmpeg -hide_banner -re -i /media/bbb.mp4 -r:v 30 -c:v libx264 -g 50 -profile:v high -level:v 4.1 -preset:v superfast -tune:v zerolatency -pix_fmt:v yuv420p -an -user_agent ffmpeg/go2rtc -rtsp_transport tcp -f rtsp {output}`,
+		},
+		{
+			name:   "[FILE] explicit frame rate overrides the simulated default",
+			source: "/media/bbb.mp4#video=h264#input=file#fps=25",
+			expect: `ffmpeg -hide_banner -re -i /media/bbb.mp4 -r:v 25 -c:v libx264 -g 50 -profile:v high -level:v 4.1 -preset:v superfast -tune:v zerolatency -pix_fmt:v yuv420p -an -user_agent ffmpeg/go2rtc -rtsp_transport tcp -f rtsp {output}`,
+		},
+		{
+			name:   "[FILE] zero frame rate disables the simulated default",
+			source: "/media/bbb.mp4#video=h264#input=file#fps=0",
+			expect: `ffmpeg -hide_banner -re -i /media/bbb.mp4 -c:v libx264 -g 50 -profile:v high -level:v 4.1 -preset:v superfast -tune:v zerolatency -pix_fmt:v yuv420p -an -user_agent ffmpeg/go2rtc -rtsp_transport tcp -f rtsp {output}`,
+		},
+		{
+			name:   "[FILE] simulated video copy keeps the source frame rate",
+			source: "/media/bbb.mp4#video=copy#audio=copy#input=file",
+			expect: `ffmpeg -hide_banner -re -i /media/bbb.mp4 -c:v copy -c:a copy -user_agent ffmpeg/go2rtc -rtsp_transport tcp -f rtsp {output}`,
+		},
+		{
 			name:   "[FILE] video will be copied, audio will be transcoded to pcmu",
 			source: "/media/bbb.mp4#video=copy#audio=pcmu",
 			expect: `ffmpeg -hide_banner -re -i /media/bbb.mp4 -c:v copy -c:a pcm_mulaw -ar:a 8000 -ac:a 1 -user_agent ffmpeg/go2rtc -rtsp_transport tcp -f rtsp {output}`,

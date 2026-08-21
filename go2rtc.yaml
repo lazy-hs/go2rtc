@@ -9,7 +9,7 @@ streams:
   # main:
   # - ffmpeg:device?video=0&video_size=1280x720&framerate=30#video=h264
   main:
-    - ffmpeg:C:/Users/8054/Videos/2026.06.21-第12期下-4K.高码率.mp4#video=h264#input=file#audio=aac
+    - ffmpeg:D:/huangsheng/测试视频/2026.06.21-第12期下-4K.高码率.mp4#video=h264#input=file#audio=aac
   car:
   - ffmpeg:C:/Users/8054/Videos/监控中心二期算法测试数据/监控中心二期算法测试数据/人脸/光线充足/car.mp4#video=h264#audio=aac#input=file
   package:
@@ -59,7 +59,7 @@ app:
     - "mjpeg"
 
 event:
-  enabled: false
+  enabled: true
   interval: 1m
   burst: 10
   permanent: true
@@ -83,17 +83,13 @@ simulate:
     main:
       - width: 0
         height: 0
-      - width: 0
-        height: 2048
-      - width: 0
-        height: 2160
     dog:
       - width: 0
         height: 0
   disabled_streams:
     - animal
     - car
-    - main
+    - dog
     - normal
     - package
     - people

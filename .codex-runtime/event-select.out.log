@@ -1,0 +1,87 @@
+16:56:35.033 INF go2rtc platform=windows/amd64 revision=d8c9b53.dirty version=1.9.14+dev.d8c9b53.dirty
+16:56:35.054 INF config path="D:\\huangsheng\\project\\go2rtc\\go2rtc.yaml"
+16:56:35.064 INF [api] simulate uploads dir="D:\\huangsheng\\project\\go2rtc\\static"
+16:56:35.072 INF [api] listen addr=127.0.0.1:12984
+16:56:35.079 INF [rtsp] listen addr=127.0.0.1:19554
+16:56:35.131 INF [webrtc] listen tcp addr=127.0.0.1:19555
+16:56:35.134 INF [webrtc] listen udp addr=127.0.0.1:19555
+16:56:35.159 INF [onvif] event generator disabled by config templates=1
+16:56:35.215 INF [onvif] discovery multicast listener started addr=239.255.255.250:3702 interfaces=1
+16:57:12.590 INF 收到 Probe 请求 messageID=urn:uuid:697835ae-c558-4428-8b9a-be93f05afebe remoteAddr=192.168.73.202:62458
+16:57:12.593 INF 已回复 ProbeMatch messageID=urn:uuid:697835ae-c558-4428-8b9a-be93f05afebe remoteAddr=192.168.73.202:62458
+16:57:12.814 INF 收到 Probe 请求 messageID=urn:uuid:697835ae-c558-4428-8b9a-be93f05afebe remoteAddr=192.168.73.202:62458
+16:57:12.815 INF 已回复 ProbeMatch messageID=urn:uuid:697835ae-c558-4428-8b9a-be93f05afebe remoteAddr=192.168.73.202:62458
+16:57:13.270 INF 收到 Probe 请求 messageID=urn:uuid:697835ae-c558-4428-8b9a-be93f05afebe remoteAddr=192.168.73.202:62458
+16:57:13.272 INF 已回复 ProbeMatch messageID=urn:uuid:697835ae-c558-4428-8b9a-be93f05afebe remoteAddr=192.168.73.202:62458
+16:57:14.163 INF 收到 Probe 请求 messageID=urn:uuid:697835ae-c558-4428-8b9a-be93f05afebe remoteAddr=192.168.73.202:62458
+16:57:14.163 INF 已回复 ProbeMatch messageID=urn:uuid:697835ae-c558-4428-8b9a-be93f05afebe remoteAddr=192.168.73.202:62458
+16:57:15.939 INF 收到 Probe 请求 messageID=urn:uuid:697835ae-c558-4428-8b9a-be93f05afebe remoteAddr=192.168.73.202:62458
+16:57:15.943 INF 已回复 ProbeMatch messageID=urn:uuid:697835ae-c558-4428-8b9a-be93f05afebe remoteAddr=192.168.73.202:62458
+16:57:17.955 INF 收到 Probe 请求 messageID=urn:uuid:697835ae-c558-4428-8b9a-be93f05afebe remoteAddr=192.168.73.202:62458
+16:57:17.987 INF 已回复 ProbeMatch messageID=urn:uuid:697835ae-c558-4428-8b9a-be93f05afebe remoteAddr=192.168.73.202:62458
+16:57:51.520 INF 收到 Probe 请求 messageID=urn:uuid:7f6c312e-767a-400f-8814-c2dd4b1e4167 remoteAddr=192.168.73.202:62458
+16:57:51.522 INF 已回复 ProbeMatch messageID=urn:uuid:7f6c312e-767a-400f-8814-c2dd4b1e4167 remoteAddr=192.168.73.202:62458
+16:57:51.747 INF 收到 Probe 请求 messageID=urn:uuid:7f6c312e-767a-400f-8814-c2dd4b1e4167 remoteAddr=192.168.73.202:62458
+16:57:51.748 INF 已回复 ProbeMatch messageID=urn:uuid:7f6c312e-767a-400f-8814-c2dd4b1e4167 remoteAddr=192.168.73.202:62458
+16:57:52.189 INF 收到 Probe 请求 messageID=urn:uuid:7f6c312e-767a-400f-8814-c2dd4b1e4167 remoteAddr=192.168.73.202:62458
+16:57:52.189 INF 已回复 ProbeMatch messageID=urn:uuid:7f6c312e-767a-400f-8814-c2dd4b1e4167 remoteAddr=192.168.73.202:62458
+16:57:53.050 INF 收到 Probe 请求 messageID=urn:uuid:7f6c312e-767a-400f-8814-c2dd4b1e4167 remoteAddr=192.168.73.202:62458
+16:57:53.051 INF 已回复 ProbeMatch messageID=urn:uuid:7f6c312e-767a-400f-8814-c2dd4b1e4167 remoteAddr=192.168.73.202:62458
+16:57:54.778 INF 收到 Probe 请求 messageID=urn:uuid:7f6c312e-767a-400f-8814-c2dd4b1e4167 remoteAddr=192.168.73.202:62458
+16:57:54.782 INF 已回复 ProbeMatch messageID=urn:uuid:7f6c312e-767a-400f-8814-c2dd4b1e4167 remoteAddr=192.168.73.202:62458
+16:57:56.793 INF 收到 Probe 请求 messageID=urn:uuid:7f6c312e-767a-400f-8814-c2dd4b1e4167 remoteAddr=192.168.73.202:62458
+16:57:56.795 INF 已回复 ProbeMatch messageID=urn:uuid:7f6c312e-767a-400f-8814-c2dd4b1e4167 remoteAddr=192.168.73.202:62458
+16:57:58.804 INF 收到 Probe 请求 messageID=urn:uuid:7f6c312e-767a-400f-8814-c2dd4b1e4167 remoteAddr=192.168.73.202:62458
+16:57:58.806 INF 已回复 ProbeMatch messageID=urn:uuid:7f6c312e-767a-400f-8814-c2dd4b1e4167 remoteAddr=192.168.73.202:62458
+16:58:05.308 INF 收到 Probe 请求 messageID=urn:uuid:c1faeba7-793e-44ac-84b7-1aabc7ff6322 remoteAddr=192.168.73.202:62458
+16:58:05.310 INF 已回复 ProbeMatch messageID=urn:uuid:c1faeba7-793e-44ac-84b7-1aabc7ff6322 remoteAddr=192.168.73.202:62458
+16:58:05.458 INF 收到 Probe 请求 messageID=urn:uuid:c1faeba7-793e-44ac-84b7-1aabc7ff6322 remoteAddr=192.168.73.202:62458
+16:58:05.458 INF 已回复 ProbeMatch messageID=urn:uuid:c1faeba7-793e-44ac-84b7-1aabc7ff6322 remoteAddr=192.168.73.202:62458
+16:58:05.758 INF 收到 Probe 请求 messageID=urn:uuid:c1faeba7-793e-44ac-84b7-1aabc7ff6322 remoteAddr=192.168.73.202:62458
+16:58:05.758 INF 已回复 ProbeMatch messageID=urn:uuid:c1faeba7-793e-44ac-84b7-1aabc7ff6322 remoteAddr=192.168.73.202:62458
+16:58:06.336 INF 收到 Probe 请求 messageID=urn:uuid:c1faeba7-793e-44ac-84b7-1aabc7ff6322 remoteAddr=192.168.73.202:62458
+16:58:06.338 INF 已回复 ProbeMatch messageID=urn:uuid:c1faeba7-793e-44ac-84b7-1aabc7ff6322 remoteAddr=192.168.73.202:62458
+16:58:07.484 INF 收到 Probe 请求 messageID=urn:uuid:c1faeba7-793e-44ac-84b7-1aabc7ff6322 remoteAddr=192.168.73.202:62458
+16:58:07.488 INF 已回复 ProbeMatch messageID=urn:uuid:c1faeba7-793e-44ac-84b7-1aabc7ff6322 remoteAddr=192.168.73.202:62458
+16:58:09.496 INF 收到 Probe 请求 messageID=urn:uuid:c1faeba7-793e-44ac-84b7-1aabc7ff6322 remoteAddr=192.168.73.202:62458
+16:58:09.499 INF 已回复 ProbeMatch messageID=urn:uuid:c1faeba7-793e-44ac-84b7-1aabc7ff6322 remoteAddr=192.168.73.202:62458
+16:58:11.502 INF 收到 Probe 请求 messageID=urn:uuid:c1faeba7-793e-44ac-84b7-1aabc7ff6322 remoteAddr=192.168.73.202:62458
+16:58:11.502 INF 已回复 ProbeMatch messageID=urn:uuid:c1faeba7-793e-44ac-84b7-1aabc7ff6322 remoteAddr=192.168.73.202:62458
+16:59:54.316 INF 收到 Probe 请求 messageID=urn:uuid:c39a95ec-6915-4b46-a594-6afc21d9e024 remoteAddr=192.168.73.202:59508
+16:59:54.318 INF 已回复 ProbeMatch messageID=urn:uuid:c39a95ec-6915-4b46-a594-6afc21d9e024 remoteAddr=192.168.73.202:59508
+16:59:54.485 INF 收到 Probe 请求 messageID=urn:uuid:36e79d3a-b601-4b70-af24-7a8a9bb99b0c remoteAddr=192.168.73.202:59508
+16:59:54.485 INF 已回复 ProbeMatch messageID=urn:uuid:36e79d3a-b601-4b70-af24-7a8a9bb99b0c remoteAddr=192.168.73.202:59508
+16:59:54.502 INF 收到 Probe 请求 messageID=urn:uuid:c39a95ec-6915-4b46-a594-6afc21d9e024 remoteAddr=192.168.73.202:59508
+16:59:54.508 INF 已回复 ProbeMatch messageID=urn:uuid:c39a95ec-6915-4b46-a594-6afc21d9e024 remoteAddr=192.168.73.202:59508
+16:59:54.819 INF 收到 Probe 请求 messageID=urn:uuid:36e79d3a-b601-4b70-af24-7a8a9bb99b0c remoteAddr=192.168.73.202:59508
+16:59:54.820 INF 已回复 ProbeMatch messageID=urn:uuid:36e79d3a-b601-4b70-af24-7a8a9bb99b0c remoteAddr=192.168.73.202:59508
+16:59:54.884 INF 收到 Probe 请求 messageID=urn:uuid:c39a95ec-6915-4b46-a594-6afc21d9e024 remoteAddr=192.168.73.202:59508
+16:59:54.885 INF 已回复 ProbeMatch messageID=urn:uuid:c39a95ec-6915-4b46-a594-6afc21d9e024 remoteAddr=192.168.73.202:59508
+16:59:55.477 INF 收到 Probe 请求 messageID=urn:uuid:36e79d3a-b601-4b70-af24-7a8a9bb99b0c remoteAddr=192.168.73.202:59508
+16:59:55.481 INF 已回复 ProbeMatch messageID=urn:uuid:36e79d3a-b601-4b70-af24-7a8a9bb99b0c remoteAddr=192.168.73.202:59508
+16:59:55.640 INF 收到 Probe 请求 messageID=urn:uuid:c39a95ec-6915-4b46-a594-6afc21d9e024 remoteAddr=192.168.73.202:59508
+16:59:55.643 INF 已回复 ProbeMatch messageID=urn:uuid:c39a95ec-6915-4b46-a594-6afc21d9e024 remoteAddr=192.168.73.202:59508
+16:59:56.773 INF 收到 Probe 请求 messageID=urn:uuid:36e79d3a-b601-4b70-af24-7a8a9bb99b0c remoteAddr=192.168.73.202:59508
+16:59:56.774 INF 已回复 ProbeMatch messageID=urn:uuid:36e79d3a-b601-4b70-af24-7a8a9bb99b0c remoteAddr=192.168.73.202:59508
+16:59:57.137 INF 收到 Probe 请求 messageID=urn:uuid:c39a95ec-6915-4b46-a594-6afc21d9e024 remoteAddr=192.168.73.202:59508
+16:59:57.144 INF 已回复 ProbeMatch messageID=urn:uuid:c39a95ec-6915-4b46-a594-6afc21d9e024 remoteAddr=192.168.73.202:59508
+16:59:58.779 INF 收到 Probe 请求 messageID=urn:uuid:36e79d3a-b601-4b70-af24-7a8a9bb99b0c remoteAddr=192.168.73.202:59508
+16:59:58.780 INF 已回复 ProbeMatch messageID=urn:uuid:36e79d3a-b601-4b70-af24-7a8a9bb99b0c remoteAddr=192.168.73.202:59508
+16:59:59.149 INF 收到 Probe 请求 messageID=urn:uuid:c39a95ec-6915-4b46-a594-6afc21d9e024 remoteAddr=192.168.73.202:59508
+16:59:59.178 INF 已回复 ProbeMatch messageID=urn:uuid:c39a95ec-6915-4b46-a594-6afc21d9e024 remoteAddr=192.168.73.202:59508
+17:00:00.796 INF 收到 Probe 请求 messageID=urn:uuid:36e79d3a-b601-4b70-af24-7a8a9bb99b0c remoteAddr=192.168.73.202:59508
+17:00:00.798 INF 已回复 ProbeMatch messageID=urn:uuid:36e79d3a-b601-4b70-af24-7a8a9bb99b0c remoteAddr=192.168.73.202:59508
+17:00:01.160 INF 收到 Probe 请求 messageID=urn:uuid:c39a95ec-6915-4b46-a594-6afc21d9e024 remoteAddr=192.168.73.202:59508
+17:00:01.160 INF 已回复 ProbeMatch messageID=urn:uuid:c39a95ec-6915-4b46-a594-6afc21d9e024 remoteAddr=192.168.73.202:59508
+17:00:50.970 INF 收到 Probe 请求 messageID=urn:uuid:3b33c640-d2d2-4b90-a646-b014a77093ba remoteAddr=192.168.73.90:61856
+17:00:50.973 INF 已回复 ProbeMatch messageID=urn:uuid:3b33c640-d2d2-4b90-a646-b014a77093ba remoteAddr=192.168.73.90:61856
+17:00:51.412 INF 收到 Probe 请求 messageID=urn:uuid:3b33c640-d2d2-4b90-a646-b014a77093ba remoteAddr=192.168.73.90:61856
+17:00:51.418 INF 已回复 ProbeMatch messageID=urn:uuid:3b33c640-d2d2-4b90-a646-b014a77093ba remoteAddr=192.168.73.90:61856
+17:00:52.297 INF 收到 Probe 请求 messageID=urn:uuid:3b33c640-d2d2-4b90-a646-b014a77093ba remoteAddr=192.168.73.90:61856
+17:00:52.298 INF 已回复 ProbeMatch messageID=urn:uuid:3b33c640-d2d2-4b90-a646-b014a77093ba remoteAddr=192.168.73.90:61856
+17:00:54.052 INF 收到 Probe 请求 messageID=urn:uuid:3b33c640-d2d2-4b90-a646-b014a77093ba remoteAddr=192.168.73.90:61856
+17:00:54.052 INF 已回复 ProbeMatch messageID=urn:uuid:3b33c640-d2d2-4b90-a646-b014a77093ba remoteAddr=192.168.73.90:61856
+17:00:56.066 INF 收到 Probe 请求 messageID=urn:uuid:3b33c640-d2d2-4b90-a646-b014a77093ba remoteAddr=192.168.73.90:61856
+17:00:56.068 INF 已回复 ProbeMatch messageID=urn:uuid:3b33c640-d2d2-4b90-a646-b014a77093ba remoteAddr=192.168.73.90:61856
+17:00:58.070 INF 收到 Probe 请求 messageID=urn:uuid:3b33c640-d2d2-4b90-a646-b014a77093ba remoteAddr=192.168.73.90:61856
+17:00:58.081 INF 已回复 ProbeMatch messageID=urn:uuid:3b33c640-d2d2-4b90-a646-b014a77093ba remoteAddr=192.168.73.90:61856
