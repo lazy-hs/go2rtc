@@ -132,6 +132,9 @@ if [[ ${CLEAN} -eq 1 ]]; then
   mkdir -p "${DIST_DIR}"
 fi
 
+printf '==> 校验 VERSION\n'
+(cd "${REPO_ROOT}" && go run ./cmd/version check)
+
 if [[ ${SKIP_TEST} -eq 0 ]]; then
   printf '==> 运行构建前测试：go test -count=1 ./internal/api\n'
   (cd "${REPO_ROOT}" && go test -count=1 ./internal/api)

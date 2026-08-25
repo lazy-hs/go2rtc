@@ -22,7 +22,7 @@ go build -ldflags "-s -w" -trimpath
 
 `amd64` 目标会额外固定 `GOAMD64=v1`，以兼容最基础的 x86-64 指令集。构建完成后脚本会检查产物中的 `GOOS`、`GOARCH`、`CGO_ENABLED` 和 `GOAMD64` 元数据，避免环境变量污染或误用旧产物。
 
-默认会先运行 `go test -count=1 ./internal/api`，再执行构建。可使用 `-SkipTest` 或 `--skip-test` 跳过测试。
+构建前始终会校验根目录的 `VERSION`，版本格式和变更方式见 [版本号管理](../VERSIONING.md)。默认还会运行 `go test -count=1 ./internal/api`，再执行构建；可使用 `-SkipTest` 或 `--skip-test` 跳过测试，但不能跳过版本校验。
 
 ## PowerShell 用法
 

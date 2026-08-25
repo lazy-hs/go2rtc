@@ -39,6 +39,37 @@ func TestSimulateUploadHandler(t *testing.T) {
 	require.Equal(t, []byte("video-content"), content)
 }
 
+func TestSimulateUploadHandlerUsesConfiguredSubdirectory(t *testing.T) {
+	root := t.TempDir()
+	withSimulateUploadDir(t, root)
+
+	res := performSimulateUpload(t, "camera-a/2026", "sample.mp4", []byte("video-content"))
+	require.Equal(t, http.StatusOK, res.Code, res.Body.String())
+
+	var uploaded simulateUploadResponse
+	require.NoError(t, json.Unmarshal(res.Body.Bytes(), &uploaded))
+	require.Equal(t, "camera-a/2026/sample.mp4", uploaded.RelativePath)
+	require.Equal(t, filepath.Join(root, "camera-a", "2026", "sample.mp4"), filepath.FromSlash(uploaded.Path))
+	content, err := os.ReadFile(filepath.Join(root, "camera-a", "2026", "sample.mp4"))
+	require.NoError(t, err)
+	require.Equal(t, []byte("video-content"), content)
+}
+
+func TestSimulateUploadHandlerUsesSelectedAbsoluteDirectory(t *testing.T) {
+	withSimulateUploadDir(t, t.TempDir())
+	selectedDir := t.TempDir()
+
+	res := performSimulateUpload(t, selectedDir, "sample.mp4", []byte("video-content"))
+	require.Equal(t, http.StatusOK, res.Code, res.Body.String())
+
+	var uploaded simulateUploadResponse
+	require.NoError(t, json.Unmarshal(res.Body.Bytes(), &uploaded))
+	require.Equal(t, filepath.Join(selectedDir, "sample.mp4"), filepath.FromSlash(uploaded.Path))
+	content, err := os.ReadFile(filepath.Join(selectedDir, "sample.mp4"))
+	require.NoError(t, err)
+	require.Equal(t, []byte("video-content"), content)
+}
+
 func TestSimulateUploadHandlerNumbersDuplicateNames(t *testing.T) {
 	withSimulateUploadDir(t, t.TempDir())
 
@@ -61,6 +92,20 @@ func TestSimulateUploadHandlerRejectsUnsupportedExtension(t *testing.T) {
 	res := performSimulateUpload(t, "", "page.html", []byte("not-video"))
 	require.Equal(t, http.StatusBadRequest, res.Code)
 	require.Contains(t, res.Body.String(), "unsupported media file: .html")
+}
+
+func TestSimulateUploadHandlerRejectsOversizedFile(t *testing.T) {
+	root := t.TempDir()
+	withSimulateUploadDir(t, root)
+
+	res := performSimulateUploadWithLimit(t, "", "sample.mp4", bytes.Repeat([]byte("v"), 2048), 1024)
+	require.Equal(t, http.StatusRequestEntityTooLarge, res.Code)
+	require.Contains(t, res.Body.String(), "upload exceeds the configured size limit")
+	require.NoFileExists(t, filepath.Join(root, "sample.mp4"))
+
+	entries, err := os.ReadDir(root)
+	require.NoError(t, err)
+	require.Empty(t, entries, "oversized uploads should not leave temporary files behind")
 }
 
 func TestSimulateUploadHandlerRejectsTraversal(t *testing.T) {
@@ -94,6 +139,119 @@ func TestSimulateFilesHandlerBrowsesOutsideUploadRoot(t *testing.T) {
 	require.False(t, response.Entries[1].IsDir)
 }
 
+func TestSimulateFilesHandlerBrowsesUploadDirectories(t *testing.T) {
+	root := t.TempDir()
+	withSimulateUploadDir(t, root)
+	require.NoError(t, os.MkdirAll(filepath.Join(root, "camera-a", "2026"), 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(root, "clip.mp4"), []byte("video"), 0644))
+
+	query := url.Values{"scope": []string{"upload"}, "path": []string{root}}
+	req := httptest.NewRequest(http.MethodGet, "/api/simulate/files?"+query.Encode(), nil)
+	res := httptest.NewRecorder()
+	simulateFilesHandler(res, req)
+	require.Equal(t, http.StatusOK, res.Code, res.Body.String())
+
+	var response simulateFilesResponse
+	require.NoError(t, json.Unmarshal(res.Body.Bytes(), &response))
+	require.Equal(t, filepath.ToSlash(root), response.Path)
+	require.Empty(t, response.RelativePath)
+	require.Equal(t, filepath.ToSlash(filepath.Dir(root)), response.Parent)
+	require.True(t, response.CanGoUp)
+	require.Len(t, response.Entries, 1)
+	require.Equal(t, "camera-a", response.Entries[0].Name)
+	require.True(t, response.Entries[0].IsDir)
+
+	query = url.Values{"scope": []string{"upload"}, "path": []string{"camera-a/2026"}}
+	req = httptest.NewRequest(http.MethodGet, "/api/simulate/files?"+query.Encode(), nil)
+	res = httptest.NewRecorder()
+	simulateFilesHandler(res, req)
+	require.Equal(t, http.StatusOK, res.Code, res.Body.String())
+	response = simulateFilesResponse{}
+	require.NoError(t, json.Unmarshal(res.Body.Bytes(), &response))
+	require.Equal(t, "camera-a/2026", response.RelativePath)
+	require.Equal(t, filepath.ToSlash(filepath.Join(root, "camera-a")), response.Parent)
+}
+
+func TestSimulateFilesHandlerUploadScopeWindowsComputerAndDriveRoot(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("Windows drive navigation")
+	}
+
+	root := t.TempDir()
+	withSimulateUploadDir(t, root)
+	req := httptest.NewRequest(http.MethodGet, "/api/simulate/files?scope=upload", nil)
+	res := httptest.NewRecorder()
+	simulateFilesHandler(res, req)
+	require.Equal(t, http.StatusOK, res.Code, res.Body.String())
+
+	var response simulateFilesResponse
+	require.NoError(t, json.Unmarshal(res.Body.Bytes(), &response))
+	require.True(t, response.IsComputer)
+	require.False(t, response.CanGoUp)
+	require.Empty(t, response.Path)
+	require.NotEmpty(t, response.Entries)
+
+	volumeRoot := filepath.VolumeName(root) + string(filepath.Separator)
+	query := url.Values{"scope": []string{"upload"}, "path": []string{volumeRoot}}
+	req = httptest.NewRequest(http.MethodGet, "/api/simulate/files?"+query.Encode(), nil)
+	res = httptest.NewRecorder()
+	simulateFilesHandler(res, req)
+	require.Equal(t, http.StatusOK, res.Code, res.Body.String())
+	response = simulateFilesResponse{}
+	require.NoError(t, json.Unmarshal(res.Body.Bytes(), &response))
+	require.False(t, response.IsComputer)
+	require.True(t, response.CanGoUp)
+	require.Empty(t, response.Parent)
+	require.Equal(t, filepath.ToSlash(volumeRoot), response.Path)
+}
+
+func TestSimulateFilesHandlerBrowsesParentOutsideUploadRoot(t *testing.T) {
+	rootParent := t.TempDir()
+	root := filepath.Join(rootParent, "static")
+	require.NoError(t, os.Mkdir(root, 0755))
+	withSimulateUploadDir(t, root)
+
+	query := url.Values{"scope": []string{"upload"}, "path": []string{rootParent}}
+	req := httptest.NewRequest(http.MethodGet, "/api/simulate/files?"+query.Encode(), nil)
+	res := httptest.NewRecorder()
+	simulateFilesHandler(res, req)
+	require.Equal(t, http.StatusOK, res.Code, res.Body.String())
+
+	var response simulateFilesResponse
+	require.NoError(t, json.Unmarshal(res.Body.Bytes(), &response))
+	require.Equal(t, filepath.ToSlash(rootParent), response.Path)
+	require.Equal(t, filepath.ToSlash(filepath.Dir(rootParent)), response.Parent)
+	require.Len(t, response.Entries, 1)
+	require.Equal(t, "static", response.Entries[0].Name)
+}
+
+func TestSimulateFilesHandlerRejectsUploadScopeEscape(t *testing.T) {
+	withSimulateUploadDir(t, t.TempDir())
+
+	query := url.Values{"scope": []string{"upload"}, "path": []string{"../outside"}}
+	req := httptest.NewRequest(http.MethodGet, "/api/simulate/files?"+query.Encode(), nil)
+	res := httptest.NewRecorder()
+	simulateFilesHandler(res, req)
+	require.Equal(t, http.StatusBadRequest, res.Code)
+	require.Contains(t, res.Body.String(), "path escapes the upload directory")
+}
+
+func TestSimulateUploadHandlerRejectsSymlinkEscape(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("creating symlinks normally requires elevated Windows privileges")
+	}
+
+	root := t.TempDir()
+	outside := t.TempDir()
+	withSimulateUploadDir(t, root)
+	require.NoError(t, os.Symlink(outside, filepath.Join(root, "outside-link")))
+
+	res := performSimulateUpload(t, "outside-link", "sample.mp4", []byte("video"))
+	require.Equal(t, http.StatusBadRequest, res.Code)
+	require.Contains(t, res.Body.String(), "path escapes the upload directory")
+	require.NoFileExists(t, filepath.Join(outside, "sample.mp4"))
+}
+
 func TestSimulateFilesHandlerInitialLocation(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/api/simulate/files", nil)
 	res := httptest.NewRecorder()
@@ -104,6 +262,8 @@ func TestSimulateFilesHandlerInitialLocation(t *testing.T) {
 	require.NoError(t, json.Unmarshal(res.Body.Bytes(), &response))
 	if runtime.GOOS == "windows" {
 		require.Empty(t, response.Path)
+		require.True(t, response.IsComputer)
+		require.False(t, response.CanGoUp)
 		require.NotEmpty(t, response.Entries)
 		for _, entry := range response.Entries {
 			require.True(t, entry.IsDir)
@@ -112,6 +272,7 @@ func TestSimulateFilesHandlerInitialLocation(t *testing.T) {
 	} else {
 		require.Equal(t, "/", response.Path)
 		require.Empty(t, response.Parent)
+		require.False(t, response.CanGoUp)
 	}
 }
 
@@ -123,6 +284,10 @@ func withSimulateUploadDir(t *testing.T, dir string) {
 }
 
 func performSimulateUpload(t *testing.T, path, name string, content []byte) *httptest.ResponseRecorder {
+	return performSimulateUploadWithLimit(t, path, name, content, simulateUploadLimit)
+}
+
+func performSimulateUploadWithLimit(t *testing.T, path, name string, content []byte, uploadLimit int64) *httptest.ResponseRecorder {
 	t.Helper()
 
 	body := bytes.NewBuffer(nil)
@@ -137,7 +302,7 @@ func performSimulateUpload(t *testing.T, path, name string, content []byte) *htt
 	req := httptest.NewRequest(http.MethodPost, "/api/simulate/upload", body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	res := httptest.NewRecorder()
-	simulateUploadHandler(res, req)
+	simulateUploadHandlerWithLimit(res, req, uploadLimit)
 	return res
 }
 

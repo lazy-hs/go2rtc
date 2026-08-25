@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"net"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
@@ -52,9 +53,31 @@ func TestSimulateHandlerUsesRequestHostAndBasePath(t *testing.T) {
 	require.Equal(t, "/rtc/api/streams/state", info.StreamStateAPI)
 	require.Equal(t, "/rtc/api/simulate/events", info.EventsAPI)
 	require.Equal(t, "/rtc/api/simulate/files", info.FilesAPI)
+	require.Equal(t, "/rtc/api/simulate/folder-picker", info.FolderPickerAPI)
 	require.Equal(t, "/rtc/api/simulate/upload", info.UploadAPI)
+	require.Equal(t, simulateUploadLimit, info.UploadLimit)
 	require.Equal(t, "/rtc/onvif/device_service", info.ONVIFPath)
 	require.Equal(t, "8554", info.RTSPPort)
+	require.False(t, info.NativeFolderPicker)
+}
+
+func TestSimulateHandlerEnablesNativeFolderPickerForLocalInterface(t *testing.T) {
+	oldAvailable := simulateFolderPickerAvailable
+	simulateFolderPickerAvailable = func() bool { return true }
+	t.Cleanup(func() { simulateFolderPickerAvailable = oldAvailable })
+	withSimulateInterfaceAddrs(t, []net.Addr{
+		&net.IPNet{IP: net.ParseIP("192.168.73.241"), Mask: net.CIDRMask(24, 32)},
+	})
+
+	req := httptest.NewRequest("GET", "http://192.168.73.241:1984/api/simulate", nil)
+	req.RemoteAddr = "192.168.73.241:54321"
+	res := httptest.NewRecorder()
+	simulateHandler(res, req)
+
+	require.Equal(t, 200, res.Code)
+	var info simulateInfo
+	require.NoError(t, json.Unmarshal(res.Body.Bytes(), &info))
+	require.True(t, info.NativeFolderPicker)
 }
 
 func TestConfiguredDisabledStreamsFromFile(t *testing.T) {

@@ -16,7 +16,9 @@ The contents of `www` folder are built into go2rtc when building, but you can us
 - you can enable HTTP API only on localhost with `listen: "127.0.0.1:1984"` setting
 - you can change the API `base_path` and host go2rtc on your main app webserver suburl
 - all files from `static_dir` hosted on root path: `/`
-- `upload_dir` controls only where files uploaded from the simulation page are stored; relative paths are resolved next to the config file
+- `upload_dir` is the default upload destination and the initial location of the simulation page directory picker; relative paths are resolved next to the config file
+- uploads are streamed directly to a temporary file and atomically published after completion; the single-file limit is 20 GiB
+- local Windows clients use the native Explorer-style folder picker; other platforms use the simulation page directory browser
 - you can use raw TLS cert/key content or path to files
 
 ```yaml
@@ -41,7 +43,7 @@ api:
   unix_listen: "/tmp/go2rtc.sock"  # default "", unix socket listener for API
 ```
 
-The simulation page backend file browser can inspect any directory and media path readable by the go2rtc process. It is intentionally not restricted to `upload_dir`. Enable API authentication before exposing this interface to untrusted networks.
+The simulation page backend file browser can inspect any readable directory, and its upload directory picker can write to an existing directory selected by the user. Enable API authentication before exposing this interface to untrusted networks.
 
 **PS:**
 

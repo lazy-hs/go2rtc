@@ -67,6 +67,7 @@ func Init() {
 	HandleFunc("api/simulate/metrics", simulateMetricsHandler)
 	HandleFunc("api/simulate/onvif", simulateONVIFConfigHandler)
 	HandleFunc("api/simulate/files", simulateFilesHandler)
+	HandleFunc("api/simulate/folder-picker", simulateFolderPickerHandler)
 	HandleFunc("api/simulate/upload", simulateUploadHandler)
 
 	Handler = http.DefaultServeMux // 4th

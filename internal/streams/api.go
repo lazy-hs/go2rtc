@@ -2,6 +2,8 @@ package streams
 
 import (
 	"encoding/json"
+	"errors"
+	"io/fs"
 	"net/http"
 	"net/url"
 	"os"
@@ -219,9 +221,21 @@ type streamStateRequest struct {
 	Enabled bool `json:"enabled"`
 }
 
+type streamStateResponse struct {
+	Name            string   `json:"name,omitempty"`
+	Enabled         bool     `json:"enabled"`
+	Persisted       bool     `json:"persisted"`
+	Warning         string   `json:"warning,omitempty"`
+	DisabledStreams []string `json:"disabled_streams"`
+}
+
 func apiStreamState(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodGet {
+		api.ResponseJSON(w, map[string]any{"disabled_streams": DisabledNames()})
+		return
+	}
 	if r.Method != http.MethodPut {
-		w.Header().Set("Allow", "PUT")
+		w.Header().Set("Allow", "GET, PUT")
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
@@ -247,8 +261,19 @@ func apiStreamState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	response, err := changeStreamState(name, sources, req.Enabled, func(names []string) error {
+		return app.PatchConfig([]string{"simulate", "disabled_streams"}, names)
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	api.ResponseJSON(w, response)
+}
+
+func changeStreamState(name string, sources []string, enabled bool, persist func([]string) error) (streamStateResponse, error) {
 	disabled := stringSet(DisabledNames())
-	if req.Enabled {
+	if enabled {
 		delete(disabled, name)
 	} else {
 		disabled[name] = true
@@ -259,21 +284,37 @@ func apiStreamState(w http.ResponseWriter, r *http.Request) {
 	}
 	sort.Strings(disabledNames)
 
-	if err := app.PatchConfig([]string{"simulate", "disabled_streams"}, disabledNames); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+	response := streamStateResponse{
+		Name:      name,
+		Enabled:   enabled,
+		Persisted: true,
+	}
+	if err := persist(disabledNames); err != nil {
+		if !isConfigPersistenceUnavailable(err) {
+			return streamStateResponse{}, err
+		}
+		response.Persisted = false
+		response.Warning = "config file is read-only; state change applies until restart"
 	}
 
-	if req.Enabled {
+	if enabled {
 		if err := Enable(name, sources...); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
+			return streamStateResponse{}, err
 		}
 	} else {
 		Disable(name)
 	}
 
-	api.ResponseJSON(w, map[string]any{"name": name, "enabled": req.Enabled, "disabled_streams": disabledNames})
+	response.DisabledStreams = DisabledNames()
+	return response, nil
+}
+
+func isConfigPersistenceUnavailable(err error) bool {
+	if errors.Is(err, fs.ErrPermission) {
+		return true
+	}
+	message := strings.ToLower(err.Error())
+	return strings.Contains(message, "read-only file system") || strings.Contains(message, "access is denied")
 }
 
 func appConfiguredStreams() map[string][]string {

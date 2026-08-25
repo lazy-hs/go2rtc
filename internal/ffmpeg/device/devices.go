@@ -34,8 +34,18 @@ var runonce sync.Once
 
 func apiDevices(w http.ResponseWriter, r *http.Request) {
 	runonce.Do(initDevices)
+	writeDeviceSources(w, streams)
+}
 
-	api.ResponseSources(w, streams)
+func writeDeviceSources(w http.ResponseWriter, sources []*api.Source) {
+	// No capture devices is a valid result on headless Linux hosts and in
+	// containers, so return an empty collection instead of a noisy 404.
+	if sources == nil {
+		sources = []*api.Source{}
+	}
+	api.ResponseJSON(w, struct {
+		Sources []*api.Source `json:"sources"`
+	}{Sources: sources})
 }
 
 func indexToItem(items []string, index string) string {

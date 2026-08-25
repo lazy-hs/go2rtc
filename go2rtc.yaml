@@ -26,6 +26,8 @@ streams:
     - ffmpeg:D:/huangsheng/project/go2rtc/static/F-001_正脸后侧脸_1.5米高3米远_光线充足.MP4#video=h264#input=file
   dog:
     - ffmpeg:D:/huangsheng/project/go2rtc/static/go2_4k_cn_fps30_8192k.mp4#video=h264#input=file
+  test2222:
+    - ffmpeg:D:/huangsheng/测试视频/人脸与狗.mp4#video=h264#input=file
 api:
   # ONVIF 协议以及 Web UI 监听地址
   listen: ":2984"
@@ -59,7 +61,7 @@ app:
     - "mjpeg"
 
 event:
-  enabled: true
+  enabled: false
   interval: 1m
   burst: 10
   permanent: true
@@ -86,12 +88,15 @@ simulate:
     dog:
       - width: 0
         height: 0
+    test2222:
+      - width: 0
+        height: 0
   disabled_streams:
     - animal
     - car
-    - dog
     - normal
     - package
     - people
     - person1
     - person2
+    - test2222

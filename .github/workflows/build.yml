@@ -9,8 +9,27 @@ on:
       - 'v*'
 
 jobs:
+  validate-version:
+    name: Validate version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with: { go-version: '1.25' }
+
+      - name: Validate VERSION
+        run: go run ./cmd/version check
+
+      - name: Validate release tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: go run ./cmd/version check-tag "${GITHUB_REF_NAME}"
+
   build-binaries:
     name: Build binaries
+    needs: validate-version
     runs-on: ubuntu-latest
     env: { CGO_ENABLED: 0 }
     steps:
@@ -114,6 +133,7 @@ jobs:
 
   docker-master:
     name: Build docker master
+    needs: validate-version
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -171,6 +191,7 @@ jobs:
 
   docker-hardware:
     name: Build docker hardware
+    needs: validate-version
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -226,6 +247,7 @@ jobs:
 
   docker-rockchip:
     name: Build docker rockchip
+    needs: validate-version
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

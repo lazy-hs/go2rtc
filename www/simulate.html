@@ -2256,6 +2256,25 @@
             margin-top: 2px;
         }
 
+        .upload-directory-picker {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 8px;
+        }
+
+        .upload-directory-picker input[readonly] {
+            min-width: 0;
+            cursor: default;
+            color: #dbeafe;
+            font-family: Consolas, Monaco, monospace;
+        }
+
+        .upload-directory-picker button {
+            min-height: 42px;
+            padding-inline: 16px;
+            white-space: nowrap;
+        }
+
         .upload-location code {
             color: #cbd5e1;
             font-family: Consolas, Monaco, monospace;
@@ -2278,6 +2297,39 @@
         .upload-progress::-webkit-progress-value {
             background: #22c7df;
             border-radius: 999px;
+        }
+
+        .upload-progress-panel {
+            display: grid;
+            gap: 7px;
+            padding: 10px 12px;
+            border: 1px solid rgba(34, 199, 223, 0.2);
+            border-radius: 11px;
+            background: rgba(8, 20, 35, 0.72);
+        }
+
+        .upload-progress-panel[hidden] {
+            display: none;
+        }
+
+        .upload-progress-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            color: #a5b4c7;
+            font-size: 12px;
+        }
+
+        .upload-progress-meta span {
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .upload-progress-meta button {
+            flex: 0 0 auto;
+            min-height: 30px;
+            padding: 4px 10px;
         }
 
         .upload-progress::-moz-progress-bar {
@@ -3311,11 +3363,20 @@
                     <button class="ghost file-action" id="browse-backend-files" type="button">浏览后端文件</button>
                 </div>
                 <input class="visually-hidden" id="local-file-input" type="file" accept="video/*,.3gp,.avi,.flv,.m2ts,.m4v,.mkv,.mov,.mp4,.mpeg,.mpg,.mts,.ts,.webm">
-                <progress class="upload-progress" id="upload-progress" max="100" value="0" hidden></progress>
+                <div class="upload-progress-panel" id="upload-progress-panel" hidden>
+                    <progress class="upload-progress" id="upload-progress" max="100" value="0"></progress>
+                    <div class="upload-progress-meta">
+                        <span id="upload-progress-label">准备上传...</span>
+                        <button class="ghost" id="cancel-upload" type="button">取消上传</button>
+                    </div>
+                </div>
                 <div class="field wide upload-path-field">
                     <label for="upload-subdirectory">上传子目录 <small>自动记忆</small></label>
-                    <input id="upload-subdirectory" type="text" autocomplete="off" spellcheck="false" placeholder="留空使用默认目录，例如：camera-a/2026">
-                    <div class="helper upload-location">后端根目录：<code id="upload-directory">加载中...</code>；后续上传直接复用此设置。</div>
+                    <div class="upload-directory-picker">
+                        <input id="upload-subdirectory" type="text" readonly placeholder="默认上传目录">
+                        <button class="ghost" id="select-upload-directory" type="button">选择目录</button>
+                    </div>
+                    <div class="helper upload-location">初始目录：<code id="upload-directory">加载中...</code>；Windows 本机访问会打开系统文件夹选择窗口，其他环境使用网页目录树。单文件上限 <strong id="upload-limit">加载中...</strong>。</div>
                 </div>
             </div>
 
@@ -3682,6 +3743,7 @@
         <div class="file-browser-list" id="file-browser-list"></div>
         <div class="file-browser-footer">
             <button class="ghost" id="cancel-file-browser" type="button">取消</button>
+            <button class="floating-action" id="select-current-directory" type="button" hidden>使用此目录</button>
         </div>
     </section>
 </div>
@@ -3737,15 +3799,22 @@
     const uploadLocalBtn = document.getElementById('upload-local-file');
     const browseBackendBtn = document.getElementById('browse-backend-files');
     const localFileInput = document.getElementById('local-file-input');
+    const uploadProgressPanel = document.getElementById('upload-progress-panel');
     const uploadProgress = document.getElementById('upload-progress');
+    const uploadProgressLabel = document.getElementById('upload-progress-label');
+    const cancelUploadBtn = document.getElementById('cancel-upload');
     const uploadDirectory = document.getElementById('upload-directory');
+    const uploadLimitLabel = document.getElementById('upload-limit');
     const uploadSubdirectory = document.getElementById('upload-subdirectory');
+    const selectUploadDirectoryBtn = document.getElementById('select-upload-directory');
     const fileBrowser = document.getElementById('file-browser');
+    const fileBrowserTitle = document.getElementById('file-browser-title');
     const fileBrowserList = document.getElementById('file-browser-list');
     const fileBrowserPath = document.getElementById('file-browser-path');
     const fileBrowserUpBtn = document.getElementById('file-browser-up');
     const closeFileBrowserBtn = document.getElementById('close-file-browser');
     const cancelFileBrowserBtn = document.getElementById('cancel-file-browser');
+    const selectCurrentDirectoryBtn = document.getElementById('select-current-directory');
     const onvifConfigModal = document.getElementById('onvif-config-modal');
     const onvifConfigForm = document.getElementById('onvif-config-form');
     const openONVIFConfigBtn = document.getElementById('open-onvif-config');
@@ -3806,7 +3875,14 @@
     let onvifChannels = new Map();
     let currentBrowserPath = '';
     let currentBrowserParent = '';
+    let currentBrowserCanGoUp = false;
+    let currentBrowserIsComputer = false;
+    let fileBrowserMode = 'file';
+    let fileBrowserReturnFocus = null;
     let uploadBusy = false;
+    let nativeFolderPickerBusy = false;
+    let activeUploadRequest = null;
+    let uploadStartedAt = 0;
     let sourceMode = 'file';
     let cameraDevices = [];
     let cameraDevicesLoaded = false;
@@ -3844,8 +3920,11 @@
         streams_api: 'api/streams',
         log_api: 'api/log',
         files_api: 'api/simulate/files',
+        folder_picker_api: 'api/simulate/folder-picker',
+        native_folder_picker: false,
         upload_api: 'api/simulate/upload',
         upload_dir: 'static',
+        upload_limit: 20 * 1024 * 1024 * 1024,
         configured_order: [],
         configured_streams: {},
         devices_api: 'api/ffmpeg/devices',
@@ -4565,23 +4644,56 @@
         return `${(value / 1024 / 1024 / 1024).toFixed(2)} GB`;
     }
 
-    function setUploadBusy(busy, progress = 0) {
+    function formatUploadDuration(seconds) {
+        const value = Math.max(0, Math.round(Number(seconds) || 0));
+        if (value < 60) return `${value} 秒`;
+        const minutes = Math.floor(value / 60);
+        const remainder = value % 60;
+        return remainder ? `${minutes} 分 ${remainder} 秒` : `${minutes} 分钟`;
+    }
+
+    function setUploadBusy(busy, progress = 0, detail = '') {
         uploadBusy = busy;
         uploadLocalBtn.disabled = busy;
         browseBackendBtn.disabled = busy;
+        selectUploadDirectoryBtn.disabled = busy || nativeFolderPickerBusy;
         uploadSubdirectory.disabled = busy;
-        uploadProgress.hidden = !busy;
+        localFileInput.disabled = busy;
+        resetBtn.disabled = busy;
+        submitButton.disabled = busy;
+        uploadProgressPanel.hidden = !busy;
         uploadProgress.value = Math.max(0, Math.min(100, progress));
+        uploadProgressLabel.textContent = busy ? (detail || '准备上传...') : '准备上传...';
+        cancelUploadBtn.disabled = !busy;
         uploadLocalBtn.textContent = busy ? `上传中 ${Math.round(uploadProgress.value)}%` : '上传本地文件';
     }
 
-    function normalizedUploadSubdirectory() {
-        return uploadSubdirectory.value.trim().replace(/\\/g, '/');
+    function updateUploadProgress(loaded, total) {
+        const progress = total > 0 ? loaded / total * 100 : 0;
+        if (total > 0 && loaded >= total) {
+            setUploadBusy(true, 100, `已传输 ${formatFileSize(total)}，正在完成磁盘写入...`);
+            return;
+        }
+        const elapsedSeconds = Math.max((performance.now() - uploadStartedAt) / 1000, 0.001);
+        const bytesPerSecond = loaded / elapsedSeconds;
+        const remainingSeconds = bytesPerSecond > 0 && total > loaded ? (total - loaded) / bytesPerSecond : 0;
+        const detail = total > 0
+            ? `${formatFileSize(loaded)} / ${formatFileSize(total)} · ${formatFileSize(bytesPerSecond)}/s${remainingSeconds > 0 ? ` · 预计剩余 ${formatUploadDuration(remainingSeconds)}` : ''}`
+            : `已上传 ${formatFileSize(loaded)} · ${formatFileSize(bytesPerSecond)}/s`;
+        setUploadBusy(true, progress, detail);
     }
 
-    function saveUploadSubdirectory(normalizeInput = true) {
-        const path = normalizedUploadSubdirectory();
-        if (normalizeInput) uploadSubdirectory.value = path;
+    function normalizedUploadDirectory(value = uploadSubdirectory.value) {
+        let path = String(value || '').trim().replace(/\\/g, '/');
+        if (!path || path === '.') return '';
+        if (path === '/' || /^[a-z]:\/$/i.test(path)) return path;
+        path = path.replace(/\/+$/, '');
+        return path;
+    }
+
+    function saveUploadDirectory(value = uploadSubdirectory.value) {
+        const path = normalizedUploadDirectory(value);
+        uploadSubdirectory.value = path;
         if (path) {
             localStorage.setItem(uploadPathStorageKey, path);
         } else {
@@ -4590,23 +4702,67 @@
         return path;
     }
 
-    function restoreUploadSubdirectory() {
-        uploadSubdirectory.value = localStorage.getItem(uploadPathStorageKey) || '';
+    function restoreUploadDirectory() {
+        saveUploadDirectory(localStorage.getItem(uploadPathStorageKey) || '');
+    }
+
+    function setNativeFolderPickerBusy(busy) {
+        nativeFolderPickerBusy = busy;
+        selectUploadDirectoryBtn.disabled = busy || uploadBusy;
+        selectUploadDirectoryBtn.textContent = busy ? '正在选择...' : '选择目录';
+    }
+
+    async function chooseUploadDirectory() {
+        if (!meta.native_folder_picker) {
+            openFileBrowser('upload-directory');
+            return;
+        }
+        if (nativeFolderPickerBusy || uploadBusy) return;
+
+        setNativeFolderPickerBusy(true);
+        setStatus('正在打开 Windows 文件夹选择窗口...');
+        try {
+            const url = new URL(baseURL(meta.folder_picker_api));
+            const initialPath = normalizedUploadDirectory() || meta.upload_dir || '';
+            if (initialPath) url.searchParams.set('path', initialPath);
+            const response = await fetch(url, {method: 'POST'});
+            if (response.status === 204) {
+                setStatus('已取消选择上传目录。');
+                return;
+            }
+            if (!response.ok) throw new Error(await response.text() || '打开 Windows 文件夹选择窗口失败');
+            const selected = await response.json();
+            const path = saveUploadDirectory(selected.path || '');
+            if (!path) throw new Error('Windows 文件夹选择窗口没有返回有效目录。');
+            setStatus(`后续文件将上传到目录：${path}`);
+        } catch (error) {
+            setStatus(error.message || '打开 Windows 文件夹选择窗口失败', true);
+        } finally {
+            setNativeFolderPickerBusy(false);
+        }
     }
 
     function uploadLocalFile(file) {
+        const uploadLimit = Number(meta.upload_limit) || 0;
+        if (uploadLimit > 0 && file.size > uploadLimit) {
+            return Promise.reject(new Error(`文件大小为 ${formatFileSize(file.size)}，超过单文件上限 ${formatFileSize(uploadLimit)}。`));
+        }
+
         return new Promise((resolve, reject) => {
             const request = new XMLHttpRequest();
             const body = new FormData();
-            body.append('path', saveUploadSubdirectory());
+            body.append('path', saveUploadDirectory());
             body.append('file', file, file.name);
 
+            activeUploadRequest = request;
+            uploadStartedAt = performance.now();
             request.open('POST', baseURL(meta.upload_api));
+            request.timeout = 0;
             request.upload.addEventListener('progress', event => {
-                if (!event.lengthComputable) return;
-                setUploadBusy(true, event.loaded / event.total * 100);
+                updateUploadProgress(event.loaded, event.lengthComputable ? event.total : 0);
             });
             request.addEventListener('load', () => {
+                if (activeUploadRequest === request) activeUploadRequest = null;
                 let response = null;
                 try {
                     response = JSON.parse(request.responseText || '{}');
@@ -4619,8 +4775,14 @@
                 }
                 reject(new Error(response?.message || request.responseText?.trim() || `上传失败 (${request.status})`));
             });
-            request.addEventListener('error', () => reject(new Error('上传失败，请检查网络连接。')));
-            request.addEventListener('abort', () => reject(new Error('上传已取消。')));
+            request.addEventListener('error', () => {
+                if (activeUploadRequest === request) activeUploadRequest = null;
+                reject(new Error('上传失败，请检查网络连接。'));
+            });
+            request.addEventListener('abort', () => {
+                if (activeUploadRequest === request) activeUploadRequest = null;
+                reject(new Error('上传已取消。'));
+            });
             request.send(body);
         });
     }
@@ -4635,21 +4797,30 @@
     function renderBackendFiles(data) {
         currentBrowserPath = data.path || '';
         currentBrowserParent = data.parent || '';
-        if (currentBrowserPath) {
-            localStorage.setItem(backendBrowserPathStorageKey, currentBrowserPath);
-        } else {
-            localStorage.removeItem(backendBrowserPathStorageKey);
+        currentBrowserCanGoUp = Boolean(data.can_go_up);
+        currentBrowserIsComputer = Boolean(data.is_computer);
+        if (fileBrowserMode === 'file') {
+            if (currentBrowserPath) {
+                localStorage.setItem(backendBrowserPathStorageKey, currentBrowserPath);
+            } else {
+                localStorage.removeItem(backendBrowserPathStorageKey);
+            }
         }
-        fileBrowserPath.textContent = currentBrowserPath || '此电脑';
+        fileBrowserPath.textContent = currentBrowserIsComputer ? '此电脑' : (currentBrowserPath || '此电脑');
         fileBrowserPath.title = fileBrowserPath.textContent;
-        fileBrowserUpBtn.disabled = !currentBrowserPath;
+        fileBrowserUpBtn.disabled = !currentBrowserCanGoUp;
+        selectCurrentDirectoryBtn.disabled = fileBrowserMode === 'upload-directory' && (!currentBrowserPath || currentBrowserIsComputer);
         fileBrowserList.replaceChildren();
 
         const entries = Array.isArray(data.entries) ? data.entries : [];
         if (!entries.length) {
             const empty = document.createElement('div');
             empty.className = 'file-browser-empty';
-            empty.textContent = '当前目录中没有可用的媒体文件。';
+            empty.textContent = currentBrowserIsComputer
+                ? '未检测到可用盘符。'
+                : (fileBrowserMode === 'upload-directory'
+                    ? '当前目录中没有子目录，可以直接使用此目录。'
+                    : '当前目录中没有可用的媒体文件。');
             fileBrowserList.appendChild(empty);
             return;
         }
@@ -4682,45 +4853,66 @@
     }
 
     async function loadBackendFiles(path = '', {fallbackToRoot = false} = {}) {
-        setFileBrowserStatus('正在加载文件列表...');
+        setFileBrowserStatus(fileBrowserMode === 'upload-directory' ? '正在加载上传目录...' : '正在加载文件列表...');
         try {
             const url = new URL(baseURL(meta.files_api));
+            if (fileBrowserMode === 'upload-directory') url.searchParams.set('scope', 'upload');
             if (path) url.searchParams.set('path', path);
             const response = await fetch(url, {cache: 'no-cache'});
             if (!response.ok) throw new Error(await response.text() || '加载后端文件失败');
             renderBackendFiles(await response.json());
         } catch (error) {
             if (fallbackToRoot && path) {
-                localStorage.removeItem(backendBrowserPathStorageKey);
-                await loadBackendFiles();
+                if (fileBrowserMode === 'upload-directory') {
+                    saveUploadDirectory('');
+                } else {
+                    localStorage.removeItem(backendBrowserPathStorageKey);
+                }
+                await loadBackendFiles(fileBrowserMode === 'upload-directory' ? (meta.upload_dir || '') : '');
                 return;
             }
             setFileBrowserStatus(error.message, true);
         }
     }
 
-    function openFileBrowser() {
+    function openFileBrowser(mode = 'file') {
+        fileBrowserMode = mode === 'upload-directory' ? 'upload-directory' : 'file';
+        fileBrowserReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        fileBrowserTitle.textContent = fileBrowserMode === 'upload-directory' ? '选择上传目录' : '选择后端媒体文件';
+        selectCurrentDirectoryBtn.hidden = fileBrowserMode !== 'upload-directory';
         fileBrowser.classList.add('is-open');
         fileBrowser.setAttribute('aria-hidden', 'false');
         currentBrowserPath = '';
         currentBrowserParent = '';
-        const savedPath = localStorage.getItem(backendBrowserPathStorageKey) || '';
+        currentBrowserCanGoUp = false;
+        currentBrowserIsComputer = false;
+        const savedPath = fileBrowserMode === 'upload-directory'
+            ? (normalizedUploadDirectory() || meta.upload_dir || '')
+            : (localStorage.getItem(backendBrowserPathStorageKey) || '');
         loadBackendFiles(savedPath, {fallbackToRoot: Boolean(savedPath)});
     }
 
     function closeFileBrowser(restoreFocus = true) {
         fileBrowser.classList.remove('is-open');
         fileBrowser.setAttribute('aria-hidden', 'true');
-        if (restoreFocus && modal.classList.contains('is-open')) {
-            browseBackendBtn.focus({preventScroll: true});
+        if (restoreFocus && modal.classList.contains('is-open') && fileBrowserReturnFocus) {
+            fileBrowserReturnFocus.focus({preventScroll: true});
         }
+        fileBrowserReturnFocus = null;
     }
 
     function selectBackendFile(path) {
-        if (!path) return;
+        if (!path || fileBrowserMode !== 'file') return;
         form.elements.file.value = path;
         setStatus(`已选择后端文件：${path}`);
         updatePreview();
+        closeFileBrowser();
+    }
+
+    function selectUploadDirectory() {
+        if (fileBrowserMode !== 'upload-directory' || !currentBrowserPath || currentBrowserIsComputer) return;
+        const path = saveUploadDirectory(currentBrowserPath);
+        setStatus(path ? `后续文件将上传到目录：${path}` : '后续文件将上传到默认目录。');
         closeFileBrowser();
     }
 
@@ -5759,7 +5951,7 @@
 
     function resetFormState() {
         form.reset();
-        restoreUploadSubdirectory();
+        restoreUploadDirectory();
         localFileInput.value = '';
         rtspInput.value = '';
         form.elements.rtsp_username.value = '';
@@ -5796,6 +5988,10 @@
     }
 
     function closeModal() {
+        if (uploadBusy) {
+            setStatus('大文件仍在上传，请等待完成或点击“取消上传”。', true);
+            return;
+        }
         closeFileBrowser(false);
         if (modal.contains(document.activeElement)) {
             (modalReturnFocus || openCreateBtn).focus({preventScroll: true});
@@ -5995,6 +6191,15 @@
         if (!response.ok) throw new Error(await response.text() || '加载模拟页状态失败');
 
         meta = {...meta, ...(await response.json())};
+        try {
+            const stateResponse = await fetch(baseURL(meta.stream_state_api), {cache: 'no-cache'});
+            if (stateResponse.ok) {
+                const state = await stateResponse.json();
+                if (Array.isArray(state.disabled_streams)) meta.disabled_streams = state.disabled_streams;
+            }
+        } catch {
+            // Older backends don't expose the runtime state endpoint via GET.
+        }
         if (!meta.configured_streams || typeof meta.configured_streams !== 'object') {
             meta.configured_streams = {};
         }
@@ -6012,6 +6217,7 @@
         document.getElementById('log-api').textContent = meta.log_api;
         uploadDirectory.textContent = meta.upload_dir || 'static';
         uploadDirectory.title = uploadDirectory.textContent;
+        uploadLimitLabel.textContent = formatFileSize(meta.upload_limit);
         await loadCameraDevices(cameraDeviceSelect.value);
         try {
             await loadONVIFConfig();
@@ -6230,7 +6436,10 @@
         if (!response.ok) throw new Error(await response.text() || (enabled ? '启动推流失败' : '停止推流失败'));
         const data = await response.json();
         if (Array.isArray(data.disabled_streams)) meta.disabled_streams = data.disabled_streams;
-        setStatus(`视频任务 ${name} 已${enabled ? '启动' : '停用'}。`);
+        const persistenceNote = data.persisted === false ? ' 配置文件为只读，本次变更仅在当前服务运行期间生效。' : '';
+        const message = `视频任务 ${name} 已${enabled ? '启动' : '停用'}。${persistenceNote}`;
+        setStatus(message);
+        showToast(message, data.persisted === false ? 'warning' : 'success');
         await loadMeta();
         await refreshRuntimeState();
         highlightStream(name, true);
@@ -6264,8 +6473,9 @@
         if (!uploadBusy) localFileInput.click();
     });
 
-    uploadSubdirectory.addEventListener('input', () => saveUploadSubdirectory(false));
-    uploadSubdirectory.addEventListener('change', () => saveUploadSubdirectory());
+    cancelUploadBtn.addEventListener('click', () => activeUploadRequest?.abort());
+
+    selectUploadDirectoryBtn.addEventListener('click', chooseUploadDirectory);
 
     localFileInput.addEventListener('change', async () => {
         const file = localFileInput.files?.[0];
@@ -6286,9 +6496,10 @@
         }
     });
 
-    browseBackendBtn.addEventListener('click', openFileBrowser);
+    browseBackendBtn.addEventListener('click', () => openFileBrowser('file'));
     closeFileBrowserBtn.addEventListener('click', () => closeFileBrowser());
     cancelFileBrowserBtn.addEventListener('click', () => closeFileBrowser());
+    selectCurrentDirectoryBtn.addEventListener('click', selectUploadDirectory);
     fileBrowserUpBtn.addEventListener('click', () => loadBackendFiles(currentBrowserParent));
     fileBrowser.addEventListener('click', event => {
         if (event.target === fileBrowser) {
@@ -6300,7 +6511,7 @@
         if (!entry) return;
         if (entry.dataset.isDir === 'true') {
             loadBackendFiles(entry.dataset.entryPath || '');
-        } else {
+        } else if (fileBrowserMode === 'file') {
             selectBackendFile(entry.dataset.entryPath || '');
         }
     });
@@ -6525,6 +6736,7 @@
             toggle.checked = !toggle.checked;
             toggle.disabled = false;
             setStatus(error.message, true);
+            showToast(error.message, 'error');
         }
     });
 

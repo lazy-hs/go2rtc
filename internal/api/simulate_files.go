@@ -15,7 +15,12 @@ import (
 	"github.com/AlexxIT/go2rtc/internal/app"
 )
 
-const simulateUploadLimit int64 = 20 << 30
+const (
+	simulateUploadLimit             int64 = 20 << 30
+	simulateUploadMultipartOverhead int64 = 1 << 20
+)
+
+var errSimulateUploadTooLarge = errors.New("upload exceeds the configured size limit")
 
 var simulateUploadDir string
 
@@ -44,9 +49,12 @@ type simulateFileEntry struct {
 }
 
 type simulateFilesResponse struct {
-	Entries []simulateFileEntry `json:"entries"`
-	Parent  string              `json:"parent"`
-	Path    string              `json:"path"`
+	Entries      []simulateFileEntry `json:"entries"`
+	Parent       string              `json:"parent"`
+	Path         string              `json:"path"`
+	RelativePath string              `json:"relative_path,omitempty"`
+	CanGoUp      bool                `json:"can_go_up"`
+	IsComputer   bool                `json:"is_computer,omitempty"`
 }
 
 type simulateUploadResponse struct {
@@ -106,11 +114,20 @@ func simulateFilesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rawPath := strings.TrimSpace(r.URL.Query().Get("path"))
+	scope := strings.TrimSpace(r.URL.Query().Get("scope"))
+	if scope == "upload" {
+		simulateUploadDirectoriesHandler(w, rawPath)
+		return
+	}
+	if scope != "" {
+		http.Error(w, "unsupported backend browse scope", http.StatusBadRequest)
+		return
+	}
+
 	if rawPath == "" && runtime.GOOS == "windows" {
 		ResponseJSON(w, &simulateFilesResponse{
-			Entries: simulateWindowsDrives(),
-			Parent:  "",
-			Path:    "",
+			Entries:    simulateWindowsDrives(),
+			IsComputer: true,
 		})
 		return
 	}
@@ -134,7 +151,7 @@ func simulateFilesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	entries, err := simulateDirectoryEntries(dir)
+	entries, err := simulateDirectoryEntries(dir, false)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -149,6 +166,46 @@ func simulateFilesHandler(w http.ResponseWriter, r *http.Request) {
 		Entries: entries,
 		Parent:  filepath.ToSlash(parent),
 		Path:    filepath.ToSlash(dir),
+		CanGoUp: parent != "" || runtime.GOOS == "windows" && filepath.VolumeName(dir)+string(filepath.Separator) == dir,
+	})
+}
+
+func simulateUploadDirectoriesHandler(w http.ResponseWriter, rawPath string) {
+	if simulateUploadDir == "" {
+		http.Error(w, "simulate upload directory is not configured", http.StatusInternalServerError)
+		return
+	}
+	if rawPath == "" && runtime.GOOS == "windows" {
+		ResponseJSON(w, &simulateFilesResponse{
+			Entries:    simulateWindowsDrives(),
+			IsComputer: true,
+		})
+		return
+	}
+
+	dir, relativeDir, err := simulateUploadBrowseTarget(rawPath)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	entries, err := simulateDirectoryEntries(dir, true)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	parent := filepath.Dir(dir)
+	if parent == dir || filepath.VolumeName(dir)+string(filepath.Separator) == dir {
+		parent = ""
+	}
+
+	ResponseJSON(w, &simulateFilesResponse{
+		Entries:      entries,
+		Parent:       filepath.ToSlash(parent),
+		Path:         filepath.ToSlash(dir),
+		RelativePath: filepath.ToSlash(relativeDir),
+		CanGoUp:      parent != "" || runtime.GOOS == "windows" && filepath.VolumeName(dir)+string(filepath.Separator) == dir,
 	})
 }
 
@@ -170,7 +227,7 @@ func simulateWindowsDrives() []simulateFileEntry {
 	return entries
 }
 
-func simulateDirectoryEntries(dir string) ([]simulateFileEntry, error) {
+func simulateDirectoryEntries(dir string, directoriesOnly bool) ([]simulateFileEntry, error) {
 	items, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
@@ -183,7 +240,10 @@ func simulateDirectoryEntries(dir string) ([]simulateFileEntry, error) {
 		if statErr != nil {
 			continue
 		}
-		if !info.IsDir() && !isSimulateMediaFile(item.Name()) {
+		if directoriesOnly && !info.IsDir() {
+			continue
+		}
+		if !directoriesOnly && !info.IsDir() && !isSimulateMediaFile(item.Name()) {
 			continue
 		}
 
@@ -209,6 +269,10 @@ func simulateDirectoryEntries(dir string) ([]simulateFileEntry, error) {
 }
 
 func simulateUploadHandler(w http.ResponseWriter, r *http.Request) {
+	simulateUploadHandlerWithLimit(w, r, simulateUploadLimit)
+}
+
+func simulateUploadHandlerWithLimit(w http.ResponseWriter, r *http.Request, uploadLimit int64) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -218,10 +282,14 @@ func simulateUploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	r.Body = http.MaxBytesReader(w, r.Body, simulateUploadLimit)
+	requestLimit := uploadLimit + simulateUploadMultipartOverhead
+	if requestLimit < uploadLimit {
+		requestLimit = uploadLimit
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, requestLimit)
 	reader, err := r.MultipartReader()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		writeSimulateUploadError(w, err)
 		return
 	}
 
@@ -232,7 +300,7 @@ func simulateUploadHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		if partErr != nil {
-			http.Error(w, partErr.Error(), http.StatusBadRequest)
+			writeSimulateUploadError(w, partErr)
 			return
 		}
 
@@ -250,10 +318,10 @@ func simulateUploadHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			uploadPath = strings.TrimSpace(string(value))
 		case part.FormName() == "file" && part.FileName() != "":
-			response, uploadErr := saveSimulateUpload(part, uploadPath)
+			response, uploadErr := saveSimulateUpload(part, uploadPath, uploadLimit)
 			_ = part.Close()
 			if uploadErr != nil {
-				http.Error(w, uploadErr.Error(), http.StatusBadRequest)
+				writeSimulateUploadError(w, uploadErr)
 				return
 			}
 			ResponseJSON(w, response)
@@ -267,8 +335,17 @@ func simulateUploadHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "upload file is required", http.StatusBadRequest)
 }
 
-func saveSimulateUpload(reader io.Reader, uploadPath string) (*simulateUploadResponse, error) {
-	dir, relativeDir, err := simulateUploadTarget(uploadPath)
+func writeSimulateUploadError(w http.ResponseWriter, err error) {
+	status := http.StatusBadRequest
+	var maxBytesErr *http.MaxBytesError
+	if errors.Is(err, errSimulateUploadTooLarge) || errors.As(err, &maxBytesErr) {
+		status = http.StatusRequestEntityTooLarge
+	}
+	http.Error(w, err.Error(), status)
+}
+
+func saveSimulateUpload(reader io.Reader, uploadPath string, uploadLimit int64) (*simulateUploadResponse, error) {
+	dir, relativeDir, createDir, err := simulateUploadTarget(uploadPath)
 	if err != nil {
 		return nil, err
 	}
@@ -286,8 +363,14 @@ func saveSimulateUpload(reader io.Reader, uploadPath string) (*simulateUploadRes
 		return nil, fmt.Errorf("unsupported media file: %s", strings.ToLower(filepath.Ext(name)))
 	}
 
-	if err = os.MkdirAll(dir, 0755); err != nil {
-		return nil, err
+	if createDir {
+		if err = os.MkdirAll(dir, 0755); err != nil {
+			return nil, err
+		}
+		dir, err = secureSimulateUploadDir(dir)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	temp, err := os.CreateTemp(dir, ".go2rtc-upload-*")
@@ -297,9 +380,9 @@ func saveSimulateUpload(reader io.Reader, uploadPath string) (*simulateUploadRes
 	tempPath := temp.Name()
 	defer os.Remove(tempPath)
 
-	size, copyErr := io.Copy(temp, io.LimitReader(reader, simulateUploadLimit+1))
-	if copyErr == nil && size > simulateUploadLimit {
-		copyErr = fmt.Errorf("upload exceeds %d bytes", simulateUploadLimit)
+	size, copyErr := io.Copy(temp, io.LimitReader(reader, uploadLimit+1))
+	if copyErr == nil && size > uploadLimit {
+		copyErr = fmt.Errorf("%w: limit is %d bytes", errSimulateUploadTooLarge, uploadLimit)
 	}
 	if copyErr == nil {
 		copyErr = temp.Sync()
@@ -331,21 +414,97 @@ func saveSimulateUpload(reader io.Reader, uploadPath string) (*simulateUploadRes
 	}, nil
 }
 
-func simulateUploadTarget(uploadPath string) (dir, relativeDir string, err error) {
-	relativeDir = filepath.Clean(filepath.FromSlash(strings.TrimSpace(uploadPath)))
+func simulateUploadTarget(uploadPath string) (dir, relativeDir string, createDir bool, err error) {
+	rawPath := strings.TrimSpace(uploadPath)
+	path := filepath.Clean(filepath.FromSlash(rawPath))
+	if filepath.IsAbs(path) {
+		dir, err = resolveExistingSimulateDirectory(path)
+		if err != nil {
+			return "", "", false, err
+		}
+		return dir, "", false, nil
+	}
+	if filepath.VolumeName(path) != "" {
+		return "", "", false, errors.New("selected upload directory must be absolute")
+	}
+
+	relativeDir = path
 	if relativeDir == "." {
 		relativeDir = ""
-	}
-	if filepath.IsAbs(relativeDir) || filepath.VolumeName(relativeDir) != "" {
-		return "", "", errors.New("path escapes the upload directory")
 	}
 
 	dir = filepath.Clean(filepath.Join(simulateUploadDir, relativeDir))
 	rel, err := filepath.Rel(simulateUploadDir, dir)
 	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
-		return "", "", errors.New("path escapes the upload directory")
+		return "", "", false, errors.New("path escapes the upload directory")
 	}
+	return dir, relativeDir, true, nil
+}
+
+func simulateUploadBrowseTarget(rawPath string) (dir, relativeDir string, err error) {
+	rawPath = strings.TrimSpace(rawPath)
+	if rawPath == "" {
+		dir = simulateUploadDir
+	} else {
+		path := filepath.Clean(filepath.FromSlash(rawPath))
+		if filepath.IsAbs(path) || filepath.VolumeName(path) != "" {
+			dir = path
+		} else {
+			if path == ".." || strings.HasPrefix(path, ".."+string(filepath.Separator)) {
+				return "", "", errors.New("path escapes the upload directory")
+			}
+			dir = filepath.Join(simulateUploadDir, path)
+		}
+	}
+
+	dir, err = resolveExistingSimulateDirectory(dir)
+	if err != nil {
+		return "", "", err
+	}
+	relativeDir, _ = relativePathWithinRoot(simulateUploadDir, dir)
 	return dir, relativeDir, nil
+}
+
+func resolveExistingSimulateDirectory(dir string) (string, error) {
+	dir = filepath.Clean(dir)
+	info, err := os.Stat(dir)
+	if err != nil {
+		return "", err
+	}
+	if !info.IsDir() {
+		return "", errors.New("selected upload path must be a directory")
+	}
+	resolvedDir, err := filepath.EvalSymlinks(dir)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Clean(resolvedDir), nil
+}
+
+func secureSimulateUploadDir(dir string) (string, error) {
+	root, err := filepath.EvalSymlinks(simulateUploadDir)
+	if err != nil {
+		return "", err
+	}
+	resolvedDir, err := filepath.EvalSymlinks(dir)
+	if err != nil {
+		return "", err
+	}
+	if _, err = relativePathWithinRoot(root, resolvedDir); err != nil {
+		return "", err
+	}
+	return resolvedDir, nil
+}
+
+func relativePathWithinRoot(root, target string) (string, error) {
+	relative, err := filepath.Rel(filepath.Clean(root), filepath.Clean(target))
+	if err != nil || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
+		return "", errors.New("path escapes the upload directory")
+	}
+	if relative == "." {
+		return "", nil
+	}
+	return relative, nil
 }
 
 func publishSimulateUpload(tempPath, dir, name string) (publishedName, publishedPath string, err error) {

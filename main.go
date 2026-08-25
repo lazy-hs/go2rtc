@@ -1,7 +1,9 @@
 package main
 
 import (
+	_ "embed"
 	"slices"
+	"strings"
 
 	"github.com/AlexxIT/go2rtc/internal/alsa"
 	"github.com/AlexxIT/go2rtc/internal/api"
@@ -51,9 +53,13 @@ import (
 	"github.com/AlexxIT/go2rtc/pkg/shell"
 )
 
+//go:embed VERSION
+var version string
+
 func main() {
-	// version will be set later from -buildvcs info, this used only as fallback
-	app.Version = "1.9.14"
+	// VERSION is the canonical release version. Build metadata is appended later
+	// by app.Init when the binary wasn't built from the matching release tag.
+	app.Version = strings.TrimSpace(version)
 
 	type module struct {
 		name string

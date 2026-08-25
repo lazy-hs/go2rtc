@@ -15,28 +15,31 @@ import (
 )
 
 type simulateInfo struct {
-	BasePath          string                                  `json:"base_path"`
-	ConfiguredOrder   []string                                `json:"configured_order"`
-	ConfiguredStreams map[string][]string                     `json:"configured_streams"`
-	DevicesAPI        string                                  `json:"devices_api"`
-	FilesAPI          string                                  `json:"files_api"`
-	Host              string                                  `json:"host"`
-	LogAPI            string                                  `json:"log_api"`
-	MetricsAPI        string                                  `json:"metrics_api"`
-	ONVIFConfigAPI    string                                  `json:"onvif_config_api"`
-	ONVIFPath         string                                  `json:"onvif_path"`
-	PTZAPI            string                                  `json:"ptz_api"`
-	PTZEnabled        bool                                    `json:"ptz_enabled"`
-	RTSPPath          string                                  `json:"rtsp_path"`
-	RTSPPort          string                                  `json:"rtsp_port"`
-	StreamStateAPI    string                                  `json:"stream_state_api"`
-	EventsAPI         string                                  `json:"events_api"`
-	DisabledStreams   []string                                `json:"disabled_streams"`
-	ONVIFQuality      map[string]simulateONVIFStreamQuality   `json:"onvif_quality,omitempty"`
-	ONVIFQualities    map[string][]simulateONVIFStreamQuality `json:"onvif_qualities"`
-	StreamsAPI        string                                  `json:"streams_api"`
-	UploadAPI         string                                  `json:"upload_api"`
-	UploadDir         string                                  `json:"upload_dir"`
+	BasePath           string                                  `json:"base_path"`
+	ConfiguredOrder    []string                                `json:"configured_order"`
+	ConfiguredStreams  map[string][]string                     `json:"configured_streams"`
+	DevicesAPI         string                                  `json:"devices_api"`
+	FilesAPI           string                                  `json:"files_api"`
+	FolderPickerAPI    string                                  `json:"folder_picker_api"`
+	Host               string                                  `json:"host"`
+	LogAPI             string                                  `json:"log_api"`
+	MetricsAPI         string                                  `json:"metrics_api"`
+	NativeFolderPicker bool                                    `json:"native_folder_picker"`
+	ONVIFConfigAPI     string                                  `json:"onvif_config_api"`
+	ONVIFPath          string                                  `json:"onvif_path"`
+	PTZAPI             string                                  `json:"ptz_api"`
+	PTZEnabled         bool                                    `json:"ptz_enabled"`
+	RTSPPath           string                                  `json:"rtsp_path"`
+	RTSPPort           string                                  `json:"rtsp_port"`
+	StreamStateAPI     string                                  `json:"stream_state_api"`
+	EventsAPI          string                                  `json:"events_api"`
+	DisabledStreams    []string                                `json:"disabled_streams"`
+	ONVIFQuality       map[string]simulateONVIFStreamQuality   `json:"onvif_quality,omitempty"`
+	ONVIFQualities     map[string][]simulateONVIFStreamQuality `json:"onvif_qualities"`
+	StreamsAPI         string                                  `json:"streams_api"`
+	UploadAPI          string                                  `json:"upload_api"`
+	UploadDir          string                                  `json:"upload_dir"`
+	UploadLimit        int64                                   `json:"upload_limit"`
 }
 
 type simulateONVIFStreamQuality struct {
@@ -47,27 +50,30 @@ type simulateONVIFStreamQuality struct {
 func simulateHandler(w http.ResponseWriter, r *http.Request) {
 	configuredStreams, configuredOrder := configuredStreamsFromFile(app.ConfigPath)
 	ResponseJSON(w, &simulateInfo{
-		BasePath:          basePath,
-		ConfiguredOrder:   configuredOrder,
-		ConfiguredStreams: configuredStreams,
-		DevicesAPI:        simulateEndpoint("api/ffmpeg/devices"),
-		FilesAPI:          simulateEndpoint("api/simulate/files"),
-		Host:              r.Host,
-		LogAPI:            simulateEndpoint("api/log"),
-		MetricsAPI:        simulateEndpoint("api/simulate/metrics"),
-		ONVIFConfigAPI:    simulateEndpoint("api/simulate/onvif"),
-		ONVIFPath:         simulateEndpoint("onvif/device_service"),
-		PTZAPI:            simulateEndpoint("api/simulate/ptz"),
-		PTZEnabled:        configuredPTZEnabledFromFile(app.ConfigPath),
-		RTSPPath:          "/",
-		RTSPPort:          simulateRTSPPort(app.ConfigPath),
-		StreamStateAPI:    simulateEndpoint("api/streams/state"),
-		EventsAPI:         simulateEndpoint("api/simulate/events"),
-		DisabledStreams:   configuredDisabledStreamsFromFile(app.ConfigPath),
-		ONVIFQualities:    configuredONVIFQualitiesFromFile(app.ConfigPath),
-		StreamsAPI:        simulateEndpoint("api/streams"),
-		UploadAPI:         simulateEndpoint("api/simulate/upload"),
-		UploadDir:         filepath.ToSlash(simulateUploadDir),
+		BasePath:           basePath,
+		ConfiguredOrder:    configuredOrder,
+		ConfiguredStreams:  configuredStreams,
+		DevicesAPI:         simulateEndpoint("api/ffmpeg/devices"),
+		FilesAPI:           simulateEndpoint("api/simulate/files"),
+		Host:               r.Host,
+		LogAPI:             simulateEndpoint("api/log"),
+		MetricsAPI:         simulateEndpoint("api/simulate/metrics"),
+		FolderPickerAPI:    simulateEndpoint("api/simulate/folder-picker"),
+		ONVIFConfigAPI:     simulateEndpoint("api/simulate/onvif"),
+		ONVIFPath:          simulateEndpoint("onvif/device_service"),
+		PTZAPI:             simulateEndpoint("api/simulate/ptz"),
+		PTZEnabled:         configuredPTZEnabledFromFile(app.ConfigPath),
+		RTSPPath:           "/",
+		RTSPPort:           simulateRTSPPort(app.ConfigPath),
+		StreamStateAPI:     simulateEndpoint("api/streams/state"),
+		EventsAPI:          simulateEndpoint("api/simulate/events"),
+		DisabledStreams:    configuredDisabledStreamsFromFile(app.ConfigPath),
+		ONVIFQualities:     configuredONVIFQualitiesFromFile(app.ConfigPath),
+		StreamsAPI:         simulateEndpoint("api/streams"),
+		UploadAPI:          simulateEndpoint("api/simulate/upload"),
+		UploadDir:          filepath.ToSlash(simulateUploadDir),
+		UploadLimit:        simulateUploadLimit,
+		NativeFolderPicker: simulateFolderPickerAvailable() && simulateLocalRequest(r),
 	})
 }
 

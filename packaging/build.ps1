@@ -134,6 +134,12 @@ try {
     Push-Location $repoRoot
     $locationPushed = $true
 
+    Write-Host '==> Validating VERSION' -ForegroundColor Cyan
+    & go run ./cmd/version check
+    if ($LASTEXITCODE -ne 0) {
+        throw 'VERSION validation failed.'
+    }
+
     if (-not $SkipTest) {
         Write-Host '==> Running pre-build test: go test -count=1 ./internal/api' -ForegroundColor Cyan
         & go test -count=1 ./internal/api
