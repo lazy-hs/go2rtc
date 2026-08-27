@@ -86,7 +86,7 @@ func apiStreams(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if IsDisabled(name) {
+		if IsDisabled(name) || !Enabled() {
 			return
 		}
 
@@ -222,16 +222,59 @@ type streamStateRequest struct {
 }
 
 type streamStateResponse struct {
-	Name            string   `json:"name,omitempty"`
-	Enabled         bool     `json:"enabled"`
-	Persisted       bool     `json:"persisted"`
-	Warning         string   `json:"warning,omitempty"`
+	Name      string `json:"name,omitempty"`
+	Scope     string `json:"scope,omitempty"`
+	Enabled   bool   `json:"enabled"`
+	Persisted bool   `json:"persisted"`
+	Warning   string `json:"warning,omitempty"`
+	streamStateSnapshot
+}
+
+type streamStateSnapshot struct {
+	StreamsEnabled  bool     `json:"streams_enabled"`
+	ONVIFEnabled    bool     `json:"onvif_enabled"`
+	RTSPEnabled     bool     `json:"rtsp_enabled"`
 	DisabledStreams []string `json:"disabled_streams"`
+}
+
+type streamStateControl struct {
+	enabled func() bool
+	apply   func(bool)
+}
+
+var streamStateControls = map[string]streamStateControl{}
+
+func RegisterStateControl(name string, enabled func() bool, apply func(bool)) {
+	streamsMu.Lock()
+	streamStateControls[name] = streamStateControl{enabled: enabled, apply: apply}
+	streamsMu.Unlock()
+}
+
+func currentStreamState() streamStateSnapshot {
+	streamsMu.Lock()
+	onvifControl := streamStateControls["onvif"]
+	rtspControl := streamStateControls["rtsp"]
+	streamsMu.Unlock()
+
+	onvifEnabled := true
+	if onvifControl.enabled != nil {
+		onvifEnabled = onvifControl.enabled()
+	}
+	rtspEnabled := true
+	if rtspControl.enabled != nil {
+		rtspEnabled = rtspControl.enabled()
+	}
+	return streamStateSnapshot{
+		StreamsEnabled:  Enabled(),
+		ONVIFEnabled:    onvifEnabled,
+		RTSPEnabled:     rtspEnabled,
+		DisabledStreams: DisabledNames(),
+	}
 }
 
 func apiStreamState(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
-		api.ResponseJSON(w, map[string]any{"disabled_streams": DisabledNames()})
+		api.ResponseJSON(w, currentStreamState())
 		return
 	}
 	if r.Method != http.MethodPut {
@@ -240,17 +283,32 @@ func apiStreamState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	name := r.URL.Query().Get("src")
-	if name == "" {
-		http.Error(w, "stream name required", http.StatusBadRequest)
-		return
-	}
-
 	var req streamStateRequest
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	name := r.URL.Query().Get("src")
+	scope := r.URL.Query().Get("scope")
+	if name == "" {
+		if scope == "" {
+			scope = "streams"
+		}
+		response, err := changeGlobalState(scope, req.Enabled, appConfiguredStreams(), func(path []string, enabled bool) error {
+			return app.PatchConfig(path, enabled)
+		})
+		if err != nil {
+			status := http.StatusBadRequest
+			if strings.Contains(err.Error(), "not available") {
+				status = http.StatusNotFound
+			}
+			http.Error(w, err.Error(), status)
+			return
+		}
+		api.ResponseJSON(w, response)
 		return
 	}
 
@@ -269,6 +327,47 @@ func apiStreamState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	api.ResponseJSON(w, response)
+}
+
+func changeGlobalState(scope string, enabled bool, configured map[string][]string, persist func([]string, bool) error) (streamStateResponse, error) {
+	var apply func(bool) error
+	switch scope {
+	case "streams":
+		if enabled {
+			if err := validateAllEnabled(configured); err != nil {
+				return streamStateResponse{}, err
+			}
+		}
+		apply = func(value bool) error { return SetAllEnabled(value, configured) }
+	case "onvif", "rtsp":
+		streamsMu.Lock()
+		control, ok := streamStateControls[scope]
+		streamsMu.Unlock()
+		if !ok || control.apply == nil {
+			return streamStateResponse{}, errors.New(scope + " state control is not available")
+		}
+		apply = func(value bool) error {
+			control.apply(value)
+			return nil
+		}
+	default:
+		return streamStateResponse{}, errors.New("unsupported state scope")
+	}
+
+	response := streamStateResponse{Scope: scope, Enabled: enabled, Persisted: true}
+	if err := persist([]string{"simulate", scope + "_enabled"}, enabled); err != nil {
+		if !isConfigPersistenceUnavailable(err) {
+			return streamStateResponse{}, err
+		}
+		response.Persisted = false
+		response.Warning = "config file is read-only; state change applies until restart"
+	}
+	if err := apply(enabled); err != nil {
+		return streamStateResponse{}, err
+	}
+
+	response.streamStateSnapshot = currentStreamState()
+	return response, nil
 }
 
 func changeStreamState(name string, sources []string, enabled bool, persist func([]string) error) (streamStateResponse, error) {
@@ -305,7 +404,7 @@ func changeStreamState(name string, sources []string, enabled bool, persist func
 		Disable(name)
 	}
 
-	response.DisabledStreams = DisabledNames()
+	response.streamStateSnapshot = currentStreamState()
 	return response, nil
 }
 

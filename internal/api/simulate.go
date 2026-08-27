@@ -33,6 +33,9 @@ type simulateInfo struct {
 	RTSPPort           string                                  `json:"rtsp_port"`
 	StreamStateAPI     string                                  `json:"stream_state_api"`
 	EventsAPI          string                                  `json:"events_api"`
+	StreamsEnabled     bool                                    `json:"streams_enabled"`
+	ONVIFEnabled       bool                                    `json:"onvif_enabled"`
+	RTSPEnabled        bool                                    `json:"rtsp_enabled"`
 	DisabledStreams    []string                                `json:"disabled_streams"`
 	ONVIFQuality       map[string]simulateONVIFStreamQuality   `json:"onvif_quality,omitempty"`
 	ONVIFQualities     map[string][]simulateONVIFStreamQuality `json:"onvif_qualities"`
@@ -49,6 +52,7 @@ type simulateONVIFStreamQuality struct {
 
 func simulateHandler(w http.ResponseWriter, r *http.Request) {
 	configuredStreams, configuredOrder := configuredStreamsFromFile(app.ConfigPath)
+	streamsEnabled, onvifEnabled, rtspEnabled := configuredServiceStatesFromFile(app.ConfigPath)
 	ResponseJSON(w, &simulateInfo{
 		BasePath:           basePath,
 		ConfiguredOrder:    configuredOrder,
@@ -67,6 +71,9 @@ func simulateHandler(w http.ResponseWriter, r *http.Request) {
 		RTSPPort:           simulateRTSPPort(app.ConfigPath),
 		StreamStateAPI:     simulateEndpoint("api/streams/state"),
 		EventsAPI:          simulateEndpoint("api/simulate/events"),
+		StreamsEnabled:     streamsEnabled,
+		ONVIFEnabled:       onvifEnabled,
+		RTSPEnabled:        rtspEnabled,
 		DisabledStreams:    configuredDisabledStreamsFromFile(app.ConfigPath),
 		ONVIFQualities:     configuredONVIFQualitiesFromFile(app.ConfigPath),
 		StreamsAPI:         simulateEndpoint("api/streams"),
@@ -75,6 +82,38 @@ func simulateHandler(w http.ResponseWriter, r *http.Request) {
 		UploadLimit:        simulateUploadLimit,
 		NativeFolderPicker: simulateFolderPickerAvailable() && simulateLocalRequest(r),
 	})
+}
+
+func configuredServiceStatesFromFile(configPath string) (streamsEnabled, onvifEnabled, rtspEnabled bool) {
+	streamsEnabled, onvifEnabled, rtspEnabled = true, true, true
+	if configPath == "" {
+		return
+	}
+
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		return
+	}
+	var cfg struct {
+		Simulate struct {
+			StreamsEnabled *bool `yaml:"streams_enabled"`
+			ONVIFEnabled   *bool `yaml:"onvif_enabled"`
+			RTSPEnabled    *bool `yaml:"rtsp_enabled"`
+		} `yaml:"simulate"`
+	}
+	if yaml.Unmarshal(data, &cfg) != nil {
+		return
+	}
+	if cfg.Simulate.StreamsEnabled != nil {
+		streamsEnabled = *cfg.Simulate.StreamsEnabled
+	}
+	if cfg.Simulate.ONVIFEnabled != nil {
+		onvifEnabled = *cfg.Simulate.ONVIFEnabled
+	}
+	if cfg.Simulate.RTSPEnabled != nil {
+		rtspEnabled = *cfg.Simulate.RTSPEnabled
+	}
+	return
 }
 
 func configuredPTZEnabledFromFile(configPath string) bool {

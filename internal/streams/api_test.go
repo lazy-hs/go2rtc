@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/AlexxIT/go2rtc/internal/app"
+	"github.com/AlexxIT/go2rtc/pkg/core"
 	"github.com/stretchr/testify/require"
 )
 
@@ -48,7 +49,78 @@ func TestAPIStreamStateGet(t *testing.T) {
 	apiStreamState(res, req)
 
 	require.Equal(t, http.StatusOK, res.Code)
-	require.JSONEq(t, `{"disabled_streams":["camera1","camera2"]}`, res.Body.String())
+	require.JSONEq(t, `{
+        "streams_enabled": true,
+        "onvif_enabled": true,
+        "rtsp_enabled": true,
+        "disabled_streams": ["camera1", "camera2"]
+    }`, res.Body.String())
+}
+
+func TestChangeGlobalStreamsStatePreservesIndividualDisabledState(t *testing.T) {
+	HandleFunc("globaltest", func(string) (core.Producer, error) { return nil, nil })
+	t.Cleanup(func() { delete(handlers, "globaltest") })
+
+	configured := map[string][]string{
+		"camera1": {"globaltest:camera1"},
+		"camera2": {"globaltest:camera2"},
+	}
+	withStreamStateTestData(t, map[string]*Stream{
+		"camera1": NewStream(configured["camera1"]),
+	}, map[string]bool{"camera2": true})
+
+	response, err := changeGlobalState("streams", false, configured, func(path []string, enabled bool) error {
+		require.Equal(t, []string{"simulate", "streams_enabled"}, path)
+		require.False(t, enabled)
+		return nil
+	})
+	require.NoError(t, err)
+	require.False(t, response.StreamsEnabled)
+	require.Nil(t, Get("camera1"))
+	require.Equal(t, []string{"camera2"}, DisabledNames())
+
+	response, err = changeGlobalState("streams", true, configured, func([]string, bool) error { return nil })
+	require.NoError(t, err)
+	require.True(t, response.StreamsEnabled)
+	require.NotNil(t, Get("camera1"))
+	require.Nil(t, Get("camera2"))
+	require.Equal(t, []string{"camera2"}, DisabledNames())
+}
+
+func TestChangeProtocolState(t *testing.T) {
+	previous := true
+	RegisterStateControl("onvif", func() bool { return previous }, func(enabled bool) { previous = enabled })
+	t.Cleanup(func() {
+		streamsMu.Lock()
+		delete(streamStateControls, "onvif")
+		streamsMu.Unlock()
+	})
+
+	response, err := changeGlobalState("onvif", false, nil, func(path []string, enabled bool) error {
+		require.Equal(t, []string{"simulate", "onvif_enabled"}, path)
+		require.False(t, enabled)
+		return nil
+	})
+	require.NoError(t, err)
+	require.False(t, previous)
+	require.False(t, response.ONVIFEnabled)
+}
+
+func TestChangeGlobalStreamsStateValidatesBeforePersistence(t *testing.T) {
+	withStreamStateTestData(t, map[string]*Stream{}, map[string]bool{})
+	require.NoError(t, SetAllEnabled(false, nil))
+	persisted := false
+
+	_, err := changeGlobalState("streams", true, map[string][]string{
+		"camera1": {"unsupported:camera1"},
+	}, func([]string, bool) error {
+		persisted = true
+		return nil
+	})
+
+	require.EqualError(t, err, "streams: source not supported")
+	require.False(t, persisted)
+	require.False(t, Enabled())
 }
 
 func TestChangeStreamStateWithReadOnlyConfig(t *testing.T) {
@@ -88,9 +160,11 @@ func withStreamStateTestData(t *testing.T, testStreams map[string]*Stream, testD
 	previousStreams := streams
 	previousDisabled := disabledStreams
 	previousOrder := streamOrder
+	previousEnabled := streamsEnabled
 	streams = testStreams
 	disabledStreams = testDisabled
 	streamOrder = nil
+	streamsEnabled = true
 	streamsMu.Unlock()
 
 	t.Cleanup(func() {
@@ -101,6 +175,7 @@ func withStreamStateTestData(t *testing.T, testStreams map[string]*Stream, testD
 		streams = previousStreams
 		disabledStreams = previousDisabled
 		streamOrder = previousOrder
+		streamsEnabled = previousEnabled
 		streamsMu.Unlock()
 	})
 }

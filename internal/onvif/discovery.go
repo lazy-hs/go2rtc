@@ -98,6 +98,9 @@ func serveDiscovery(conn *net.UDPConn, interfaces []discoveryInterface, apiPort 
 		if !ok {
 			continue
 		}
+		if !ONVIFEnabled() {
+			continue
+		}
 		log.Info().Str("messageID", messageID).Stringer("remoteAddr", remote).Msg("收到 Probe 请求")
 
 		localIP := selectDiscoveryIP(remote.IP, interfaces)

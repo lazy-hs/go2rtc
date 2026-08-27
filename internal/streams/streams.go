@@ -21,6 +21,7 @@ func Init() {
 		Preload  map[string]string `yaml:"preload"`
 		Simulate struct {
 			DisabledStreams []string `yaml:"disabled_streams"`
+			StreamsEnabled  *bool    `yaml:"streams_enabled"`
 		} `yaml:"simulate"`
 	}
 
@@ -30,14 +31,19 @@ func Init() {
 	streamsMu.Lock()
 	streamOrder = streamOrderFromConfig(app.ConfigPath)
 	disabledStreams = stringSet(cfg.Simulate.DisabledStreams)
+	streamsEnabled = cfg.Simulate.StreamsEnabled == nil || *cfg.Simulate.StreamsEnabled
 
-	for name, item := range cfg.Streams {
-		if disabledStreams[name] {
-			continue
+	if streamsEnabled {
+		for name, item := range cfg.Streams {
+			if disabledStreams[name] {
+				continue
+			}
+			streams[name] = NewStream(item)
 		}
-		streams[name] = NewStream(item)
 	}
-	normalizeStreamOrderLocked()
+	if streamsEnabled {
+		normalizeStreamOrderLocked()
+	}
 	streamsMu.Unlock()
 
 	api.HandleFunc("api/streams", apiStreams)
@@ -66,6 +72,9 @@ func Init() {
 }
 
 func New(name string, sources ...string) (*Stream, error) {
+	if !Enabled() {
+		return nil, errors.New("streams: globally disabled")
+	}
 	for _, source := range sources {
 		if !HasProducer(source) {
 			return nil, errors.New("streams: source not supported")
@@ -89,6 +98,9 @@ func New(name string, sources ...string) (*Stream, error) {
 func Patch(name string, source string) (*Stream, error) {
 	streamsMu.Lock()
 	defer streamsMu.Unlock()
+	if !streamsEnabled {
+		return nil, errors.New("streams: globally disabled")
+	}
 
 	// check if source links to some stream name from go2rtc
 	if u, err := url.Parse(source); err == nil && u.Scheme == "rtsp" && len(u.Path) > 1 {
@@ -164,6 +176,7 @@ var streams = map[string]*Stream{}
 var streamsMu sync.Mutex
 var streamOrder []string
 var disabledStreams = map[string]bool{}
+var streamsEnabled = true
 
 func stringSet(items []string) map[string]bool {
 	set := make(map[string]bool, len(items))
@@ -179,6 +192,12 @@ func Get(name string) *Stream {
 	streamsMu.Lock()
 	defer streamsMu.Unlock()
 	return streams[name]
+}
+
+func Enabled() bool {
+	streamsMu.Lock()
+	defer streamsMu.Unlock()
+	return streamsEnabled
 }
 
 func Delete(name string) {
@@ -215,6 +234,10 @@ func Disable(name string) {
 func Enable(name string, sources ...string) error {
 	streamsMu.Lock()
 	delete(disabledStreams, name)
+	if !streamsEnabled {
+		streamsMu.Unlock()
+		return nil
+	}
 	if _, ok := streams[name]; ok {
 		streamsMu.Unlock()
 		return nil
@@ -226,6 +249,71 @@ func Enable(name string, sources ...string) error {
 		return err
 	}
 	_ = stream
+	return nil
+}
+
+func SetAllEnabled(enabled bool, configured map[string][]string) error {
+	if enabled {
+		if err := validateAllEnabled(configured); err != nil {
+			return err
+		}
+
+		streamsMu.Lock()
+		if streamsEnabled {
+			streamsMu.Unlock()
+			return nil
+		}
+		streamsEnabled = true
+		for name, sources := range configured {
+			if disabledStreams[name] {
+				continue
+			}
+			streams[name] = NewStream(sources)
+			addStreamOrderLocked(name)
+		}
+		normalizeStreamOrderLocked()
+		streamsMu.Unlock()
+		return nil
+	}
+
+	streamsMu.Lock()
+	if !streamsEnabled {
+		streamsMu.Unlock()
+		return nil
+	}
+	streamsEnabled = false
+	active := make([]*Stream, 0, len(streams))
+	seen := make(map[*Stream]struct{}, len(streams))
+	for _, stream := range streams {
+		if _, ok := seen[stream]; ok {
+			continue
+		}
+		seen[stream] = struct{}{}
+		active = append(active, stream)
+	}
+	streams = map[string]*Stream{}
+	streamsMu.Unlock()
+
+	for _, stream := range active {
+		stream.Close()
+	}
+	return nil
+}
+
+func validateAllEnabled(configured map[string][]string) error {
+	for name, sources := range configured {
+		if IsDisabled(name) {
+			continue
+		}
+		for _, source := range sources {
+			if !HasProducer(source) {
+				return errors.New("streams: source not supported")
+			}
+			if err := Validate(source); err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 
@@ -250,6 +338,9 @@ func DisabledNames() []string {
 func GetAllNames() []string {
 	streamsMu.Lock()
 	defer streamsMu.Unlock()
+	if !streamsEnabled {
+		return nil
+	}
 	normalizeStreamOrderLocked()
 	return append([]string(nil), streamOrder...)
 }

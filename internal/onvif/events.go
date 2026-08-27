@@ -376,7 +376,7 @@ func (m *eventManager) generate(now time.Time) {
 	defer m.mu.Unlock()
 
 	m.cleanupLocked(now)
-	if !m.enabled {
+	if !m.enabled || !ONVIFEnabled() {
 		return
 	}
 
@@ -439,7 +439,7 @@ func subscriptionMatchesTemplate(sub *eventSubscription, index int) bool {
 }
 
 func (m *eventManager) enqueueLocked(sub *eventSubscription, count int, now time.Time, operationOverride string) int {
-	if !m.enabled || len(sub.TemplateIndexes) == 0 || count <= 0 {
+	if !m.enabled || !ONVIFEnabled() || len(sub.TemplateIndexes) == 0 || count <= 0 {
 		return 0
 	}
 

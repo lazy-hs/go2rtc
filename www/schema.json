@@ -697,6 +697,33 @@
         }
       }
     },
+    "simulate": {
+      "type": "object",
+      "properties": {
+        "streams_enabled": {
+          "description": "Enable all configured video streams",
+          "type": "boolean",
+          "default": true
+        },
+        "onvif_enabled": {
+          "description": "Enable ONVIF service, discovery and event delivery",
+          "type": "boolean",
+          "default": true
+        },
+        "rtsp_enabled": {
+          "description": "Enable RTSP server access",
+          "type": "boolean",
+          "default": true
+        },
+        "disabled_streams": {
+          "description": "Configured streams that remain individually disabled",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "srtp": {
       "description": "SRTP server for HomeKit",
       "type": "object",

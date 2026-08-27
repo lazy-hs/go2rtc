@@ -165,6 +165,9 @@ streams:
     - ffmpeg:/data/demo.mp4#video=h264#audio=aac#input=file
 
 simulate:
+  streams_enabled: true
+  onvif_enabled: true
+  rtsp_enabled: true
   disabled_streams: []
   onvif_qualities:
     demo:
@@ -173,6 +176,8 @@ simulate:
       - width: 1280
         height: 720
 ```
+
+控制台提供三个即时生效并写回配置的发布开关：`streams_enabled` 会停止或恢复全部视频任务，`onvif_enabled` 会控制 ONVIF 接口、发现与事件推送，`rtsp_enabled` 会拒绝新的 RTSP 访问并断开已有 RTSP 会话。重新开启整体推流时，只恢复未列入 `disabled_streams` 的任务。
 
 发布地址示例：
 

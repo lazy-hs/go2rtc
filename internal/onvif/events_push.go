@@ -136,6 +136,18 @@ func (m *eventManager) pushLoop(id string) {
 			return
 		default:
 		}
+		if !ONVIFEnabled() {
+			timer := time.NewTimer(250 * time.Millisecond)
+			select {
+			case <-m.stop:
+				if !timer.Stop() {
+					<-timer.C
+				}
+				return
+			case <-timer.C:
+			}
+			continue
+		}
 
 		notifications, _, err := m.pull(id, maxPullMessages, maxPullTimeout)
 		if err != nil {

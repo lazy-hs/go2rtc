@@ -91,6 +91,25 @@ func TestConfiguredDisabledStreamsFromFile(t *testing.T) {
 	require.Equal(t, []string{"camera2", "rtsp-main"}, configuredDisabledStreamsFromFile(configPath))
 }
 
+func TestConfiguredServiceStatesFromFile(t *testing.T) {
+	configPath := filepath.Join(t.TempDir(), "go2rtc.yaml")
+	require.NoError(t, os.WriteFile(configPath, []byte(`simulate:
+  streams_enabled: false
+  onvif_enabled: false
+  rtsp_enabled: true
+`), 0644))
+
+	streamsEnabled, onvifEnabled, rtspEnabled := configuredServiceStatesFromFile(configPath)
+	require.False(t, streamsEnabled)
+	require.False(t, onvifEnabled)
+	require.True(t, rtspEnabled)
+
+	streamsEnabled, onvifEnabled, rtspEnabled = configuredServiceStatesFromFile("")
+	require.True(t, streamsEnabled)
+	require.True(t, onvifEnabled)
+	require.True(t, rtspEnabled)
+}
+
 func TestConfiguredPTZEnabledFromFile(t *testing.T) {
 	configPath := filepath.Join(t.TempDir(), "go2rtc.yaml")
 	require.NoError(t, os.WriteFile(configPath, []byte(`simulate:

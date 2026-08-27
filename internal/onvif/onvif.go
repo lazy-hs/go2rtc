@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/AlexxIT/go2rtc/internal/api"
@@ -38,11 +39,14 @@ func Init() {
 		Event    eventConfig  `yaml:"event"`
 		Device   deviceConfig `yaml:"onvif"`
 		Simulate struct {
-			PTZEnabled *bool                      `yaml:"ptz_enabled"`
-			PTZ        map[string]ptzStreamConfig `yaml:"ptz"`
+			PTZEnabled   *bool                      `yaml:"ptz_enabled"`
+			PTZ          map[string]ptzStreamConfig `yaml:"ptz"`
+			ONVIFEnabled *bool                      `yaml:"onvif_enabled"`
 		} `yaml:"simulate"`
 	}
 	app.LoadConfig(&cfg)
+	onvifServerEnabled.Store(cfg.Simulate.ONVIFEnabled == nil || *cfg.Simulate.ONVIFEnabled)
+	streams.RegisterStateControl("onvif", ONVIFEnabled, SetONVIFEnabled)
 	device = cfg.Device.withDefaults(app.Version)
 	ptzEnabled := len(cfg.Simulate.PTZ) > 0
 	if cfg.Simulate.PTZEnabled != nil {
@@ -77,6 +81,19 @@ func Init() {
 }
 
 var log zerolog.Logger
+var onvifServerEnabled atomic.Bool
+
+func init() {
+	onvifServerEnabled.Store(true)
+}
+
+func ONVIFEnabled() bool {
+	return onvifServerEnabled.Load()
+}
+
+func SetONVIFEnabled(enabled bool) {
+	onvifServerEnabled.Store(enabled)
+}
 
 func streamOnvif(rawURL string) (core.Producer, error) {
 	client, err := onvif.NewClient(rawURL)
@@ -104,6 +121,11 @@ func streamOnvif(rawURL string) (core.Producer, error) {
 }
 
 func onvifDeviceService(w http.ResponseWriter, r *http.Request) {
+	if !ONVIFEnabled() {
+		http.Error(w, "ONVIF service disabled", http.StatusServiceUnavailable)
+		return
+	}
+
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

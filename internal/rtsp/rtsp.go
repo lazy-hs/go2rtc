@@ -8,6 +8,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 
 	"github.com/AlexxIT/go2rtc/internal/app"
 	"github.com/AlexxIT/go2rtc/internal/streams"
@@ -37,6 +39,9 @@ func Init() {
 			DefaultQuery string `yaml:"default_query" json:"default_query"`
 			PacketSize   uint16 `yaml:"pkt_size" json:"pkt_size,omitempty"`
 		} `yaml:"rtsp"`
+		Simulate struct {
+			RTSPEnabled *bool `yaml:"rtsp_enabled"`
+		} `yaml:"simulate"`
 	}
 
 	// default config
@@ -45,6 +50,8 @@ func Init() {
 
 	app.LoadConfig(&conf)
 	app.Info["rtsp"] = conf.Mod
+	rtspServerEnabled.Store(conf.Simulate.RTSPEnabled == nil || *conf.Simulate.RTSPEnabled)
+	streams.RegisterStateControl("rtsp", RTSPEnabled, SetRTSPEnabled)
 
 	log = app.GetLogger("rtsp")
 
@@ -80,12 +87,21 @@ func Init() {
 				return
 			}
 
+			if !RTSPEnabled() {
+				_ = conn.Close()
+				continue
+			}
+
 			c := rtsp.NewServer(conn)
 			c.PacketSize = conf.Mod.PacketSize
 			if conf.Mod.Username != "" {
 				c.Auth(conf.Mod.Username, conf.Mod.Password)
 			}
-			go tcpHandler(c)
+			registerRTSPServerConn(c)
+			go func() {
+				defer unregisterRTSPServerConn(c)
+				tcpHandler(c)
+			}()
 		}
 	}()
 }
@@ -148,6 +164,49 @@ func configuredAuth() authConfig {
 var log zerolog.Logger
 var handlers []Handler
 var defaultMedias []*core.Media
+var rtspServerEnabled atomic.Bool
+var rtspServerConnsMu sync.Mutex
+var rtspServerConns = map[*rtsp.Conn]struct{}{}
+
+func init() {
+	rtspServerEnabled.Store(true)
+}
+
+func RTSPEnabled() bool {
+	return rtspServerEnabled.Load()
+}
+
+func SetRTSPEnabled(enabled bool) {
+	rtspServerEnabled.Store(enabled)
+	if enabled {
+		return
+	}
+
+	rtspServerConnsMu.Lock()
+	connections := make([]*rtsp.Conn, 0, len(rtspServerConns))
+	for conn := range rtspServerConns {
+		connections = append(connections, conn)
+	}
+	rtspServerConnsMu.Unlock()
+	for _, conn := range connections {
+		_ = conn.Close()
+	}
+}
+
+func registerRTSPServerConn(conn *rtsp.Conn) {
+	rtspServerConnsMu.Lock()
+	rtspServerConns[conn] = struct{}{}
+	rtspServerConnsMu.Unlock()
+	if !RTSPEnabled() {
+		_ = conn.Close()
+	}
+}
+
+func unregisterRTSPServerConn(conn *rtsp.Conn) {
+	rtspServerConnsMu.Lock()
+	delete(rtspServerConns, conn)
+	rtspServerConnsMu.Unlock()
+}
 
 func rtspHandler(rawURL string) (core.Producer, error) {
 	rawURL, rawQuery, _ := strings.Cut(rawURL, "#")

@@ -61,7 +61,7 @@ app:
     - "mjpeg"
 
 event:
-  enabled: false
+  enabled: true
   interval: 1m
   burst: 10
   permanent: true
@@ -100,3 +100,5 @@ simulate:
     - person1
     - person2
     - test2222
+  onvif_enabled: true
+  streams_enabled: true

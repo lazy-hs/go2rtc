@@ -139,6 +139,63 @@
             font-size: 14px;
         }
 
+        .publish-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: stretch;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .publish-controls-title {
+            display: inline-flex;
+            align-items: center;
+            padding: 0 4px 0 0;
+            color: rgba(191, 219, 254, 0.72);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .publish-control {
+            min-width: 158px;
+            padding: 9px 11px;
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 12px;
+            background: rgba(2, 6, 23, 0.24);
+        }
+
+        .publish-control.is-master {
+            border-color: rgba(34, 211, 238, 0.3);
+            background: rgba(8, 145, 178, 0.1);
+        }
+
+        .publish-control-copy {
+            display: grid;
+            gap: 2px;
+            min-width: 0;
+        }
+
+        .publish-control-copy strong {
+            color: white;
+            font-size: 12px;
+            line-height: 1.2;
+        }
+
+        .publish-control-copy small {
+            color: rgba(219, 234, 254, 0.64);
+            font-size: 10px;
+            font-weight: 500;
+            line-height: 1.25;
+            white-space: nowrap;
+        }
+
+        .publish-control.is-off {
+            border-color: rgba(251, 191, 36, 0.28);
+            background: rgba(251, 191, 36, 0.07);
+        }
+
         .hero-band {
             display: flex;
             flex-wrap: wrap;
@@ -3063,6 +3120,20 @@
                 font-size: 28px;
                 line-height: 1.16;
             }
+
+            .publish-controls {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .publish-controls-title,
+            .publish-control.is-master {
+                grid-column: 1 / -1;
+            }
+
+            .publish-control {
+                min-width: 0;
+            }
         }
 
         @media (max-width: 520px) {
@@ -3073,6 +3144,15 @@
             .onvif-config-form .form-grid,
             .event-config-form .form-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .publish-controls {
+                grid-template-columns: 1fr;
+            }
+
+            .publish-control,
+            .publish-control.is-master {
+                grid-column: auto;
             }
         }
 
@@ -3099,6 +3179,33 @@
                 <div class="eyebrow">流媒体总览</div>
                 <h1>视频流模拟与转发面板</h1>
                 <p>把本地视频、电脑摄像头或其他设备的 RTSP 流统一接入 go2rtc，再通过 RTSP 与 ONVIF 对外发布。</p>
+                <div class="publish-controls" id="publish-controls" aria-label="即时发布控制">
+                    <span class="publish-controls-title">即时发布控制</span>
+                    <label class="switch-control publish-control is-master" data-control-scope="streams">
+                        <input id="streams-enabled" type="checkbox" data-state-scope="streams">
+                        <span class="switch-track" aria-hidden="true"></span>
+                        <span class="publish-control-copy">
+                            <strong>整体推流</strong>
+                            <small id="streams-enabled-status">加载中...</small>
+                        </span>
+                    </label>
+                    <label class="switch-control publish-control" data-control-scope="onvif">
+                        <input id="onvif-enabled" type="checkbox" data-state-scope="onvif">
+                        <span class="switch-track" aria-hidden="true"></span>
+                        <span class="publish-control-copy">
+                            <strong>ONVIF</strong>
+                            <small id="onvif-enabled-status">加载中...</small>
+                        </span>
+                    </label>
+                    <label class="switch-control publish-control" data-control-scope="rtsp">
+                        <input id="rtsp-enabled" type="checkbox" data-state-scope="rtsp">
+                        <span class="switch-track" aria-hidden="true"></span>
+                        <span class="publish-control-copy">
+                            <strong>RTSP</strong>
+                            <small id="rtsp-enabled-status">加载中...</small>
+                        </span>
+                    </label>
+                </div>
             </div>
             <div class="actions">
                 <button class="floating-action" id="open-create" type="button">＋ 新建任务</button>
@@ -3757,6 +3864,10 @@
     const simList = document.getElementById('sim-list');
     const emptyState = document.getElementById('empty-state');
     const sourceValue = document.getElementById('source-value');
+    const publishControls = document.getElementById('publish-controls');
+    const streamsEnabledInput = document.getElementById('streams-enabled');
+    const onvifEnabledInput = document.getElementById('onvif-enabled');
+    const rtspEnabledInput = document.getElementById('rtsp-enabled');
     const refreshStateBtn = document.getElementById('refresh-state');
     const resetBtn = document.getElementById('reset-form');
     const submitButton = document.getElementById('submit-button');
@@ -3913,6 +4024,9 @@
         ptz_api: 'api/simulate/ptz',
         ptz_enabled: false,
         events_api: 'api/simulate/events',
+        streams_enabled: true,
+        onvif_enabled: true,
+        rtsp_enabled: true,
         disabled_streams: [],
         onvif_quality: {},
         onvif_qualities: {},
@@ -4794,11 +4908,29 @@
         fileBrowserList.replaceChildren(status);
     }
 
+    function inferredBrowserParent(path) {
+        let value = String(path || '').trim().replace(/\\/g, '/');
+        if (!value || value === '/') return '';
+
+        value = value.replace(/\/+$/, '');
+        if (/^[a-z]:$/i.test(value)) return '';
+
+        const separator = value.lastIndexOf('/');
+        if (separator < 0) return '';
+        if (separator === 0) return '/';
+        if (separator === 2 && /^[a-z]:/i.test(value)) return `${value.slice(0, 2)}/`;
+        return value.slice(0, separator);
+    }
+
     function renderBackendFiles(data) {
         currentBrowserPath = data.path || '';
-        currentBrowserParent = data.parent || '';
-        currentBrowserCanGoUp = Boolean(data.can_go_up);
         currentBrowserIsComputer = Boolean(data.is_computer);
+        currentBrowserParent = data.parent || inferredBrowserParent(currentBrowserPath);
+        currentBrowserCanGoUp = !currentBrowserIsComputer && (
+            Boolean(data.can_go_up)
+            || Boolean(currentBrowserParent)
+            || /^[a-z]:\/?$/i.test(currentBrowserPath)
+        );
         if (fileBrowserMode === 'file') {
             if (currentBrowserPath) {
                 localStorage.setItem(backendBrowserPathStorageKey, currentBrowserPath);
@@ -4990,6 +5122,22 @@
 
     function isStreamDisabled(name) {
         return disabledStreamSet().has(name);
+    }
+
+    function syncPublishControls() {
+        const controls = [
+            [streamsEnabledInput, 'streams', Boolean(meta.streams_enabled), meta.streams_enabled ? '允许任务运行' : '全部任务已停止'],
+            [onvifEnabledInput, 'onvif', Boolean(meta.onvif_enabled), meta.onvif_enabled ? '服务可发现' : '发现与接口已关闭'],
+            [rtspEnabledInput, 'rtsp', Boolean(meta.rtsp_enabled), meta.rtsp_enabled ? '允许客户端取流' : '新连接已拒绝'],
+        ];
+        for (const [input, scope, enabled, status] of controls) {
+            if (!input) continue;
+            input.checked = enabled;
+            const label = publishControls?.querySelector(`[data-control-scope="${scope}"]`);
+            label?.classList.toggle('is-off', !enabled);
+            const statusNode = document.getElementById(`${scope}-enabled-status`);
+            if (statusNode) statusNode.textContent = status;
+        }
     }
 
     function sortStreamEntries(entries) {
@@ -5745,7 +5893,9 @@
             positionConsumerPopover();
         }
 
-        if (errorCount > 0) {
+        if (!meta.streams_enabled) {
+            setOpsStatus('busy', '整体推流已关闭', '所有视频任务配置均已保留；重新打开整体推流后，将恢复未被单独停用的任务。');
+        } else if (errorCount > 0) {
             setOpsStatus('error', `发现 ${errorCount} 路异常来源`, '请检查任务卡片里的 Source、上游地址或 FFmpeg 参数。');
         } else if (disabledCount > 0 && consumerCount > 0) {
             setOpsDisabledConsumerStatus(disabledCount, consumerCount, ipEntries);
@@ -6196,6 +6346,9 @@
             if (stateResponse.ok) {
                 const state = await stateResponse.json();
                 if (Array.isArray(state.disabled_streams)) meta.disabled_streams = state.disabled_streams;
+                if (typeof state.streams_enabled === 'boolean') meta.streams_enabled = state.streams_enabled;
+                if (typeof state.onvif_enabled === 'boolean') meta.onvif_enabled = state.onvif_enabled;
+                if (typeof state.rtsp_enabled === 'boolean') meta.rtsp_enabled = state.rtsp_enabled;
             }
         } catch {
             // Older backends don't expose the runtime state endpoint via GET.
@@ -6211,6 +6364,7 @@
         }
         if (!Array.isArray(meta.configured_order)) meta.configured_order = [];
         if (!Array.isArray(meta.disabled_streams)) meta.disabled_streams = [];
+        syncPublishControls();
         document.getElementById('onvif-path').textContent = meta.onvif_path;
         document.getElementById('onvif-service').textContent = onvifURL();
         document.getElementById('streams-api').textContent = meta.streams_api;
@@ -6259,7 +6413,9 @@
             const rtspDisplay = rtspURL(name, {maskPassword: true});
             const onvifChannel = onvifChannels.get(name) || 0;
             const onvif = onvifURL(onvifChannel);
-            const disabled = isStreamDisabled(name) || stream?.disabled;
+            const individuallyDisabled = isStreamDisabled(name) || stream?.disabled;
+            const globallyDisabled = !meta.streams_enabled;
+            const disabled = globallyDisabled || individuallyDisabled;
             const rtspQualityRows = rtspQualityURLs(name, parsed);
             const directRTSP = /^rtsp:\/\//i.test(src);
 
@@ -6272,7 +6428,9 @@
             const hasError = src.includes('#error=') || src.includes('error=');
             const runtimePresent = stream?.runtime_present !== false;
             const stateClass = disabled ? 'is-disabled' : (hasError ? 'is-error' : (online > 0 ? 'is-active' : 'is-idle'));
-            const stateText = disabled
+            const stateText = globallyDisabled
+                ? (individuallyDisabled ? '整体关闭 · 当前任务单独停用' : '整体关闭 · 开启后自动恢复')
+                : individuallyDisabled
                 ? '已停用 · 配置保留'
                 : hasError
                 ? '异常'
@@ -6345,10 +6503,10 @@
                 </div>
 
                 <div class="sim-actions">
-                    <label class="switch-control stream-toggle" title="${disabled ? '启动推流' : '停止推流'}">
-                        <input type="checkbox" data-stream-toggle="${encodeURIComponent(name)}" ${disabled ? '' : 'checked'}>
+                    <label class="switch-control stream-toggle" title="${globallyDisabled ? '请先开启整体推流' : (individuallyDisabled ? '启动推流' : '停止推流')}">
+                        <input type="checkbox" data-stream-toggle="${encodeURIComponent(name)}" ${individuallyDisabled ? '' : 'checked'} ${globallyDisabled ? 'disabled' : ''}>
                         <span class="switch-track" aria-hidden="true"></span>
-                        <span>${disabled ? '停用' : '运行'}</span>
+                        <span>${globallyDisabled ? (individuallyDisabled ? '停用' : '待恢复') : (individuallyDisabled ? '停用' : '运行')}</span>
                     </label>
                     <div class="actions">
                         <button class="secondary icon-btn" type="button" data-edit="${encodeURIComponent(name)}" title="编辑任务" aria-label="编辑任务">
@@ -6443,6 +6601,31 @@
         await loadMeta();
         await refreshRuntimeState();
         highlightStream(name, true);
+    }
+
+    async function setGlobalState(scope, enabled) {
+        const url = new URL(baseURL(meta.stream_state_api));
+        url.searchParams.set('scope', scope);
+        const response = await fetch(url, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({enabled}),
+        });
+        if (!response.ok) throw new Error(await response.text() || '更新发布状态失败');
+
+        const data = await response.json();
+        if (typeof data.streams_enabled === 'boolean') meta.streams_enabled = data.streams_enabled;
+        if (typeof data.onvif_enabled === 'boolean') meta.onvif_enabled = data.onvif_enabled;
+        if (typeof data.rtsp_enabled === 'boolean') meta.rtsp_enabled = data.rtsp_enabled;
+        if (Array.isArray(data.disabled_streams)) meta.disabled_streams = data.disabled_streams;
+        syncPublishControls();
+
+        const labels = {streams: '整体推流', onvif: 'ONVIF 服务', rtsp: 'RTSP 服务'};
+        const persistenceNote = data.persisted === false ? ' 配置文件为只读，本次变更仅在当前服务运行期间生效。' : '';
+        const message = `${labels[scope] || '发布服务'}已${enabled ? '启用' : '禁用'}。${persistenceNote}`;
+        setStatus(message);
+        showToast(message, data.persisted === false ? 'warning' : 'success');
+        await refreshRuntimeState();
     }
 
     form.addEventListener('input', updatePreview);
@@ -6723,6 +6906,24 @@
     streamSort.addEventListener('change', () => {
         localStorage.setItem('go2rtc-simulate-sort', streamSort.value);
         renderStreams(cachedStreams);
+    });
+
+    publishControls?.addEventListener('change', async event => {
+        const input = event.target.closest('input[data-state-scope]');
+        if (!input) return;
+        const scope = input.dataset.stateScope;
+        const previous = !input.checked;
+        input.disabled = true;
+        try {
+            await setGlobalState(scope, input.checked);
+        } catch (error) {
+            input.checked = previous;
+            syncPublishControls();
+            setStatus(error.message, true);
+            showToast(error.message, 'error');
+        } finally {
+            input.disabled = false;
+        }
     });
 
     simList.addEventListener('change', async event => {
