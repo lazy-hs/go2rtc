@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "go2rtc 便携控制台",
+  "version": "0.2.0",
+  "description": "在独立页面中管理多个本机或局域网 go2rtc 服务。",
+  "action": {
+    "default_title": "打开 go2rtc 多服务端控制台"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "options_ui": {
+    "page": "dashboard.html",
+    "open_in_tab": true
+  },
+  "permissions": [
+    "storage"
+  ],
+  "optional_host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ]
+}

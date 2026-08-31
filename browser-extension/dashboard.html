@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>go2rtc 多服务端控制台</title>
+    <link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+<div class="app-shell">
+    <header class="app-header">
+        <a class="brand" href="dashboard.html" aria-label="go2rtc 多服务端控制台">
+            <img src="icons/favicon.svg" alt="" width="38" height="38">
+            <span class="brand-copy">
+                <strong>go2rtc</strong>
+                <span>多服务端控制台</span>
+            </span>
+        </a>
+        <div class="header-actions">
+            <span id="health-summary" class="health-summary">尚未配置服务端</span>
+            <button id="add-server" class="primary-button" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+                添加服务端
+            </button>
+        </div>
+    </header>
+
+    <div class="workspace">
+        <aside class="server-sidebar" aria-label="go2rtc 服务端">
+            <div class="sidebar-heading">
+                <div>
+                    <span class="section-label">服务端</span>
+                    <strong id="server-count">0 个连接</strong>
+                </div>
+                <button id="sidebar-add-server" class="icon-button" type="button" aria-label="添加服务端" title="添加服务端">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+                </button>
+            </div>
+            <nav id="server-list" class="server-list"></nav>
+            <p class="sidebar-note">连接凭据仅保存在当前浏览器的扩展本地存储中。</p>
+        </aside>
+
+        <main class="main-content">
+            <section id="empty-state" class="empty-state">
+                <div class="empty-mark">g2</div>
+                <h1>集中管理你的 go2rtc 服务</h1>
+                <p>添加本机或局域网服务端，在一个页面中切换、查看视频流并控制任务状态。</p>
+                <button id="empty-add-server" class="primary-button" type="button">添加第一个服务端</button>
+            </section>
+
+            <section id="server-dashboard" class="server-dashboard" hidden>
+                <div class="active-server-header">
+                    <div class="active-server-identity">
+                        <div class="title-line">
+                            <span id="active-status-dot" class="status-dot"></span>
+                            <h1 id="active-server-name">go2rtc</h1>
+                            <span id="active-server-version" class="version-tag">连接中</span>
+                        </div>
+                        <p id="active-server-url">-</p>
+                    </div>
+                    <div class="active-server-actions">
+                        <button id="authorize-server" class="secondary-button" type="button" hidden>授权访问</button>
+                        <button id="open-console" class="primary-button" type="button">打开 Web 控制台</button>
+                        <button id="refresh" class="icon-button" type="button" aria-label="刷新当前服务端" title="刷新当前服务端">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.34 5.66"></path><path d="M20 4v7h-7"></path></svg>
+                        </button>
+                        <button id="edit-server" class="icon-button" type="button" aria-label="编辑当前服务端" title="编辑当前服务端">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 5 5M4 20l3.5-.8L19 7.7a2 2 0 0 0-2.8-2.8L4.8 16.3 4 20Z"></path></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="stats-strip" aria-label="当前服务端统计">
+                    <div><span>视频流</span><strong id="stat-total">0</strong></div>
+                    <div><span>已启用</span><strong id="stat-enabled">0</strong></div>
+                    <div><span>已停用</span><strong id="stat-disabled">0</strong></div>
+                    <div><span>观看者</span><strong id="stat-consumers">0</strong></div>
+                    <span id="last-updated" class="last-updated">尚未刷新</span>
+                </div>
+
+                <div id="global-warning" class="global-warning" hidden></div>
+                <div id="status-message" class="status-message" role="status" aria-live="polite" hidden></div>
+
+                <div class="stream-toolbar">
+                    <div>
+                        <h2>视频流</h2>
+                        <span id="stream-count">0 路</span>
+                    </div>
+                    <label class="search-box">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+                        <input id="stream-filter" type="search" placeholder="按名称筛选视频流" autocomplete="off">
+                    </label>
+                    <div class="filter-group" aria-label="视频流状态筛选">
+                        <button class="filter-button is-active" type="button" data-filter="all">全部</button>
+                        <button class="filter-button" type="button" data-filter="enabled">已启用</button>
+                        <button class="filter-button" type="button" data-filter="disabled">已停用</button>
+                    </div>
+                </div>
+
+                <div class="stream-table-head" aria-hidden="true">
+                    <span>名称</span><span>来源</span><span>观看者</span><span>状态</span><span>操作</span>
+                </div>
+                <div id="stream-list" class="stream-list" aria-live="polite"></div>
+            </section>
+        </main>
+    </div>
+</div>
+
+<div id="copy-toast" class="copy-toast" role="status" aria-live="polite" hidden>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"></path></svg>
+    <span id="copy-toast-message">RTSP 地址已复制</span>
+</div>
+
+<div id="server-dialog" class="dialog-backdrop" hidden>
+    <section class="server-dialog" role="dialog" aria-modal="true" aria-labelledby="server-dialog-title">
+        <div class="dialog-header">
+            <div>
+                <span class="section-label">连接配置</span>
+                <h2 id="server-dialog-title">添加服务端</h2>
+            </div>
+            <button id="close-dialog" class="icon-button" type="button" aria-label="关闭">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"></path></svg>
+            </button>
+        </div>
+        <form id="server-form">
+            <input id="server-id" type="hidden">
+            <label class="field">
+                <span>显示名称</span>
+                <input id="server-name" type="text" maxlength="48" placeholder="例如：本机 go2rtc">
+            </label>
+            <label class="field">
+                <span>服务地址</span>
+                <input id="base-url" type="text" inputmode="url" autocomplete="url" placeholder="http://localhost:2984" required>
+                <small>支持带 base_path 的地址，例如 https://camera.example.com/rtc</small>
+            </label>
+            <div class="field-row">
+                <label class="field">
+                    <span>用户名</span>
+                    <input id="username" type="text" autocomplete="username" placeholder="可选">
+                </label>
+                <label class="field">
+                    <span>密码</span>
+                    <input id="password" type="password" autocomplete="current-password" placeholder="可选">
+                </label>
+            </div>
+            <p class="permission-note">保存时会请求该主机的访问权限。Chrome 权限按协议和主机授权，不区分端口。</p>
+            <div id="dialog-status" class="dialog-status" role="status" aria-live="polite" hidden></div>
+            <div class="dialog-actions">
+                <button id="delete-server" class="danger-button" type="button" hidden>删除服务端</button>
+                <span></span>
+                <button id="cancel-dialog" class="secondary-button" type="button">取消</button>
+                <button id="save-server" class="primary-button" type="submit">保存并授权</button>
+            </div>
+        </form>
+    </section>
+</div>
+
+<template id="server-template">
+    <button class="server-item" type="button">
+        <span class="status-dot"></span>
+        <span class="server-item-copy">
+            <strong class="server-item-name"></strong>
+            <span class="server-item-url"></span>
+        </span>
+        <span class="server-item-state"></span>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg>
+    </button>
+</template>
+
+<template id="stream-template">
+    <article class="stream-row">
+        <div class="stream-identity">
+            <span class="stream-state-dot"></span>
+            <div><strong class="stream-name"></strong><span class="stream-detail"></span></div>
+        </div>
+        <span class="stream-source"></span>
+        <span class="stream-consumers"></span>
+        <div class="stream-status">
+            <label class="switch-control" title="启用或停用任务">
+                <input class="stream-toggle" type="checkbox">
+                <span class="switch-track" aria-hidden="true"></span>
+            </label>
+            <span class="stream-status-label"></span>
+        </div>
+        <div class="stream-actions">
+            <button class="viewer-button" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 7 8 5-8 5V7Z"></path></svg>
+                播放
+            </button>
+            <button class="copy-button icon-button" type="button" aria-label="复制 RTSP 地址" title="复制 RTSP 地址">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="2"></rect><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path></svg>
+            </button>
+        </div>
+    </article>
+</template>
+
+<script src="dashboard.js"></script>
+</body>
+</html>
