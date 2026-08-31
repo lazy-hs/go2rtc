@@ -1,4 +1,4 @@
-const currentPage = location.pathname.split('/').pop() || 'index.html';
+const currentPage = location.pathname.split('/').pop() || 'simulate.html';
 
 document.head.insertAdjacentHTML('beforeend', `
 <style>
@@ -424,7 +424,7 @@ document.head.insertAdjacentHTML('beforeend', `
 `);
 
 const navItems = [
-    ['index.html', 'Streams'],
+    ['streams.html', 'Streams'],
     ['simulate.html', '模拟流'],
     ['add.html', 'Add'],
     ['config.html', 'Config'],
@@ -433,14 +433,14 @@ const navItems = [
 ];
 
 const links = navItems.map(([href, label]) => {
-    const active = currentPage === href || (currentPage === '' && href === 'index.html');
+    const active = currentPage === href;
     return `<a href="${href}"${active ? ' class="is-active"' : ''}>${label}</a>`;
 }).join('');
 
 document.body.insertAdjacentHTML('afterbegin', `
 <header class="app-header">
     <nav class="app-nav" aria-label="go2rtc navigation">
-        <a class="app-brand" href="index.html" aria-label="go2rtc streams">
+        <a class="app-brand" href="simulate.html" aria-label="go2rtc simulate dashboard">
             <span class="app-brand-mark">g2</span>
             <span>go2rtc</span>
         </a>

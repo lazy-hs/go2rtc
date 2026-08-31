@@ -159,7 +159,10 @@
         }
 
         .publish-control {
+            box-sizing: border-box;
+            width: 158px;
             min-width: 158px;
+            flex: 0 0 158px;
             padding: 9px 11px;
             border: 1px solid rgba(148, 163, 184, 0.18);
             border-radius: 12px;
@@ -194,6 +197,11 @@
         .publish-control.is-off {
             border-color: rgba(251, 191, 36, 0.28);
             background: rgba(251, 191, 36, 0.07);
+        }
+
+        .publish-control.is-partial {
+            border-color: rgba(251, 191, 36, 0.42);
+            background: rgba(251, 191, 36, 0.1);
         }
 
         .hero-band {
@@ -759,6 +767,16 @@
         .switch-control input:checked + .switch-track::after {
             transform: translateX(14px);
             background: var(--accent-strong);
+        }
+
+        .switch-control input:indeterminate + .switch-track {
+            border-color: rgba(251, 191, 36, 0.78);
+            background: rgba(251, 191, 36, 0.2);
+        }
+
+        .switch-control input:indeterminate + .switch-track::after {
+            transform: translateX(7px);
+            background: #fbbf24;
         }
 
         .switch-control input:focus-visible + .switch-track {
@@ -2085,12 +2103,6 @@
             font-size: 12px;
         }
 
-        #onvif-config-feedback {
-            min-height: 16px;
-            color: var(--ok);
-            font-size: 11px;
-        }
-
         .onvif-config-panel {
             width: min(560px, 100%);
         }
@@ -3132,7 +3144,9 @@
             }
 
             .publish-control {
+                width: auto;
                 min-width: 0;
+                flex: initial;
             }
         }
 
@@ -3181,8 +3195,8 @@
                 <p>把本地视频、电脑摄像头或其他设备的 RTSP 流统一接入 go2rtc，再通过 RTSP 与 ONVIF 对外发布。</p>
                 <div class="publish-controls" id="publish-controls" aria-label="即时发布控制">
                     <span class="publish-controls-title">即时发布控制</span>
-                    <label class="switch-control publish-control is-master" data-control-scope="streams">
-                        <input id="streams-enabled" type="checkbox" data-state-scope="streams">
+                    <label class="switch-control publish-control is-master" data-control-scope="all">
+                        <input id="streams-enabled" type="checkbox" data-state-scope="all">
                         <span class="switch-track" aria-hidden="true"></span>
                         <span class="publish-control-copy">
                             <strong>整体推流</strong>
@@ -3327,7 +3341,6 @@
                         <div class="onvif-identity-actions">
                             <button class="secondary" id="refresh-state" type="button">刷新列表</button>
                             <button class="floating-action" id="open-onvif-config" type="button">设备信息</button>
-                            <span id="onvif-config-feedback" role="status" aria-live="polite"></span>
                         </div>
                     </div>
                     <div class="card-body access-body">
@@ -3933,7 +3946,6 @@
     const cancelONVIFConfigBtn = document.getElementById('cancel-onvif-config');
     const saveONVIFConfigBtn = document.getElementById('save-onvif-config');
     const onvifConfigStatus = document.getElementById('onvif-config-status');
-    const onvifConfigFeedback = document.getElementById('onvif-config-feedback');
     const onvifPTZEnabled = document.getElementById('onvif-ptz-enabled');
     const onvifPTZStatus = document.getElementById('onvif-ptz-status');
     const onvifRTSPPasswordInput = document.getElementById('onvif-rtsp-password');
@@ -5125,18 +5137,27 @@
     }
 
     function syncPublishControls() {
+        const allEnabled = Boolean(meta.streams_enabled && meta.onvif_enabled && meta.rtsp_enabled);
+        const protocolsDisabled = !meta.onvif_enabled && !meta.rtsp_enabled;
+        const masterPartial = !allEnabled && !protocolsDisabled;
+        const masterStatus = allEnabled
+            ? '全部服务运行'
+            : (protocolsDisabled ? 'ONVIF 与 RTSP 已关闭' : '部分服务已关闭');
         const controls = [
-            [streamsEnabledInput, 'streams', Boolean(meta.streams_enabled), meta.streams_enabled ? '允许任务运行' : '全部任务已停止'],
+            [streamsEnabledInput, 'all', allEnabled, masterStatus],
             [onvifEnabledInput, 'onvif', Boolean(meta.onvif_enabled), meta.onvif_enabled ? '服务可发现' : '发现与接口已关闭'],
             [rtspEnabledInput, 'rtsp', Boolean(meta.rtsp_enabled), meta.rtsp_enabled ? '允许客户端取流' : '新连接已拒绝'],
         ];
         for (const [input, scope, enabled, status] of controls) {
             if (!input) continue;
             input.checked = enabled;
+            input.indeterminate = scope === 'all' && masterPartial;
             const label = publishControls?.querySelector(`[data-control-scope="${scope}"]`);
             label?.classList.toggle('is-off', !enabled);
+            label?.classList.toggle('is-partial', scope === 'all' && masterPartial);
             const statusNode = document.getElementById(`${scope}-enabled-status`);
-            if (statusNode) statusNode.textContent = status;
+            const targetStatusNode = scope === 'all' ? document.getElementById('streams-enabled-status') : statusNode;
+            if (targetStatusNode) targetStatusNode.textContent = status;
         }
     }
 
@@ -6220,9 +6241,6 @@
         updateONVIFIdentitySummary(data.effective || config);
         await loadONVIFPTZState();
 
-        const savedMessage = sessionStorage.getItem('onvif-config-saved');
-        sessionStorage.removeItem('onvif-config-saved');
-        onvifConfigFeedback.textContent = savedMessage || '';
         return data;
     }
 
@@ -6241,7 +6259,6 @@
             ? document.activeElement
             : openONVIFConfigBtn;
         openONVIFConfigBtn.disabled = true;
-        onvifConfigFeedback.textContent = '';
         try {
             await loadONVIFConfig();
             setONVIFConfigStatus('');
@@ -6251,7 +6268,7 @@
             document.body.style.overflow = 'hidden';
             requestAnimationFrame(() => onvifConfigForm.elements.name.focus({preventScroll: true}));
         } catch (error) {
-            onvifConfigFeedback.textContent = error.message;
+            showToast(error.message || '加载 ONVIF 设备信息失败', 'error');
         } finally {
             openONVIFConfigBtn.disabled = false;
         }
@@ -6375,9 +6392,8 @@
         await loadCameraDevices(cameraDeviceSelect.value);
         try {
             await loadONVIFConfig();
-        } catch (error) {
+        } catch {
             updateONVIFIdentitySummary();
-            onvifConfigFeedback.textContent = error.message;
         }
         try {
             await loadEventConfig();
@@ -6603,7 +6619,14 @@
         highlightStream(name, true);
     }
 
-    async function setGlobalState(scope, enabled) {
+    function updateGlobalStateMeta(data) {
+        if (typeof data.streams_enabled === 'boolean') meta.streams_enabled = data.streams_enabled;
+        if (typeof data.onvif_enabled === 'boolean') meta.onvif_enabled = data.onvif_enabled;
+        if (typeof data.rtsp_enabled === 'boolean') meta.rtsp_enabled = data.rtsp_enabled;
+        if (Array.isArray(data.disabled_streams)) meta.disabled_streams = data.disabled_streams;
+    }
+
+    async function requestGlobalState(scope, enabled) {
         const url = new URL(baseURL(meta.stream_state_api));
         url.searchParams.set('scope', scope);
         const response = await fetch(url, {
@@ -6614,10 +6637,12 @@
         if (!response.ok) throw new Error(await response.text() || '更新发布状态失败');
 
         const data = await response.json();
-        if (typeof data.streams_enabled === 'boolean') meta.streams_enabled = data.streams_enabled;
-        if (typeof data.onvif_enabled === 'boolean') meta.onvif_enabled = data.onvif_enabled;
-        if (typeof data.rtsp_enabled === 'boolean') meta.rtsp_enabled = data.rtsp_enabled;
-        if (Array.isArray(data.disabled_streams)) meta.disabled_streams = data.disabled_streams;
+        updateGlobalStateMeta(data);
+        return data;
+    }
+
+    async function setGlobalState(scope, enabled) {
+        const data = await requestGlobalState(scope, enabled);
         syncPublishControls();
 
         const labels = {streams: '整体推流', onvif: 'ONVIF 服务', rtsp: 'RTSP 服务'};
@@ -6625,6 +6650,22 @@
         const message = `${labels[scope] || '发布服务'}已${enabled ? '启用' : '禁用'}。${persistenceNote}`;
         setStatus(message);
         showToast(message, data.persisted === false ? 'warning' : 'success');
+        await refreshRuntimeState();
+    }
+
+    async function setAllGlobalStates(enabled) {
+        const scopes = enabled ? ['streams', 'rtsp', 'onvif'] : ['onvif', 'rtsp', 'streams'];
+        let persisted = true;
+        for (const scope of scopes) {
+            const data = await requestGlobalState(scope, enabled);
+            if (data.persisted === false) persisted = false;
+        }
+        syncPublishControls();
+
+        const persistenceNote = persisted ? '' : ' 配置文件为只读，本次变更仅在当前服务运行期间生效。';
+        const message = `整体发布已${enabled ? '启用' : '禁用'}，ONVIF 与 RTSP 已同步${enabled ? '开启' : '关闭'}。${persistenceNote}`;
+        setStatus(message);
+        showToast(message, persisted ? 'success' : 'warning');
         await refreshRuntimeState();
     }
 
@@ -6913,16 +6954,23 @@
         if (!input) return;
         const scope = input.dataset.stateScope;
         const previous = !input.checked;
-        input.disabled = true;
+        const affectedInputs = scope === 'all'
+            ? [streamsEnabledInput, onvifEnabledInput, rtspEnabledInput].filter(Boolean)
+            : [input];
+        for (const affectedInput of affectedInputs) affectedInput.disabled = true;
         try {
-            await setGlobalState(scope, input.checked);
+            if (scope === 'all') {
+                await setAllGlobalStates(input.checked);
+            } else {
+                await setGlobalState(scope, input.checked);
+            }
         } catch (error) {
             input.checked = previous;
             syncPublishControls();
             setStatus(error.message, true);
             showToast(error.message, 'error');
         } finally {
-            input.disabled = false;
+            for (const affectedInput of affectedInputs) affectedInput.disabled = false;
         }
     });
 
