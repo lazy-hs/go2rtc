@@ -18,6 +18,7 @@
 | ONVIF 模拟 | 支持设备信息、多个清晰度 Profile、RTSP 地址发布和 WS-Discovery  |
 | 模拟 PTZ   | 支持绝对移动、相对移动、连续移动、停止、Home Position 和预置点        |
 | ONVIF 事件 | 支持 PullPoint、Push Notify、事件模板、推送周期和持久订阅       |
+| 浏览器扩展    | 提供完整页面式的 Chrome、Edge 和 Firefox 便携控制台，支持多服务端切换   |
 | 版本管理     | 使用根目录 `VERSION` 作为唯一版本源，提供版本校验和自动递增工具         |
 | 多架构发布    | 提供 PowerShell/Bash 构建脚本，输出多平台二进制和 SHA256 校验文件 |
 
@@ -81,6 +82,12 @@ chmod +x ./go2rtc
 | WebRTC                                  | `9555` | WebRTC TCP/UDP 连接 |
 
 如果替换了配置文件，请以其中的 `api.listen`、`rtsp.listen` 和 `webrtc.listen` 为准。未配置时，上游 go2rtc 的默认端口分别为 `1984`、`8554` 和 `8555`。
+
+### 浏览器扩展
+
+仓库提供了无需构建的 [`browser-extension/`](browser-extension/README.md) 形态。加载扩展后，点击浏览器工具栏图标会打开独立的完整控制台页面，不再使用易被授权窗口关闭的小型弹窗。页面支持添加、授权、编辑、删除和切换多个本机或局域网 go2rtc 服务端，查看各服务端健康状态、流状态、启停单路任务，打开现有 Web 控制台和播放器，并复制发布后的 RTSP 流地址。旧版单服务端配置会在首次打开时自动迁移。
+
+扩展沿用 Web 控制台的界面风格，但不在浏览器沙箱中重复实现媒体后端。用户仍需在本机运行 go2rtc，FFmpeg 由 go2rtc 从用户本地环境变量 `PATH` 中调用。浏览器本身不能直接启动任意本地进程；如需由扩展自动拉起 go2rtc 或 FFmpeg，需要额外安装 Native Messaging 本地伴随程序。
 
 ## 视频流模拟与转发控制台
 
