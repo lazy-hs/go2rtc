@@ -10,20 +10,16 @@ streams:
   # - ffmpeg:device?video=0&video_size=1280x720&framerate=30#video=h264
   main:
     - ffmpeg:D:/huangsheng/测试视频/2026.06.21-第12期下-4K.高码率.mp4#video=h264#input=file#audio=aac
-  car:
-  - ffmpeg:C:/Users/8054/Videos/监控中心二期算法测试数据/监控中心二期算法测试数据/人脸/光线充足/car.mp4#video=h264#audio=aac#input=file
   package:
     - ffmpeg:D:/huangsheng/监控中心/竞品分析/萤石/视频素材/包裹检测/标准纸箱-1米-2.mp4#video=h264#input=file#audio=aac
-  normal:
-  - ffmpeg:C:/Users/8054/Videos/监控中心二期算法测试数据/监控中心二期算法测试数据/宠物/宠物监控录像/normal_video.mp4#video=h264#audio=aac#input=file
-  person1:
-    - ffmpeg:D:/huangsheng/project/go2rtc/static/F-001_正脸后侧脸_1.5米高1米远_光线充足.MP4#video=h264#input=file
-  person2:
-    - ffmpeg:D:/huangsheng/project/go2rtc/static/F-001_正脸后侧脸_1.5米高3米远_光线充足.MP4#video=h264#input=file
-  dog:
-    - ffmpeg:D:/huangsheng/project/go2rtc/static/go2_4k_cn_fps30_8192k.mp4#video=h264#input=file
-  main2:
-    - ffmpeg:D:/huangsheng/测试视频/2026.06.28-第1期下-4K.高码率.mp4#video=h264#input=file
+  cam1:
+    - ffmpeg:/Users/lazy/huangsheng/资源/video/cross/route_01_室外1_P1P2双人四摄_先后通行_从cam4到cam3到cam1到cam2/cam1/cam01_route01_take01.mp4#video=h264#input=file#audio=aac
+  cam2:
+    - ffmpeg:/Users/lazy/huangsheng/资源/video/cross/route_01_室外1_P1P2双人四摄_先后通行_从cam4到cam3到cam1到cam2/cam2/cam02_route01_take01.mp4#video=h264#input=file
+  cam3:
+    - ffmpeg:/Users/lazy/huangsheng/资源/video/cross/route_01_室外1_P1P2双人四摄_先后通行_从cam4到cam3到cam1到cam2/cam3/cam03_route01_take02.mp4#video=h264#input=file
+  cam4:
+    - ffmpeg:/Users/lazy/huangsheng/资源/video/cross/route_01_室外1_P1P2双人四摄_先后通行_从cam4到cam3到cam1到cam2/cam4/cam04_route01_take02.mp4#video=h264#input=file
 api:
   # ONVIF 协议以及 Web UI 监听地址
   listen: ":2984"
@@ -80,24 +76,24 @@ simulate:
     main:
       - width: 0
         height: 0
-    dog:
-      - width: 0
-        height: 0
     package:
       - width: 0
         height: 0
-    main2:
+    cam1:
+      - width: 0
+        height: 0
+    cam2:
+      - width: 0
+        height: 0
+    cam3:
+      - width: 0
+        height: 0
+    cam4:
       - width: 0
         height: 0
   disabled_streams:
-    - car
-    - dog
     - main
-    - main2
-    - normal
     - package
-    - person1
-    - person2
   onvif_enabled: true
   streams_enabled: true
   rtsp_enabled: true
