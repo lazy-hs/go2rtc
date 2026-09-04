@@ -9,7 +9,7 @@ streams:
   # main:
   # - ffmpeg:device?video=0&video_size=1280x720&framerate=30#video=h264
   main:
-    - ffmpeg:D:/huangsheng/测试视频/2026.06.21-第12期下-4K.高码率.mp4#video=h264#input=file#audio=aac
+    - ffmpeg:/Users/lazy/huangsheng/资源/video/2026.06.28-第1期下-4K.高码率.mp4#video=h264#input=file#audio=aac
   package:
     - ffmpeg:D:/huangsheng/监控中心/竞品分析/萤石/视频素材/包裹检测/标准纸箱-1米-2.mp4#video=h264#input=file#audio=aac
   cam1:
@@ -20,6 +20,8 @@ streams:
     - ffmpeg:/Users/lazy/huangsheng/资源/video/cross/route_01_室外1_P1P2双人四摄_先后通行_从cam4到cam3到cam1到cam2/cam3/cam03_route01_take02.mp4#video=h264#input=file
   cam4:
     - ffmpeg:/Users/lazy/huangsheng/资源/video/cross/route_01_室外1_P1P2双人四摄_先后通行_从cam4到cam3到cam1到cam2/cam4/cam04_route01_take02.mp4#video=h264#input=file
+  main2:
+    - ffmpeg:/Users/lazy/huangsheng/资源/video/2026.06.21-第12期下-4K.高码率.mp4#video=h264#input=file
 api:
   # ONVIF 协议以及 Web UI 监听地址
   listen: ":2984"
@@ -53,13 +55,20 @@ app:
 
 event:
   enabled: true
-  interval: 5s
-  burst: 10
+  interval: 10m
+  burst: 1
   permanent: true
   templates:
     - enabled: true
       name: 镜头遮挡
       topic: tns1:VideoSource/GlobalSceneChange
+      startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
+      endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
+      startOperation: Changed
+      endOperation: Deleted
+    - enabled: true
+      name: 画面变化
+      topic: tns1:VideoSource/MotionAlarm
       startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
       endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
       startOperation: Changed
@@ -91,8 +100,14 @@ simulate:
     cam4:
       - width: 0
         height: 0
+    main2:
+      - width: 0
+        height: 0
   disabled_streams:
-    - main
+    - cam1
+    - cam2
+    - cam3
+    - cam4
     - package
   onvif_enabled: true
   streams_enabled: true
