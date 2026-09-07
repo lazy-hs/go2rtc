@@ -12,6 +12,10 @@ import (
 )
 
 func TestNetworkInterfaceFromAddresses(t *testing.T) {
+	oldDevice := device
+	t.Cleanup(func() { device = oldDevice })
+	device.MAC = ""
+
 	_, alias, err := net.ParseCIDR("192.168.73.200/24")
 	require.NoError(t, err)
 	alias.IP = net.ParseIP("192.168.73.200")
@@ -68,4 +72,23 @@ func TestNetworkInterfacesForRequest(t *testing.T) {
 	}
 
 	t.Skip("no active non-loopback IPv4 interface with a hardware address")
+}
+
+func TestNetworkInterfaceUsesConfiguredMAC(t *testing.T) {
+	oldDevice := device
+	t.Cleanup(func() { device = oldDevice })
+	device.MAC = "aa:bb:cc:dd:ee:ff"
+
+	iface := net.Interface{
+		Name:         "eth0",
+		HardwareAddr: net.HardwareAddr{0x6c, 0x1f, 0xf7, 0xaa, 0x73, 0xfc},
+		MTU:          1500,
+	}
+	_, network, err := net.ParseCIDR("192.168.73.241/24")
+	require.NoError(t, err)
+	network.IP = net.ParseIP("192.168.73.241")
+
+	item, matched := networkInterfaceFromAddresses(iface, []net.Addr{network}, net.ParseIP("192.168.73.241"))
+	require.True(t, matched)
+	require.Equal(t, "AA:BB:CC:DD:EE:FF", item.HWAddress)
 }

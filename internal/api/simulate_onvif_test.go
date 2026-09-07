@@ -22,6 +22,7 @@ func TestSimulateONVIFConfigHandlerGet(t *testing.T) {
   firmware: 2.1.0
   serial: CAM-001
   hardware: Virtual IPC
+  mac: 6C:1F:F7:AA:73:FC
 api:
   listen: ":2984"
 rtsp:
@@ -38,6 +39,7 @@ rtsp:
 	require.Equal(t, "Warehouse Camera", response.Config.Name)
 	require.Equal(t, "HuangSheng", response.Config.Manufacturer)
 	require.Equal(t, "Virtual IPC-9000", response.Effective.Model)
+	require.Equal(t, "6C:1F:F7:AA:73:FC", response.Config.MAC)
 	require.Equal(t, 2984, response.Config.ServicePort)
 	require.Equal(t, 9554, response.Config.RTSPPort)
 	require.FileExists(t, configPath)
@@ -55,7 +57,7 @@ rtsp:
   listen: ":9554"
 `)
 
-	body := bytes.NewBufferString(`{"name":"仓库模拟摄像机","manufacturer":"HuangSheng","model":"Virtual IPC-9000","firmware":"2.1.0","serial":"CAM-001","hardware":"Virtual IPC","service_port":3984,"rtsp_port":10554}`)
+	body := bytes.NewBufferString(`{"name":"仓库模拟摄像机","manufacturer":"HuangSheng","model":"Virtual IPC-9000","firmware":"2.1.0","serial":"CAM-001","hardware":"Virtual IPC","mac":"aa:bb:cc:dd:ee:ff","service_port":3984,"rtsp_port":10554}`)
 	req := httptest.NewRequest(http.MethodPut, "/api/simulate/onvif", body)
 	res := httptest.NewRecorder()
 	simulateONVIFConfigHandler(res, req)
@@ -74,6 +76,7 @@ rtsp:
 	require.Equal(t, "仓库模拟摄像机", document.ONVIF["name"])
 	require.Equal(t, "HuangSheng", document.ONVIF["manufacturer"])
 	require.Equal(t, "Virtual IPC-9000", document.ONVIF["model"])
+	require.Equal(t, "AA:BB:CC:DD:EE:FF", document.ONVIF["mac"])
 	require.Equal(t, "keep-me", document.ONVIF["custom"])
 	require.Equal(t, ":3984", document.API["listen"])
 	require.Equal(t, ":10554", document.RTSP["listen"])
@@ -81,7 +84,7 @@ rtsp:
 
 func TestSimulateONVIFConfigHandlerRemovesEmptyOverride(t *testing.T) {
 	configPath := setupSimulateONVIFConfigTest(t, "onvif:\n  name: Camera\n  serial: CAM-001\n")
-	body := bytes.NewBufferString(`{"name":"Camera","manufacturer":"","model":"","firmware":"","serial":"","hardware":""}`)
+	body := bytes.NewBufferString(`{"name":"Camera","manufacturer":"","model":"","firmware":"","serial":"","hardware":"","mac":""}`)
 	req := httptest.NewRequest(http.MethodPut, "/api/simulate/onvif", body)
 	res := httptest.NewRecorder()
 	simulateONVIFConfigHandler(res, req)
@@ -94,6 +97,7 @@ func TestSimulateONVIFConfigHandlerRemovesEmptyOverride(t *testing.T) {
 	}
 	require.NoError(t, yaml.Unmarshal(data, &document))
 	require.NotContains(t, document.ONVIF, "serial")
+	require.NotContains(t, document.ONVIF, "mac")
 }
 
 func TestSimulateONVIFConfigHandlerWithoutConfig(t *testing.T) {

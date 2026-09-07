@@ -30,12 +30,20 @@ func networkInterfacesForRequest(r *http.Request) []pkgonvif.NetworkInterface {
 			continue
 		}
 		if matches {
+			applyConfiguredHardwareAddress(item)
 			return []pkgonvif.NetworkInterface{*item}
 		}
+		applyConfiguredHardwareAddress(item)
 		fallback = append(fallback, *item)
 	}
 
 	return fallback
+}
+
+func applyConfiguredHardwareAddress(item *pkgonvif.NetworkInterface) {
+	if mac := normalizeHardwareAddress(device.MAC); mac != "" {
+		item.HWAddress = mac
+	}
 }
 
 func logNetworkInterface(interfaces []pkgonvif.NetworkInterface) {
@@ -84,6 +92,7 @@ func networkInterfaceFromAddresses(iface net.Interface, addrs []net.Addr, localI
 	if item.IPv4 == "" && !matched {
 		return nil, false
 	}
+	applyConfiguredHardwareAddress(item)
 	return item, matched
 }
 

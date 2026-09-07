@@ -187,6 +187,9 @@ func selectDiscoveryIP(remoteIP net.IP, interfaces []discoveryInterface) net.IP 
 }
 
 func discoveryIdentitySeed() string {
+	if device.MAC != "" {
+		return "go2rtc:" + strings.ToLower(device.MAC)
+	}
 	interfaces, _ := net.Interfaces()
 	for _, iface := range interfaces {
 		if iface.Flags&net.FlagUp != 0 && iface.Flags&net.FlagLoopback == 0 && len(iface.HardwareAddr) != 0 {

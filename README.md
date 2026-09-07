@@ -209,9 +209,10 @@ onvif:
   firmware: "2.1.0"
   serial: "CAM-001"
   hardware: "Virtual IPC"
+  mac: "6C:1F:F7:AA:73:FC"
 ```
 
-这些信息会用于 `GetDeviceInformation`、`GetScopes` 和 WS-Discovery，使第三方 ONVIF 客户端看到一致的设备身份。
+这些信息会用于 `GetDeviceInformation`、`GetScopes`、`GetNetworkInterfaces` 和 WS-Discovery，使第三方 ONVIF 客户端看到一致的设备身份。
 
 ### 多清晰度 Profile
 

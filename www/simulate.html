@@ -3689,6 +3689,10 @@
                             <label for="onvif-hardware">硬件标识</label>
                             <input id="onvif-hardware" name="hardware" type="text" maxlength="256">
                         </div>
+                        <div class="field">
+                            <label for="onvif-mac">MAC 地址</label>
+                            <input id="onvif-mac" name="mac" type="text" maxlength="32" placeholder="留空则自动读取本机网卡">
+                        </div>
                     </div>
                 </div>
                 <div class="modal-section">
@@ -6232,7 +6236,7 @@
         const data = await response.json();
         const config = data.config || {};
         const defaults = data.defaults || {};
-        for (const field of ['name', 'manufacturer', 'model', 'firmware', 'serial', 'hardware']) {
+        for (const field of ['name', 'manufacturer', 'model', 'firmware', 'serial', 'hardware', 'mac']) {
             const input = onvifConfigForm.elements[field];
             input.value = config[field] || '';
             if (field !== 'serial') input.placeholder = defaults[field] || '';

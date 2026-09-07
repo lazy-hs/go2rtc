@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -18,6 +19,7 @@ type simulateONVIFDeviceConfig struct {
 	Firmware     string `json:"firmware" yaml:"firmware"`
 	Serial       string `json:"serial" yaml:"serial"`
 	Hardware     string `json:"hardware" yaml:"hardware"`
+	MAC          string `json:"mac" yaml:"mac"`
 	ServicePort  int    `json:"service_port" yaml:"-"`
 	RTSPPort     int    `json:"rtsp_port" yaml:"-"`
 	RTSPUsername string `json:"rtsp_username" yaml:"-"`
@@ -40,6 +42,7 @@ var simulateONVIFConfigFields = []struct {
 	{"firmware", func(cfg simulateONVIFDeviceConfig) string { return cfg.Firmware }},
 	{"serial", func(cfg simulateONVIFDeviceConfig) string { return cfg.Serial }},
 	{"hardware", func(cfg simulateONVIFDeviceConfig) string { return cfg.Hardware }},
+	{"mac", func(cfg simulateONVIFDeviceConfig) string { return cfg.MAC }},
 }
 
 func simulateONVIFConfigHandler(w http.ResponseWriter, r *http.Request) {
@@ -169,12 +172,20 @@ func normalizeSimulateONVIFConfig(cfg *simulateONVIFDeviceConfig) error {
 		&cfg.Firmware,
 		&cfg.Serial,
 		&cfg.Hardware,
+		&cfg.MAC,
 	}
 	for _, value := range values {
 		*value = strings.TrimSpace(*value)
 		if len(*value) > 256 {
 			return fmt.Errorf("ONVIF device field must not exceed 256 characters")
 		}
+	}
+	if cfg.MAC != "" {
+		mac, err := net.ParseMAC(cfg.MAC)
+		if err != nil {
+			return fmt.Errorf("MAC 地址格式不正确")
+		}
+		cfg.MAC = strings.ToUpper(mac.String())
 	}
 	cfg.RTSPUsername = strings.TrimSpace(cfg.RTSPUsername)
 	cfg.RTSPPassword = strings.TrimSpace(cfg.RTSPPassword)
@@ -217,6 +228,7 @@ func newSimulateONVIFConfigResponse(cfg simulateONVIFDeviceConfig) simulateONVIF
 		Model:        "go2rtc",
 		Firmware:     app.Version,
 		Hardware:     "go2rtc",
+		MAC:          simulateDefaultMAC(),
 		ServicePort:  1984,
 		RTSPPort:     8554,
 	}
@@ -236,6 +248,9 @@ func newSimulateONVIFConfigResponse(cfg simulateONVIFDeviceConfig) simulateONVIF
 	if effective.Hardware == "" {
 		effective.Hardware = defaults.Hardware
 	}
+	if effective.MAC == "" {
+		effective.MAC = defaults.MAC
+	}
 	if effective.ServicePort == 0 {
 		effective.ServicePort = defaults.ServicePort
 	}
@@ -243,4 +258,14 @@ func newSimulateONVIFConfigResponse(cfg simulateONVIFDeviceConfig) simulateONVIF
 		effective.RTSPPort = defaults.RTSPPort
 	}
 	return simulateONVIFConfigResponse{Config: cfg, Defaults: defaults, Effective: effective}
+}
+
+func simulateDefaultMAC() string {
+	interfaces, _ := net.Interfaces()
+	for _, iface := range interfaces {
+		if iface.Flags&net.FlagUp != 0 && iface.Flags&net.FlagLoopback == 0 && len(iface.HardwareAddr) != 0 {
+			return strings.ToUpper(iface.HardwareAddr.String())
+		}
+	}
+	return ""
 }
