@@ -3186,6 +3186,588 @@
                 transition: none;
             }
         }
+
+        /* Configured task list */
+        .task-list-toolbar {
+            display: grid;
+            gap: 12px;
+            margin-top: 18px;
+            padding: 14px;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            background: rgba(15, 23, 42, 0.54);
+        }
+
+        .task-list-toolbar-main,
+        .task-list-toolbar-meta,
+        .task-list-footer,
+        .task-row-actions,
+        .task-drawer-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .task-list-toolbar-main {
+            flex-wrap: wrap;
+        }
+
+        .task-search,
+        .task-filter-control {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 38px;
+            padding: 0 11px;
+            border: 1px solid rgba(71, 85, 105, 0.7);
+            border-radius: 10px;
+            background: rgba(2, 6, 23, 0.42);
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .task-search {
+            flex: 1 1 230px;
+        }
+
+        .task-search svg {
+            width: 15px;
+            height: 15px;
+            flex: 0 0 auto;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+        }
+
+        .task-search input,
+        .task-filter-control select {
+            min-width: 0;
+            border: 0;
+            outline: 0;
+            background: transparent;
+            color: var(--text);
+            font: inherit;
+        }
+
+        .task-search input {
+            width: 100%;
+        }
+
+        .task-search:focus-within,
+        .task-filter-control:focus-within {
+            border-color: rgba(34, 211, 238, 0.72);
+            box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.12);
+        }
+
+        .task-filter-control select {
+            cursor: pointer;
+        }
+
+        .task-list-toolbar-meta {
+            justify-content: space-between;
+            flex-wrap: wrap;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .task-list-count {
+            color: var(--text);
+            font-weight: 700;
+        }
+
+        .task-list-head,
+        .task-row {
+            display: grid;
+            grid-template-columns: 104px minmax(120px, 1.15fr) minmax(140px, 1.3fr) 64px 108px minmax(150px, 1.2fr) 200px;
+            gap: 12px;
+            align-items: center;
+            min-width: 980px;
+        }
+
+        .task-list-head {
+            padding: 12px 14px 8px;
+            color: var(--text-faint);
+            font-size: 11px;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+        }
+
+        .task-list-scroll {
+            overflow-x: auto;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            background: rgba(15, 23, 42, 0.42);
+        }
+
+        .task-list {
+            display: grid;
+            gap: 1px;
+            min-width: 980px;
+        }
+
+        #sim-list.task-list {
+            grid-template-columns: 1fr;
+        }
+
+        .task-row {
+            position: relative;
+            padding: 13px 14px;
+            border-top: 1px solid rgba(34, 50, 77, 0.72);
+            background: rgba(15, 23, 42, 0.44);
+            cursor: pointer;
+            transition: background .16s ease, box-shadow .16s ease;
+        }
+
+        .task-row:hover,
+        .task-row:focus-visible,
+        .task-row.is-selected,
+        .task-row.is-highlighted,
+        .task-row.is-located {
+            background: rgba(22, 47, 69, 0.72);
+            box-shadow: inset 3px 0 0 var(--accent);
+        }
+
+        .task-row:focus-visible {
+            outline: none;
+        }
+
+        .task-row.is-disabled {
+            opacity: .72;
+        }
+
+        .task-row-cell {
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .task-row-title,
+        .task-row-source,
+        .task-row-address {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .task-row-title {
+            display: block;
+            color: var(--text);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .task-row-subline,
+        .task-row-source-type {
+            display: block;
+            margin-top: 3px;
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+
+        .task-row-source,
+        .task-row-address {
+            color: #cfe1ff;
+            font-family: Consolas, Monaco, monospace;
+            font-size: 11px;
+        }
+
+        .task-row-address {
+            display: inline-block;
+            max-width: calc(100% - 30px);
+            vertical-align: middle;
+        }
+
+        .task-row-metric {
+            color: var(--text);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .task-row-actions {
+            justify-content: flex-end;
+            min-width: 0;
+    }
+
+        .task-row-actions button {
+            flex: 0 0 auto;
+            white-space: nowrap;
+        }
+
+        .task-row-actions .secondary {
+            width: 72px;
+            min-width: 72px;
+            padding-left: 10px;
+            padding-right: 10px;
+            white-space: nowrap;
+        }
+
+        .task-row-actions .stream-toggle {
+            margin-right: auto;
+        }
+
+        .task-list-message {
+            padding: 40px 20px;
+            color: var(--text-muted);
+            text-align: center;
+            line-height: 1.7;
+        }
+
+        .task-list-footer {
+            justify-content: space-between;
+            margin-top: 12px;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .task-pagination {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .task-pagination button {
+            min-width: 34px;
+            min-height: 32px;
+            padding: 0 9px;
+            border-radius: 9px;
+        }
+
+        .task-pagination button:disabled {
+            opacity: .42;
+            cursor: not-allowed;
+        }
+
+        .task-page-label {
+            min-width: 92px;
+            text-align: center;
+            color: var(--text);
+            font-weight: 700;
+        }
+
+        .task-page-size {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            white-space: nowrap;
+        }
+
+        .task-page-size select {
+            min-height: 32px;
+            padding: 4px 7px;
+            border: 1px solid rgba(71, 85, 105, 0.7);
+            border-radius: 8px;
+            background: rgba(2, 6, 23, 0.42);
+            color: var(--text);
+            font: inherit;
+        }
+
+        .task-drawer-shell {
+            position: fixed;
+            inset: 0;
+            z-index: 1100;
+            display: flex;
+            justify-content: flex-end;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .task-drawer-shell.is-open {
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        .task-drawer-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(5, 12, 24, 0.58);
+            backdrop-filter: blur(6px);
+            opacity: 0;
+            transition: opacity .22s ease;
+        }
+
+        .task-drawer-panel {
+            position: relative;
+            width: min(520px, 100%);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid rgba(34, 50, 77, 0.96);
+            background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+            box-shadow: -24px 0 80px rgba(2, 6, 23, 0.48);
+            transform: translateX(100%);
+            transition: transform .28s cubic-bezier(.22, .8, .24, 1);
+        }
+
+        .task-drawer-shell.is-open .task-drawer-backdrop {
+            opacity: 1;
+        }
+
+        .task-drawer-shell.is-open .task-drawer-panel {
+            transform: translateX(0);
+        }
+
+        .task-drawer-head,
+        .task-drawer-footer {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .task-drawer-head h2 {
+            margin: 0;
+            color: white;
+            font-size: 18px;
+            line-height: 1.35;
+            overflow-wrap: anywhere;
+        }
+
+        .task-drawer-head p {
+            margin: 5px 0 0;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .task-drawer-close {
+            flex: 0 0 auto;
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            border-radius: 10px;
+            font-size: 22px;
+            line-height: 1;
+        }
+
+        .task-drawer-body {
+            min-height: 0;
+            flex: 1 1 auto;
+            overflow: auto;
+            padding: 18px 20px 28px;
+        }
+
+        .task-drawer-status {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 12px 13px;
+            border: 1px solid rgba(34, 211, 238, 0.22);
+            border-radius: 12px;
+            background: rgba(34, 211, 238, 0.08);
+            color: #dbeafe;
+            font-size: 12px;
+        }
+
+        .task-drawer-section {
+            display: grid;
+            gap: 9px;
+            margin-top: 18px;
+        }
+
+        .task-drawer-section h3 {
+            margin: 0;
+            color: white;
+            font-size: 12px;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+        }
+
+        .task-detail-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .task-detail-item,
+        .task-drawer-address {
+            min-width: 0;
+            padding: 10px 11px;
+            border: 1px solid rgba(34, 50, 77, 0.84);
+            border-radius: 11px;
+            background: rgba(2, 6, 23, 0.28);
+        }
+
+        .task-detail-item span,
+        .task-drawer-address strong {
+            display: block;
+            color: var(--text-muted);
+            font-size: 10px;
+        }
+
+        .task-detail-item strong {
+            display: block;
+            margin-top: 5px;
+            color: var(--text);
+            font-size: 13px;
+            overflow-wrap: anywhere;
+        }
+
+        .task-drawer-address code {
+            display: block;
+            margin-top: 5px;
+            color: #cfe1ff;
+            font-family: Consolas, Monaco, monospace;
+            font-size: 11px;
+            line-height: 1.55;
+            overflow-wrap: anywhere;
+        }
+
+        .task-drawer-address .copy-btn {
+            float: right;
+            margin-left: 8px;
+        }
+
+        .task-quality-list {
+            display: grid;
+            gap: 7px;
+        }
+
+        .task-quality-row {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr) auto;
+            gap: 8px;
+            align-items: center;
+            padding: 8px 10px;
+            border: 1px solid rgba(34, 50, 77, 0.84);
+            border-radius: 10px;
+            background: rgba(2, 6, 23, 0.28);
+        }
+
+        .task-quality-row strong {
+            color: var(--text);
+            font-size: 11px;
+        }
+
+        .task-quality-row code {
+            min-width: 0;
+            overflow: hidden;
+            color: #cfe1ff;
+            font-family: Consolas, Monaco, monospace;
+            font-size: 10px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .task-drawer-footer {
+            align-items: center;
+            flex-wrap: wrap;
+            border-top: 1px solid var(--line);
+            border-bottom: 0;
+            background: rgba(2, 6, 23, 0.24);
+        }
+
+        .task-drawer-actions {
+            margin-left: auto;
+        }
+
+        @media (max-width: 760px) {
+            .task-list-toolbar-main {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .task-search {
+                grid-column: 1 / -1;
+            }
+
+            .task-filter-control,
+            .task-filter-control select {
+                width: 100%;
+            }
+
+            .task-list-footer {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .task-pagination {
+                justify-content: space-between;
+            }
+
+            .task-page-size {
+                justify-content: space-between;
+            }
+
+            .task-drawer-panel {
+                width: 100%;
+            }
+
+            .task-drawer-head,
+            .task-drawer-body,
+            .task-drawer-footer {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+
+            .task-list-scroll {
+                overflow-x: hidden;
+            }
+
+            .task-list-head,
+            .task-list {
+                min-width: 0;
+            }
+
+            .task-list-head {
+                display: none;
+            }
+
+            .task-row {
+                grid-template-columns: minmax(0, 1fr) auto;
+                gap: 8px;
+                min-width: 0;
+            }
+
+            .task-row-cell:nth-child(1) {
+                grid-column: 1 / -1;
+            }
+
+            .task-row-cell:nth-child(2) {
+                grid-column: 1;
+                grid-row: 2;
+            }
+
+            .task-row-cell:nth-child(3) {
+                grid-column: 1 / -1;
+                grid-row: 3;
+            }
+
+            .task-row-cell:nth-child(4) {
+                grid-column: 2;
+                grid-row: 2;
+                text-align: right;
+            }
+
+            .task-row-cell:nth-child(5) {
+                grid-column: 1;
+                grid-row: 4;
+            }
+
+            .task-row-cell:nth-child(6) {
+                grid-column: 1 / -1;
+                grid-row: 5;
+            }
+
+            .task-row-actions {
+                grid-column: 1 / -1;
+                grid-row: 6;
+            }
+
+            .task-row-actions {
+                padding-top: 8px;
+                border-top: 1px solid rgba(34, 50, 77, 0.72);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .task-row,
+            .task-drawer-backdrop,
+            .task-drawer-panel {
+                transition: none;
+            }
+        }
     </style>
 </head>
 <body>
@@ -3425,7 +4007,7 @@
         <div class="section-top">
             <div>
                 <h2>已配置任务</h2>
-                <p>展示由本页管理的本地文件、电脑摄像头和 RTSP 转发任务。支持编辑回填、地址复制与删除。</p>
+                <p>集中查看任务运行状态与访问地址。点击任务行可打开详情抽屉，支持启停、编辑、复制和删除。</p>
             </div>
             <div class="toolbar-pills">
                 <label class="sort-control" for="stream-sort">
@@ -3443,11 +4025,76 @@
                 <div class="toolbar-pill">最近操作 <strong id="current-highlight-label">无</strong></div>
             </div>
         </div>
-        <div id="sim-list"></div>
+        <div class="task-list-toolbar" aria-label="任务筛选与分页">
+            <div class="task-list-toolbar-main">
+                <label class="task-search" for="stream-search">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+                    <input id="stream-search" type="search" placeholder="按任务名称筛选" autocomplete="off">
+                </label>
+                <label class="task-filter-control" for="stream-status-filter">
+                    <span>状态</span>
+                    <select id="stream-status-filter">
+                        <option value="all">全部</option>
+                        <option value="active">运行中</option>
+                        <option value="idle">空闲</option>
+                        <option value="error">异常</option>
+                        <option value="disabled">已停用</option>
+                    </select>
+                </label>
+                <label class="task-filter-control" for="stream-source-filter">
+                    <span>来源</span>
+                    <select id="stream-source-filter">
+                        <option value="all">全部</option>
+                        <option value="file">本地文件</option>
+                        <option value="camera">电脑摄像头</option>
+                        <option value="rtsp">RTSP 输入</option>
+                    </select>
+                </label>
+            </div>
+            <div class="task-list-toolbar-meta">
+                <span class="task-list-count" id="stream-range-label">显示 0–0 / 共 0 个</span>
+                <span id="stream-filter-label">未筛选</span>
+            </div>
+        </div>
+        <div class="task-list-scroll">
+            <div class="task-list-head" aria-hidden="true">
+                <span>状态</span><span>任务名称</span><span>来源</span><span>消费者</span><span>编码 / 音频</span><span>RTSP 地址</span><span>操作</span>
+            </div>
+            <div id="sim-list" class="task-list" aria-live="polite"></div>
+        </div>
+        <div class="task-list-footer">
+            <label class="task-page-size" for="stream-page-size">
+                <span>每页</span>
+                <select id="stream-page-size">
+                    <option value="20">20 条</option>
+                    <option value="50">50 条</option>
+                </select>
+            </label>
+            <div class="task-pagination" aria-label="任务分页">
+                <button class="secondary" id="stream-page-prev" type="button" aria-label="上一页">上一页</button>
+                <span class="task-page-label" id="stream-page-label">第 1 / 1 页</span>
+                <button class="secondary" id="stream-page-next" type="button" aria-label="下一页">下一页</button>
+            </div>
+        </div>
         <div id="empty-state" hidden>当前还没有视频任务。点击“新建任务”，选择本地文件、电脑摄像头或 RTSP 输入；保存后这里会显示访问地址、来源信息和编辑入口。</div>
     </section>
 
 </main>
+
+<div id="task-drawer" class="task-drawer-shell" aria-hidden="true" inert>
+    <div class="task-drawer-backdrop" data-close-task-drawer></div>
+    <aside class="task-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="task-drawer-title">
+        <div class="task-drawer-head">
+            <div>
+                <h2 id="task-drawer-title">任务详情</h2>
+                <p id="task-drawer-subtitle">只读配置与运行状态</p>
+            </div>
+            <button class="task-drawer-close ghost" id="close-task-drawer" type="button" aria-label="关闭任务详情">×</button>
+        </div>
+        <div class="task-drawer-body" id="task-drawer-body"></div>
+        <div class="task-drawer-footer" id="task-drawer-footer"></div>
+    </aside>
+</div>
 
 <div id="task-modal" class="modal-shell" aria-hidden="true" inert>
     <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="form-title">
@@ -3983,6 +4630,21 @@
     const eventCustomEndData = document.getElementById('event-custom-end-data');
     const toastRegion = document.getElementById('toast-region');
     const selectPopover = document.getElementById('select-popover');
+    const streamSearch = document.getElementById('stream-search');
+    const streamStatusFilter = document.getElementById('stream-status-filter');
+    const streamSourceFilter = document.getElementById('stream-source-filter');
+    const streamRangeLabel = document.getElementById('stream-range-label');
+    const streamFilterLabel = document.getElementById('stream-filter-label');
+    const streamPageSize = document.getElementById('stream-page-size');
+    const streamPagePrev = document.getElementById('stream-page-prev');
+    const streamPageNext = document.getElementById('stream-page-next');
+    const streamPageLabel = document.getElementById('stream-page-label');
+    const taskDrawer = document.getElementById('task-drawer');
+    const taskDrawerBody = document.getElementById('task-drawer-body');
+    const taskDrawerFooter = document.getElementById('task-drawer-footer');
+    const taskDrawerTitle = document.getElementById('task-drawer-title');
+    const taskDrawerSubtitle = document.getElementById('task-drawer-subtitle');
+    const closeTaskDrawerBtn = document.getElementById('close-task-drawer');
     const sourceModeButtons = [...document.querySelectorAll('[data-source-mode]')];
     const sourcePanels = [...document.querySelectorAll('[data-source-panel]')];
     const transcodeOptions = document.getElementById('transcode-options');
@@ -4030,6 +4692,13 @@
     let eventTemplateCatalog = [];
     let toastTimer = 0;
     let activeCustomSelect = null;
+    let streamSearchQuery = '';
+    let streamStatusFilterValue = 'all';
+    let streamSourceFilterValue = 'all';
+    let streamPage = 1;
+    let streamPageSizeValue = 20;
+    let detailStreamName = '';
+    let taskDrawerReturnFocus = null;
     const customSelectInstances = new Map();
     const backendBrowserPathStorageKey = 'go2rtc-simulate-browser-path';
     const uploadPathStorageKey = 'go2rtc-simulate-upload-path';
@@ -5580,7 +6249,7 @@
         disabledBlock.className = 'ops-status-pill is-disabled';
         disabledBlock.innerHTML = `
             <strong>${disabledCount} 路已停用</strong>
-            <small>配置仍保留，可在任务卡片右下角打开开关恢复推流。</small>
+            <small>配置仍保留，可在任务列表中打开开关恢复推流。</small>
         `;
 
         const consumerBlock = document.createElement('div');
@@ -5927,11 +6596,11 @@
         if (!meta.streams_enabled) {
             setOpsStatus('busy', '整体推流已关闭', '所有视频任务配置均已保留；重新打开整体推流后，将恢复未被单独停用的任务。');
         } else if (errorCount > 0) {
-            setOpsStatus('error', `发现 ${errorCount} 路异常来源`, '请检查任务卡片里的 Source、上游地址或 FFmpeg 参数。');
+            setOpsStatus('error', `发现 ${errorCount} 路异常来源`, '请检查任务列表里的 Source、上游地址或 FFmpeg 参数。');
         } else if (disabledCount > 0 && consumerCount > 0) {
             setOpsDisabledConsumerStatus(disabledCount, consumerCount, ipEntries);
         } else if (disabledCount > 0) {
-            setOpsStatus('busy', `${disabledCount} 路已停用`, '配置仍保留，需要时可在任务卡片右下角打开开关恢复推流。');
+            setOpsStatus('busy', `${disabledCount} 路已停用`, '配置仍保留，需要时可在任务列表中打开开关恢复推流。');
         } else if (runtimeMissing > 0) {
             setOpsStatus('busy', `${runtimeMissing} 路配置待重载`, '配置文件里已存在任务，但当前运行状态还没有同步到进程。');
         } else if (entries.length === 0) {
@@ -5961,7 +6630,8 @@
             return `${cameraDeviceLabel(parsed.cameraDevice)}${capture ? ` · ${capture}` : ''}`;
         }
         if (parsed.mode === 'rtsp') return redactRTSPCredentials(parsed.rtsp || parsed.file);
-        return parsed.file || '未识别本地文件';
+        const file = String(parsed.file || '');
+        return file.split(/[\\/]/).pop() || file || '未识别本地文件';
     }
 
     function rtspURL(name, {maskPassword = false} = {}) {
@@ -6022,9 +6692,22 @@
 
     function locateStreamCard(name) {
         const selector = `[data-stream-name="${CSS.escape(name)}"]`;
-        const card = simList.querySelector(selector);
+        let card = simList.querySelector(selector);
+        if (!card && cachedStreams[name] && getManagedSources(cachedStreams[name]).length) {
+            streamSearchQuery = '';
+            streamStatusFilterValue = 'all';
+            streamSourceFilterValue = 'all';
+            streamSearch.value = '';
+            streamStatusFilter.value = 'all';
+            streamSourceFilter.value = 'all';
+            const entries = sortStreamEntries(Object.entries(cachedStreams).filter(([, stream]) => getManagedSources(stream).length > 0));
+            const index = entries.findIndex(([streamName]) => streamName === name);
+            streamPage = index >= 0 ? Math.floor(index / streamPageSizeValue) + 1 : 1;
+            renderStreams(cachedStreams);
+            card = simList.querySelector(selector);
+        }
         if (!card) {
-            showToast(`未找到视频流 ${name} 的任务卡片。`, 'error');
+            showToast(`未在当前列表页找到视频流 ${name}。`, 'error');
             return false;
         }
 
@@ -6180,7 +6863,7 @@
         modal.classList.remove('is-open');
         modal.setAttribute('aria-hidden', 'true');
         modal.inert = true;
-        document.body.style.overflow = '';
+        setPageBodyLock();
     }
 
     function setONVIFConfigStatus(message, isError = false) {
@@ -6291,7 +6974,7 @@
         onvifConfigModal.classList.remove('is-open');
         onvifConfigModal.setAttribute('aria-hidden', 'true');
         onvifConfigModal.inert = true;
-        document.body.style.overflow = '';
+        setPageBodyLock();
     }
 
     async function openEventConfig() {
@@ -6324,7 +7007,7 @@
         eventConfigModal.classList.remove('is-open');
         eventConfigModal.setAttribute('aria-hidden', 'true');
         eventConfigModal.inert = true;
-        document.body.style.overflow = '';
+        setPageBodyLock();
     }
 
     function fillFormFromStream(name, source) {
@@ -6414,7 +7097,7 @@
         updatePreview();
     }
 
-    function renderStreams(data) {
+    function renderStreamCards(data) {
         cachedStreams = data || {};
         processSourceIndex = buildProcessSourceIndex(cachedStreams);
         onvifChannels = buildONVIFChannels(cachedStreams);
@@ -6548,6 +7231,185 @@
         }
     }
 
+    function streamViewModel(name, stream) {
+        const src = getManagedSources(stream)[0] || '';
+        const parsed = parseSource(src) || {};
+        const consumerInfo = consumerStats(stream);
+        const online = consumerInfo.consumers;
+        const individuallyDisabled = Boolean(isStreamDisabled(name) || stream?.disabled);
+        const globallyDisabled = !meta.streams_enabled;
+        const disabled = globallyDisabled || individuallyDisabled;
+        const hasError = src.includes('#error=') || src.includes('error=');
+        const runtimePresent = stream?.runtime_present !== false;
+        const stateKey = disabled ? 'disabled' : (hasError ? 'error' : (online > 0 ? 'active' : 'idle'));
+        const stateClass = stateKey === 'active' ? 'is-active' : stateKey === 'error' ? 'is-error' : stateKey === 'disabled' ? 'is-disabled' : 'is-idle';
+        const stateText = globallyDisabled
+            ? (individuallyDisabled ? '整体关闭 · 当前任务单独停用' : '整体关闭 · 开启后自动恢复')
+            : individuallyDisabled
+            ? '已停用 · 配置保留'
+            : hasError
+            ? '异常'
+            : (!runtimePresent ? '已配置 · 待重载' : (online > 0 ? `运行中 · 消费者 ${online} · IP ${consumerInfo.ipCount}` : '空闲'));
+        return {
+            name, stream, src, parsed, consumerInfo, online, individuallyDisabled, globallyDisabled,
+            disabled, hasError, runtimePresent, stateKey, stateClass, stateText,
+            rtsp: rtspURL(name), rtspDisplay: rtspURL(name, {maskPassword: true}),
+            onvif: onvifURL(onvifChannels.get(name) || 0),
+            qualityRows: rtspQualityURLs(name, parsed),
+        };
+    }
+
+    function filteredStreamEntries(entries) {
+        const query = streamSearchQuery.trim().toLocaleLowerCase();
+        return entries.filter(([name, stream]) => {
+            const view = streamViewModel(name, stream);
+            return (!query || name.toLocaleLowerCase().includes(query))
+                && (streamStatusFilterValue === 'all' || view.stateKey === streamStatusFilterValue)
+                && (streamSourceFilterValue === 'all' || view.parsed.mode === streamSourceFilterValue);
+        });
+    }
+
+    function setPageBodyLock() {
+        document.body.style.overflow = (taskDrawer.classList.contains('is-open') || modal.classList.contains('is-open') || onvifConfigModal.classList.contains('is-open') || eventConfigModal.classList.contains('is-open')) ? 'hidden' : '';
+    }
+
+    function renderTaskDrawer(name, focus = true) {
+        const stream = cachedStreams[name];
+        if (!stream) return;
+        const view = streamViewModel(name, stream);
+        taskDrawerTitle.textContent = name;
+        taskDrawerSubtitle.textContent = `${sourceTypeLabel(view.parsed.mode)} · ${view.stateText}`;
+        const directRTSP = /^rtsp:\/\//i.test(view.src);
+        const sourceDisplay = view.parsed.mode === 'rtsp' ? redactRTSPCredentials(view.src) : view.src;
+        const bitrateText = directRTSP
+            ? '直接转发，不进行重复编码'
+            : `目标 ${view.parsed.bitrate ? `${view.parsed.bitrate} kbps` : '默认'} / 最大 ${view.parsed.maxrate ? `${view.parsed.maxrate} kbps` : '跟随目标'} / 缓冲 ${view.parsed.bufsize ? `${view.parsed.bufsize} kbps` : '跟随目标'}`;
+        const qualityRows = view.qualityRows.map(row => `
+            <div class="task-quality-row">
+                <strong>${escapeHTML(row.label)}</strong>
+                <code title="${escapeHTML(row.displayURL)}">${escapeHTML(row.displayURL)}</code>
+                <button class="copy-btn inline" type="button" data-copy="${encodeURIComponent(row.url)}" data-copy-label="清晰度 RTSP 地址" aria-label="复制 ${escapeHTML(row.label)} RTSP 地址"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+            </div>`).join('');
+        taskDrawerBody.innerHTML = `
+            <div class="task-drawer-status"><span class="status-dot ${view.stateClass}"></span><span>${escapeHTML(view.stateText)} · 消费者 ${view.online} · ${view.consumerInfo.ipCount} 个 IP</span></div>
+            <section class="task-drawer-section"><h3>来源</h3><div class="task-detail-item"><span>来源类型</span><strong>${escapeHTML(sourceTypeLabel(view.parsed.mode))}</strong></div><div class="task-drawer-address"><button class="copy-btn inline" type="button" data-copy="${encodeURIComponent(view.src)}" data-copy-label="Source" aria-label="复制 Source"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1 2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button><strong>实际 Source</strong><code>${escapeHTML(sourceDisplay || '未识别来源')}</code></div></section>
+            <section class="task-drawer-section"><h3>媒体配置</h3><div class="task-detail-grid"><div class="task-detail-item"><span>视频编码</span><strong>${escapeHTML(directRTSP ? '保持上游视频' : (view.parsed.video || '未指定').toUpperCase())}</strong></div><div class="task-detail-item"><span>音频</span><strong>${escapeHTML(directRTSP ? '保持上游音频' : audioLabel(view.parsed.audio))}</strong></div><div class="task-detail-item"><span>码率控制</span><strong>${escapeHTML(bitrateText)}</strong></div><div class="task-detail-item"><span>运行时</span><strong>${escapeHTML(view.runtimePresent ? '已接入进程' : '配置已保存，待重载')}</strong></div></div></section>
+            <section class="task-drawer-section"><h3>访问地址</h3><div class="task-drawer-address"><button class="copy-btn inline" type="button" data-copy="${encodeURIComponent(view.rtsp)}" data-copy-label="RTSP 地址" aria-label="复制 RTSP 地址"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1 2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button><strong>RTSP 地址</strong><code>${escapeHTML(view.rtspDisplay)}</code></div><div class="task-drawer-address"><button class="copy-btn inline" type="button" data-copy="${encodeURIComponent(view.onvif)}" data-copy-label="ONVIF 地址" aria-label="复制 ONVIF 地址"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1 2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button><strong>ONVIF 入口</strong><code>${escapeHTML(view.onvif)}</code></div></section>
+            <section class="task-drawer-section"><h3>清晰度档位（${view.qualityRows.length}）</h3><div class="task-quality-list">${qualityRows || '<span class="task-row-subline">暂无可用清晰度档位</span>'}</div></section>
+        `;
+        taskDrawerFooter.innerHTML = `<label class="switch-control stream-toggle" title="${view.globallyDisabled ? '请先开启整体推流' : (view.individuallyDisabled ? '启动推流' : '停止推流')}"><input type="checkbox" data-drawer-stream-toggle="${encodeURIComponent(name)}" ${view.individuallyDisabled ? '' : 'checked'} ${view.globallyDisabled ? 'disabled' : ''}><span class="switch-track" aria-hidden="true"></span><span>${view.individuallyDisabled ? '停用' : '运行'}</span></label><div class="task-drawer-actions"><button class="secondary" type="button" data-drawer-edit="${encodeURIComponent(name)}">编辑</button><button class="danger" type="button" data-drawer-delete="${encodeURIComponent(name)}">删除</button></div>`;
+        if (focus) requestAnimationFrame(() => closeTaskDrawerBtn.focus({preventScroll: true}));
+    }
+
+    function openTaskDrawer(name, trigger = document.activeElement) {
+        if (!cachedStreams[name]) return;
+        detailStreamName = name;
+        taskDrawerReturnFocus = trigger instanceof HTMLElement ? trigger : null;
+        taskDrawer.inert = false;
+        taskDrawer.classList.add('is-open');
+        taskDrawer.setAttribute('aria-hidden', 'false');
+        renderStreams(cachedStreams);
+        renderTaskDrawer(name);
+        setPageBodyLock();
+    }
+
+    function closeTaskDrawer({restoreFocus = true, notice = ''} = {}) {
+        const previousName = detailStreamName;
+        const fallbackFocus = previousName
+            ? simList.querySelector(`[data-stream-name="${CSS.escape(previousName)}"]`)
+            : null;
+        detailStreamName = '';
+        taskDrawer.classList.remove('is-open');
+        taskDrawer.setAttribute('aria-hidden', 'true');
+        taskDrawer.inert = true;
+        taskDrawerBody.replaceChildren();
+        taskDrawerFooter.replaceChildren();
+        setPageBodyLock();
+        const focusTarget = taskDrawerReturnFocus?.isConnected ? taskDrawerReturnFocus : fallbackFocus;
+        focusTarget?.classList.remove('is-selected');
+        if (restoreFocus && previousName) {
+            window.setTimeout(() => {
+                simList.querySelectorAll('.task-row.is-selected').forEach(row => row.classList.remove('is-selected'));
+                const currentTarget = simList.querySelector(`[data-stream-name="${CSS.escape(previousName)}"]`);
+                currentTarget?.focus({preventScroll: true});
+            }, 50);
+        }
+        taskDrawerReturnFocus = null;
+        if (notice && previousName) showToast(notice, 'warning');
+    }
+
+    function renderStreams(data) {
+        cachedStreams = data || {};
+        processSourceIndex = buildProcessSourceIndex(cachedStreams);
+        onvifChannels = buildONVIFChannels(cachedStreams);
+        const entries = sortStreamEntries(Object.entries(cachedStreams).filter(([, stream]) => getManagedSources(stream).length > 0));
+        const parsedByName = new Map(entries.map(([name, stream]) => [name, parseSource(getManagedSources(stream)[0]) || {}]));
+        const visibleEntries = filteredStreamEntries(entries);
+        const pageCount = Math.max(1, Math.ceil(visibleEntries.length / streamPageSizeValue));
+        streamPage = Math.min(streamPage, pageCount);
+        const pageEntries = visibleEntries.slice((streamPage - 1) * streamPageSizeValue, streamPage * streamPageSizeValue);
+        const rangeStart = visibleEntries.length ? (streamPage - 1) * streamPageSizeValue + 1 : 0;
+        const rangeEnd = visibleEntries.length ? Math.min(streamPage * streamPageSizeValue, visibleEntries.length) : 0;
+
+        simList.replaceChildren();
+        const runningCount = entries.filter(([, stream]) => (Array.isArray(stream?.consumers) ? stream.consumers.length : 0) > 0).length;
+        streamCount.textContent = String(entries.length);
+        document.getElementById('summary-stream-count').textContent = String(entries.length);
+        document.getElementById('summary-running-count').textContent = String(runningCount);
+        emptyState.hidden = entries.length > 0;
+        streamRangeLabel.textContent = `显示 ${rangeStart}–${rangeEnd} / 共 ${visibleEntries.length} 个`;
+        streamFilterLabel.textContent = (streamSearchQuery || streamStatusFilterValue !== 'all' || streamSourceFilterValue !== 'all') ? '已应用筛选' : '未筛选';
+        streamPageLabel.textContent = `第 ${streamPage} / ${pageCount} 页`;
+        streamPagePrev.disabled = streamPage <= 1;
+        streamPageNext.disabled = streamPage >= pageCount;
+        updateOpsOverview(entries, parsedByName);
+
+        if (!entries.length) {
+            if (detailStreamName) {
+                closeTaskDrawer({restoreFocus: false, notice: `任务“${detailStreamName}”已不存在，详情已关闭。`});
+            }
+            return;
+        }
+        if (!visibleEntries.length) {
+            const message = document.createElement('div');
+            message.className = 'task-list-message';
+            message.textContent = '没有匹配的任务，请调整搜索或筛选条件。';
+            simList.appendChild(message);
+        }
+
+        for (const [name, stream] of pageEntries) {
+            const view = streamViewModel(name, stream);
+            const directRTSP = /^rtsp:\/\//i.test(view.src);
+            const row = document.createElement('article');
+            row.className = `task-row${view.disabled ? ' is-disabled' : ''}${detailStreamName === name ? ' is-selected' : ''}`;
+            row.dataset.openStream = encodeURIComponent(name);
+            row.dataset.streamName = name;
+            row.tabIndex = 0;
+            row.setAttribute('role', 'button');
+            row.setAttribute('aria-label', `查看任务 ${name} 详情`);
+            row.innerHTML = `
+                <div class="task-row-cell"><span class="status-dot ${view.stateClass}"></span><span class="task-row-subline">${escapeHTML(view.stateText)}</span></div>
+                <div class="task-row-cell"><strong class="task-row-title" title="${escapeHTML(name)}">${escapeHTML(name)}</strong><span class="task-row-subline">${escapeHTML(sourceTypeLabel(view.parsed.mode))}</span></div>
+                <div class="task-row-cell"><span class="task-row-source" title="${escapeHTML(sourceSummary(view.parsed))}">${escapeHTML(sourceSummary(view.parsed))}</span></div>
+                <div class="task-row-cell"><span class="task-row-metric">${view.online}</span><span class="task-row-subline">${view.consumerInfo.ipCount} 个 IP</span></div>
+                <div class="task-row-cell"><span class="task-row-subline">${escapeHTML(directRTSP ? '透传' : (view.parsed.video || '未指定').toUpperCase())}</span><span class="task-row-subline">${escapeHTML(directRTSP ? '保持上游音频' : audioLabel(view.parsed.audio))}</span></div>
+                <div class="task-row-cell"><code class="task-row-address" title="${escapeHTML(view.rtspDisplay)}">${escapeHTML(view.rtspDisplay)}</code><button class="copy-btn inline" type="button" data-copy="${encodeURIComponent(view.rtsp)}" data-copy-label="RTSP 地址" aria-label="复制 RTSP 地址"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div>
+                <div class="task-row-actions"><label class="switch-control stream-toggle" title="${view.globallyDisabled ? '请先开启整体推流' : (view.individuallyDisabled ? '启动推流' : '停止推流')}"><input type="checkbox" data-stream-toggle="${encodeURIComponent(name)}" ${view.individuallyDisabled ? '' : 'checked'} ${view.globallyDisabled ? 'disabled' : ''}><span class="switch-track" aria-hidden="true"></span></label><button class="secondary" type="button" data-open-stream="${encodeURIComponent(name)}">详情</button><button class="danger icon-btn" type="button" data-delete="${encodeURIComponent(name)}" title="删除任务" aria-label="删除任务"><svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></div>
+            `;
+            simList.appendChild(row);
+        }
+
+        if (detailStreamName) {
+            if (visibleEntries.some(([name]) => name === detailStreamName)) {
+                renderTaskDrawer(detailStreamName, false);
+            } else if (entries.some(([name]) => name === detailStreamName)) {
+                closeTaskDrawer({restoreFocus: false, notice: '当前任务不再匹配筛选条件，详情已关闭。'});
+            } else {
+                closeTaskDrawer({restoreFocus: false, notice: `任务“${detailStreamName}”已不存在，详情已关闭。`});
+            }
+        }
+    }
+
     async function loadStreams() {
         const response = await fetch(baseURL(meta.streams_api), {cache: 'no-cache'});
         if (!response.ok) throw new Error(await response.text() || '加载流列表失败');
@@ -6591,7 +7453,7 @@
     }
 
     async function removeStream(name) {
-        if (!confirm(`确认删除视频任务“${name}”？\n\n删除后将从配置中移除，且无法恢复。`)) return;
+        if (!confirm(`确认删除视频任务“${name}”？\n\n删除后将从配置中移除，且无法恢复。`)) return false;
 
         const url = new URL(baseURL(meta.streams_api));
         url.searchParams.set('src', name);
@@ -6607,6 +7469,7 @@
         setStatus(`已删除视频任务 ${name}`);
         await loadMeta();
         await refreshRuntimeState();
+        return true;
     }
 
     async function setStreamEnabled(name, enabled) {
@@ -6766,6 +7629,8 @@
             closeEventConfig();
         } else if (onvifConfigModal.classList.contains('is-open')) {
             closeONVIFConfig();
+        } else if (taskDrawer.classList.contains('is-open')) {
+            closeTaskDrawer();
         } else if (modal.classList.contains('is-open')) {
             closeModal();
         }
@@ -6956,6 +7821,43 @@
 
     streamSort.addEventListener('change', () => {
         localStorage.setItem('go2rtc-simulate-sort', streamSort.value);
+        streamPage = 1;
+        renderStreams(cachedStreams);
+    });
+
+    streamSearch.addEventListener('input', () => {
+        streamSearchQuery = streamSearch.value;
+        streamPage = 1;
+        renderStreams(cachedStreams);
+    });
+
+    streamStatusFilter.addEventListener('change', () => {
+        streamStatusFilterValue = streamStatusFilter.value;
+        streamPage = 1;
+        renderStreams(cachedStreams);
+    });
+
+    streamSourceFilter.addEventListener('change', () => {
+        streamSourceFilterValue = streamSourceFilter.value;
+        streamPage = 1;
+        renderStreams(cachedStreams);
+    });
+
+    streamPageSize.addEventListener('change', () => {
+        streamPageSizeValue = Number(streamPageSize.value) || 20;
+        localStorage.setItem('go2rtc-simulate-page-size', String(streamPageSizeValue));
+        streamPage = 1;
+        renderStreams(cachedStreams);
+    });
+
+    streamPagePrev.addEventListener('click', () => {
+        if (streamPage <= 1) return;
+        streamPage -= 1;
+        renderStreams(cachedStreams);
+    });
+
+    streamPageNext.addEventListener('click', () => {
+        streamPage += 1;
         renderStreams(cachedStreams);
     });
 
@@ -7106,6 +8008,13 @@
     });
 
     simList.addEventListener('click', async event => {
+        const openButton = event.target.closest('button[data-open-stream]');
+        if (openButton) {
+            event.stopPropagation();
+            openTaskDrawer(decodeURIComponent(openButton.dataset.openStream), openButton.closest('.task-row'));
+            return;
+        }
+
         const copyButton = event.target.closest('button[data-copy]');
         if (copyButton) {
             await copyFromButton(copyButton);
@@ -7133,11 +8042,90 @@
         }
 
         const deleteButton = event.target.closest('button[data-delete]');
-        if (!deleteButton) return;
+        if (deleteButton) {
+            try {
+                await removeStream(decodeURIComponent(deleteButton.dataset.delete));
+            } catch (error) {
+                setStatus(error.message, true);
+            }
+            return;
+        }
+
+        const row = event.target.closest('.task-row[data-open-stream]');
+        if (row && !event.target.closest('button, input, label, a')) {
+            openTaskDrawer(decodeURIComponent(row.dataset.openStream), row);
+        }
+    });
+
+    simList.addEventListener('keydown', event => {
+        const row = event.target.closest('.task-row[data-open-stream]');
+        if (!row || event.target !== row) return;
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            openTaskDrawer(decodeURIComponent(row.dataset.openStream), row);
+        }
+    });
+
+    taskDrawer.addEventListener('click', async event => {
+        if (event.target === taskDrawer || event.target.closest('[data-close-task-drawer]') || event.target.closest('#close-task-drawer')) {
+            closeTaskDrawer();
+            return;
+        }
+        const copyButton = event.target.closest('button[data-copy]');
+        if (copyButton) {
+            await copyFromButton(copyButton);
+            return;
+        }
+        const editButton = event.target.closest('[data-drawer-edit]');
+        if (editButton) {
+            const name = decodeURIComponent(editButton.dataset.drawerEdit);
+            const source = getManagedSources(cachedStreams[name])[0];
+            if (source) {
+                closeTaskDrawer({restoreFocus: false});
+                fillFormFromStream(name, source);
+            }
+            return;
+        }
+        const deleteButton = event.target.closest('[data-drawer-delete]');
+        if (deleteButton) {
+            try {
+                const removed = await removeStream(decodeURIComponent(deleteButton.dataset.drawerDelete));
+                if (removed) closeTaskDrawer({restoreFocus: false});
+            } catch (error) {
+                setStatus(error.message, true);
+            }
+        }
+    });
+
+    taskDrawer.addEventListener('change', async event => {
+        const toggle = event.target.closest('input[data-drawer-stream-toggle]');
+        if (!toggle) return;
+        const name = decodeURIComponent(toggle.dataset.drawerStreamToggle);
+        toggle.disabled = true;
         try {
-            await removeStream(decodeURIComponent(deleteButton.dataset.delete));
+            await setStreamEnabled(name, toggle.checked);
         } catch (error) {
+            toggle.checked = !toggle.checked;
             setStatus(error.message, true);
+            showToast(error.message, 'error');
+        } finally {
+            toggle.disabled = false;
+        }
+    });
+
+    taskDrawer.addEventListener('keydown', event => {
+        if (event.key !== 'Tab' || !taskDrawer.classList.contains('is-open')) return;
+        const focusable = [...taskDrawer.querySelectorAll('button:not(:disabled), input:not(:disabled), select:not(:disabled), a[href], [tabindex]:not([tabindex="-1"])')]
+            .filter(element => !element.closest('[hidden]'));
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
         }
     });
 
@@ -7155,6 +8143,11 @@
         const savedSort = localStorage.getItem('go2rtc-simulate-sort');
         if ([...streamSort.options].some(option => option.value === savedSort)) {
             streamSort.value = savedSort;
+        }
+        const savedPageSize = Number(localStorage.getItem('go2rtc-simulate-page-size'));
+        if ([20, 50].includes(savedPageSize)) {
+            streamPageSizeValue = savedPageSize;
+            streamPageSize.value = String(savedPageSize);
         }
         syncCustomSelect(streamSort);
         await loadMeta();
