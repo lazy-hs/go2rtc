@@ -474,11 +474,7 @@ func resolveExistingSimulateDirectory(dir string) (string, error) {
 	if !info.IsDir() {
 		return "", errors.New("selected upload path must be a directory")
 	}
-	resolvedDir, err := filepath.EvalSymlinks(dir)
-	if err != nil {
-		return "", err
-	}
-	return filepath.Clean(resolvedDir), nil
+	return dir, nil
 }
 
 func secureSimulateUploadDir(dir string) (string, error) {
@@ -493,7 +489,7 @@ func secureSimulateUploadDir(dir string) (string, error) {
 	if _, err = relativePathWithinRoot(root, resolvedDir); err != nil {
 		return "", err
 	}
-	return resolvedDir, nil
+	return filepath.Clean(dir), nil
 }
 
 func relativePathWithinRoot(root, target string) (string, error) {
