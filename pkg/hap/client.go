@@ -40,9 +40,6 @@ type Client struct {
 
 	Conn   net.Conn
 	reader *bufio.Reader
-
-	res chan *http.Response
-	err error
 }
 
 func Dial(rawURL string) (*Client, error) {
@@ -237,32 +234,6 @@ func (c *Client) Close() error {
 		return nil
 	}
 	return c.Conn.Close()
-}
-
-func (c *Client) eventsReader() {
-	c.res = make(chan *http.Response)
-
-	for {
-		var res *http.Response
-		if res, c.err = ReadResponse(c.reader, nil); c.err != nil {
-			break
-		}
-
-		var body []byte
-		if body, c.err = io.ReadAll(res.Body); c.err != nil {
-			break
-		}
-
-		res.Body = io.NopCloser(bytes.NewReader(body))
-
-		if res.Proto != ProtoEvent {
-			c.res <- res
-		} else if c.OnEvent != nil {
-			c.OnEvent(res)
-		}
-	}
-
-	close(c.res)
 }
 
 func (c *Client) GetAccessories() ([]*Accessory, error) {

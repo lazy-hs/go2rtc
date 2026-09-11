@@ -448,3 +448,15 @@ document.body.insertAdjacentHTML('afterbegin', `
     </nav>
 </header>
 `);
+
+const configLink = document.querySelector('.app-nav a[href="config.html"]');
+if (configLink) {
+    fetch(new URL('api', location.href), {cache: 'no-cache'})
+        .then(response => response.ok ? response.json() : null)
+        .then(info => {
+            if (info?.config_enabled === false) configLink.remove();
+        })
+        .catch(() => {
+            // Keep the link visible when application info is unavailable.
+        });
+}

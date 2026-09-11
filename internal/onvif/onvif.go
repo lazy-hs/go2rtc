@@ -482,25 +482,6 @@ func applyRTSPAuth(rawURL string, auth rtspAuthConfig) string {
 	return u.String()
 }
 
-func applyONVIFStreamQuality(rawURL string, quality onvifStreamQuality) string {
-	if quality.Width <= 0 && quality.Height <= 0 {
-		return rawURL
-	}
-	u, err := url.Parse(rawURL)
-	if err != nil {
-		return rawURL
-	}
-	query := u.Query()
-	if quality.Width > 0 {
-		query.Set("onvif_width", strconv.Itoa(quality.Width))
-	}
-	if quality.Height > 0 {
-		query.Set("onvif_height", strconv.Itoa(quality.Height))
-	}
-	u.RawQuery = query.Encode()
-	return u.String()
-}
-
 func writeSOAPResponse(w http.ResponseWriter, b []byte) {
 	w.Header().Set("Content-Type", "application/soap+xml; charset=utf-8")
 	if _, err := w.Write(b); err != nil {

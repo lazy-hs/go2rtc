@@ -160,6 +160,7 @@ ffmpeg:
 api:
   listen: ":2984"
   upload_dir: "static"
+  config: false
 
 rtsp:
   listen: ":9554"
@@ -183,6 +184,8 @@ simulate:
       - width: 1280
         height: 720
 ```
+
+`api.config` 控制 Web UI 中 Config 配置页面的显示状态，默认为 `true`；设置为 `false` 时会隐藏导航入口，并关闭 `config.html` 和 `api/config`。
 
 控制台提供三个即时生效并写回配置的发布开关：`streams_enabled` 会停止或恢复全部视频任务，`onvif_enabled` 会控制 ONVIF 接口、发现与事件推送，`rtsp_enabled` 会拒绝新的 RTSP 访问并断开已有 RTSP 会话。重新开启整体推流时，只恢复未列入 `disabled_streams` 的任务。
 

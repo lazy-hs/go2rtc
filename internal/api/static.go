@@ -7,7 +7,7 @@ import (
 	"github.com/AlexxIT/go2rtc/www"
 )
 
-func initStatic(staticDir string) {
+func initStatic(staticDir string, configEnabled bool) {
 	var root http.FileSystem
 	if staticDir != "" {
 		log.Info().Str("dir", staticDir).Msg("[api] serve static")
@@ -22,6 +22,7 @@ func initStatic(staticDir string) {
 	defaultPage := defaultPath + "simulate.html"
 	legacyStreamsPage := defaultPath + "index.html"
 	streamsPage := defaultPath + "streams.html"
+	configPage := defaultPath + "config.html"
 
 	HandleFunc("", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == defaultPath {
@@ -30,6 +31,10 @@ func initStatic(staticDir string) {
 		}
 		if r.URL.Path == legacyStreamsPage {
 			http.Redirect(w, r, streamsPage, http.StatusFound)
+			return
+		}
+		if r.URL.Path == configPage && !configEnabled {
+			http.NotFound(w, r)
 			return
 		}
 		if base > 0 {

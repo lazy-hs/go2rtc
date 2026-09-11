@@ -7,8 +7,48 @@
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <script src="https://cdn.jsdelivr.net/npm/vis-network@10.0.2/standalone/umd/vis-network.min.js"></script>
     <style>
-        html, body, #network {
+        html, body, #network-shell {
             height: 100%;
+        }
+
+        #network-shell {
+            position: relative;
+            flex: 1 1 auto;
+            min-height: 0;
+        }
+
+        #network {
+            height: 100%;
+        }
+
+        .network-empty-state {
+            position: absolute;
+            inset: 50% auto auto 50%;
+            width: min(420px, calc(100% - 32px));
+            padding: 24px 28px;
+            display: grid;
+            gap: 8px;
+            border: 1px solid rgba(34, 211, 238, 0.2);
+            border-radius: 16px;
+            background: rgba(17, 24, 39, 0.94);
+            box-shadow: 0 20px 50px rgba(2, 6, 23, 0.3);
+            text-align: center;
+            transform: translate(-50%, -50%);
+        }
+
+        .network-empty-state[hidden] {
+            display: none;
+        }
+
+        .network-empty-state strong {
+            color: #e2e8f0;
+            font-size: 16px;
+        }
+
+        .network-empty-state span {
+            color: #94a3b8;
+            font-size: 13px;
+            line-height: 1.6;
         }
     </style>
 </head>
@@ -16,7 +56,13 @@
 
 <script src="main.js"></script>
 
-<div id="network"></div>
+<div id="network-shell">
+    <div id="network"></div>
+    <div id="network-empty-state" class="network-empty-state" role="status" aria-live="polite" hidden>
+        <strong>暂无消费者拉流</strong>
+        <span>当前没有客户端正在拉取视频流，开始播放或连接流后，网络关系将在这里显示。</span>
+    </div>
+</div>
 
 <script>
     /* global vis */
@@ -24,6 +70,7 @@
         const url = new URL('api/streams.dot' + location.search, location.href);
 
         const container = document.getElementById('network');
+        const emptyState = document.getElementById('network-empty-state');
         const options = {
             edges: {
                 font: {align: 'middle'},
@@ -35,11 +82,17 @@
 
         let network;
 
+        function hasConsumerNodes(data) {
+            const nodes = Array.isArray(data.nodes) ? data.nodes : data.nodes?.get?.() || [];
+            return nodes.some(node => node.group === 'consumer');
+        }
+
         async function update() {
             try {
                 const response = await fetch(url, {cache: 'no-cache'});
                 const dotData = await response.text();
                 const data = vis.parseDOTNetwork(dotData);
+                emptyState.hidden = hasConsumerNodes(data);
 
                 if (!network) {
                     network = new vis.Network(container, data, options);

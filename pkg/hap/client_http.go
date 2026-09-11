@@ -23,9 +23,6 @@ func (c *Client) Do(req *http.Request) (*http.Response, error) {
 	if err := req.Write(c.Conn); err != nil {
 		return nil, err
 	}
-	if c.res != nil {
-		return <-c.res, c.err
-	}
 	return http.ReadResponse(c.reader, req)
 }
 

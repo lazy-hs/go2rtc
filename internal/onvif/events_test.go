@@ -18,6 +18,17 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+func closeEventManager(m *eventManager) {
+	m.stopOnce.Do(func() {
+		m.mu.Lock()
+		for _, sub := range m.subscriptions {
+			sub.close()
+		}
+		m.mu.Unlock()
+		close(m.stop)
+	})
+}
+
 func TestEventConfigFormats(t *testing.T) {
 	t.Run("mapping", func(t *testing.T) {
 		var cfg struct {
@@ -67,9 +78,9 @@ func TestEventManagerLifecycle(t *testing.T) {
 			EndOperation:   "Deleted",
 		}},
 	})
-	defer manager.close()
+	defer closeEventManager(manager)
 
-	_, id := manager.create("main", time.Minute)
+	_, id := manager.createPull("main", "", time.Minute)
 	notifications, _, err := manager.pull(id, 10, 0)
 	require.NoError(t, err)
 	require.Len(t, notifications, 2)
@@ -111,7 +122,7 @@ func TestEventNotificationIncludesLifecycleTimes(t *testing.T) {
 			EndOperation:   "Deleted",
 		}},
 	})
-	defer manager.close()
+	defer closeEventManager(manager)
 
 	startTime := time.Date(2026, time.August, 20, 10, 30, 0, 0, time.UTC)
 	endTime := startTime.Add(15 * time.Second)
@@ -145,7 +156,7 @@ func TestEventEndTimeIsNeverEqualToStartTime(t *testing.T) {
 			EndData:   "end",
 		}},
 	})
-	defer manager.close()
+	defer closeEventManager(manager)
 
 	now := time.Date(2026, time.August, 20, 10, 30, 0, 0, time.UTC)
 	started := manager.nextNotificationLocked(0, now)
@@ -167,9 +178,9 @@ func TestEventManagerDisabledDoesNotQueueNotifications(t *testing.T) {
 			StartData: `<tt:SimpleItem Value="true" Name="IsMotion"/>`,
 		}},
 	})
-	defer manager.close()
+	defer closeEventManager(manager)
 
-	_, id := manager.create("main", time.Minute)
+	_, id := manager.createPull("main", "", time.Minute)
 	notifications, _, err := manager.pull(id, 10, 0)
 	require.NoError(t, err)
 	require.Empty(t, notifications)
@@ -192,7 +203,7 @@ func TestEventBroadcastsToEveryMatchingSubscription(t *testing.T) {
 			EndOperation:   "Deleted",
 		}},
 	})
-	defer manager.close()
+	defer closeEventManager(manager)
 
 	_, firstID := manager.createPull("main", "tns1:VideoSource/MotionAlarm", time.Minute)
 	_, secondID := manager.createPull("main", "tns1:VideoSource/MotionAlarm", time.Minute)
@@ -232,7 +243,7 @@ func TestEventBroadcastCoversDifferentTopicFilters(t *testing.T) {
 			{Topic: "tns1:Device/HardwareFailure", StartData: "hardware"},
 		},
 	})
-	defer manager.close()
+	defer closeEventManager(manager)
 
 	_, motionID := manager.createPull("main", "tns1:VideoSource/MotionAlarm", time.Minute)
 	_, hardwareID := manager.createPull("main", "tns1:Device/HardwareFailure", time.Minute)
@@ -265,7 +276,7 @@ func TestDisabledEventTemplateIsFiltered(t *testing.T) {
 			{Topic: "tns1:VideoAnalytics/Vehicle"},
 		},
 	})
-	defer manager.close()
+	defer closeEventManager(manager)
 
 	sub, id := manager.createPull("main", "", time.Minute)
 	require.Equal(t, []int{1}, sub.TemplateIndexes)
@@ -280,7 +291,7 @@ func TestEventSubscriptionExpiresWhileWaiting(t *testing.T) {
 		Interval:  "1h",
 		Templates: []eventTemplate{{Topic: "tns1:VideoSource/MotionAlarm"}},
 	})
-	defer manager.close()
+	defer closeEventManager(manager)
 
 	_, id := manager.createPull("main", "", 50*time.Millisecond)
 	started := time.Now()
@@ -299,9 +310,9 @@ func TestPermanentEventSubscription(t *testing.T) {
 			EndData:   "end",
 		}},
 	})
-	defer manager.close()
+	defer closeEventManager(manager)
 
-	sub, id := manager.create("main", time.Nanosecond)
+	sub, id := manager.createPull("main", "", time.Nanosecond)
 	require.Equal(t, permanentSubscriptionExpiration, sub.ExpiresAt)
 
 	manager.generate(time.Now().UTC().Add(24 * time.Hour))
@@ -325,7 +336,7 @@ func TestEventSOAPFlow(t *testing.T) {
 		}},
 	})
 	defer func() {
-		events.close()
+		closeEventManager(events)
 		events = previous
 	}()
 
@@ -395,7 +406,7 @@ func TestEventPushSubscription(t *testing.T) {
 		},
 	})
 	defer func() {
-		events.close()
+		closeEventManager(events)
 		events = previous
 	}()
 
@@ -462,7 +473,7 @@ func TestEventPushBroadcastsToMultipleConsumers(t *testing.T) {
 			EndData:   `<tt:SimpleItem Value="false" Name="IsMotion"/>`,
 		}},
 	})
-	defer manager.close()
+	defer closeEventManager(manager)
 
 	for _, consumer := range consumers {
 		manager.createPush("main", "tns1:VideoSource/MotionAlarm", consumer.URL, time.Minute)

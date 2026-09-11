@@ -1157,6 +1157,39 @@
             color: var(--text);
         }
 
+        #refresh-state {
+            min-width: 106px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        #refresh-state.is-loading {
+            border-color: rgba(34, 211, 238, 0.42);
+            background: rgba(8, 145, 178, 0.12);
+            color: var(--accent-strong);
+            opacity: 1;
+            cursor: wait;
+        }
+
+        #refresh-state.is-loading::before {
+            content: "";
+            width: 14px;
+            height: 14px;
+            flex: 0 0 auto;
+            border: 2px solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: refresh-state-spin .7s linear infinite;
+        }
+
+        @keyframes refresh-state-spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
         .ghost {
             background: rgba(15, 23, 42, 0.72);
         }
@@ -3927,7 +3960,9 @@
                             <p>保存后即可复制 RTSP 地址与 ONVIF 服务入口，用于第三方平台接入测试。</p>
                         </div>
                         <div class="onvif-identity-actions">
-                            <button class="secondary" id="refresh-state" type="button">刷新列表</button>
+                            <button class="secondary" id="refresh-state" type="button" aria-live="polite">
+                                <span id="refresh-state-label">刷新列表</span>
+                            </button>
                             <button class="floating-action" id="open-onvif-config" type="button">设备信息</button>
                         </div>
                     </div>
@@ -4539,6 +4574,7 @@
     const onvifEnabledInput = document.getElementById('onvif-enabled');
     const rtspEnabledInput = document.getElementById('rtsp-enabled');
     const refreshStateBtn = document.getElementById('refresh-state');
+    const refreshStateLabel = document.getElementById('refresh-state-label');
     const resetBtn = document.getElementById('reset-form');
     const submitButton = document.getElementById('submit-button');
     const formTitle = document.getElementById('form-title');
@@ -5439,6 +5475,14 @@
     function setStatus(message, isError = false) {
         formStatus.textContent = message;
         formStatus.classList.toggle('error', isError);
+    }
+
+    function setRefreshStateBusy(busy) {
+        refreshStateBtn.disabled = busy;
+        refreshStateBtn.classList.toggle('is-loading', busy);
+        refreshStateBtn.setAttribute('aria-busy', String(busy));
+        refreshStateBtn.title = busy ? '正在刷新视频任务列表' : '刷新视频任务列表';
+        refreshStateLabel.textContent = busy ? '刷新中...' : '刷新列表';
     }
 
     function formatFileSize(size) {
@@ -7810,12 +7854,18 @@
     });
 
     refreshStateBtn?.addEventListener('click', async () => {
+        setRefreshStateBusy(true);
+        setStatus('正在刷新视频任务列表...');
         try {
             await loadMeta();
             await refreshRuntimeState();
             setStatus('视频任务列表已刷新');
+            showToast('视频任务列表已刷新', 'success');
         } catch (error) {
             setStatus(error.message, true);
+            showToast(`刷新列表失败：${error.message}`, 'error');
+        } finally {
+            setRefreshStateBusy(false);
         }
     });
 

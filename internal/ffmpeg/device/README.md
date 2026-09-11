@@ -6,7 +6,7 @@ You can get video from any USB camera or Webcam as RTSP or WebRTC stream. This i
 - `video_size` and `framerate` must be supported by your camera!
 - for Linux supported only video for now
 - for macOS you can stream FaceTime camera or whole desktop!
-- for macOS important to set right framerate
+- for macOS generated device sources probe supported modes and select a high-resolution mode at 25+ FPS; set `video_size` and `framerate` explicitly for another supported mode
 
 ## Configuration
 

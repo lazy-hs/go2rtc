@@ -189,21 +189,6 @@ func (m *eventManager) start() {
 	}()
 }
 
-func (m *eventManager) close() {
-	m.stopOnce.Do(func() {
-		m.mu.Lock()
-		for _, sub := range m.subscriptions {
-			sub.close()
-		}
-		m.mu.Unlock()
-		close(m.stop)
-	})
-}
-
-func (m *eventManager) create(source string, ttl time.Duration) (*eventSubscription, string) {
-	return m.createSubscription(source, "", "", ttl)
-}
-
 func (m *eventManager) createPull(source, filter string, ttl time.Duration) (*eventSubscription, string) {
 	return m.createSubscription(source, filter, "", ttl)
 }

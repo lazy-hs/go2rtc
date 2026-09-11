@@ -35,6 +35,7 @@ func Init() {
 			TLSCert    string `yaml:"tls_cert"`
 			TLSKey     string `yaml:"tls_key"`
 			UnixListen string `yaml:"unix_listen"`
+			Config     bool   `yaml:"config"`
 
 			AllowPaths []string `yaml:"allow_paths"`
 		} `yaml:"api"`
@@ -42,6 +43,7 @@ func Init() {
 
 	// default config
 	cfg.Mod.Listen = ":1984"
+	cfg.Mod.Config = true
 
 	// load config from YAML
 	app.LoadConfig(&cfg)
@@ -52,13 +54,15 @@ func Init() {
 
 	allowPaths = cfg.Mod.AllowPaths
 	basePath = cfg.Mod.BasePath
+	configEnabled = cfg.Mod.Config
+	app.Info["config_enabled"] = configEnabled
 	log = app.GetLogger("api")
 
-	initStatic(cfg.Mod.StaticDir)
+	initStatic(cfg.Mod.StaticDir, configEnabled)
 	initSimulateFiles(cfg.Mod.UploadDir)
 
 	HandleFunc("api", apiHandler)
-	HandleFunc("api/config", configHandler)
+	HandleFunc("api/config", configHandlerWithVisibility)
 	HandleFunc("api/exit", exitHandler)
 	HandleFunc("api/restart", restartHandler)
 	HandleFunc("api/log", logHandler)
