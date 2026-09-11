@@ -462,10 +462,11 @@ func resolveRTSPQualityAlias(alias string, names []string) (string, streamQualit
 }
 
 func configuredRTSPStreamQualities(name string) []streamQuality {
-	if app.ConfigPath == "" || name == "" {
+	configPath := app.StreamConfigPathOrConfig()
+	if configPath == "" || name == "" {
 		return nil
 	}
-	data, err := os.ReadFile(app.ConfigPath)
+	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil
 	}

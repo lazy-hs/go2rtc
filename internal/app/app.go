@@ -17,7 +17,10 @@ var (
 	Modules    []string
 	UserAgent  string
 	ConfigPath string
-	Info       = make(map[string]any)
+	// StreamConfigPath points to the platform-specific stream configuration.
+	// It falls back to ConfigPath for legacy single-file configurations.
+	StreamConfigPath string
+	Info             = make(map[string]any)
 )
 
 const usage = `Usage of go2rtc:
@@ -86,6 +89,9 @@ func Init() {
 
 	if ConfigPath != "" {
 		Logger.Info().Str("path", ConfigPath).Msg("config")
+	}
+	if StreamConfigPath != "" && StreamConfigPath != ConfigPath {
+		Logger.Info().Str("path", StreamConfigPath).Msg("stream config")
 	}
 
 	var cfg struct {

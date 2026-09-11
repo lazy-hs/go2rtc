@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 
@@ -22,7 +23,11 @@ func LoadConfig(v any) {
 var configMu sync.Mutex
 
 func PatchConfig(path []string, value any) error {
-	if ConfigPath == "" {
+	configPath := ConfigPath
+	if len(path) > 0 && isStreamConfigKey(path[0]) {
+		configPath = StreamConfigPathOrConfig()
+	}
+	if configPath == "" {
 		return errors.New("config file disabled")
 	}
 
@@ -30,14 +35,14 @@ func PatchConfig(path []string, value any) error {
 	defer configMu.Unlock()
 
 	// empty config is OK
-	b, _ := os.ReadFile(ConfigPath)
+	b, _ := os.ReadFile(configPath)
 
 	b, err := yaml.Patch(b, path, value)
 	if err != nil {
 		return err
 	}
 
-	return os.WriteFile(ConfigPath, b, 0644)
+	return os.WriteFile(configPath, b, 0644)
 }
 
 type flagConfig []string
@@ -53,9 +58,16 @@ func (c *flagConfig) Set(value string) error {
 
 var configs [][]byte
 
+func StreamConfigPathOrConfig() string {
+	if StreamConfigPath != "" {
+		return StreamConfigPath
+	}
+	return ConfigPath
+}
+
 func initConfig(confs flagConfig) {
 	if confs == nil {
-		confs = []string{"go2rtc.yaml"}
+		confs = []string{"go2rtc.yaml", platformStreamConfig(runtime.GOOS)}
 	}
 
 	for _, conf := range confs {
@@ -69,12 +81,25 @@ func initConfig(confs flagConfig) {
 			configs = append(configs, data)
 		} else {
 			// config as file
-			if ConfigPath == "" {
+			data, _ := os.ReadFile(conf)
+			streamConfig := isPlatformStreamConfig(conf)
+			if !streamConfig && ConfigPath != "" && configContainsStreamSettings(data) {
+				streamConfig = true
+			}
+
+			if streamConfig {
+				if StreamConfigPath == "" {
+					StreamConfigPath = conf
+				}
+				if storage == nil {
+					initStorage()
+				}
+			} else if ConfigPath == "" {
 				ConfigPath = conf
 				initStorage()
 			}
 
-			if data, _ = os.ReadFile(conf); data == nil {
+			if data == nil {
 				continue
 			}
 
@@ -91,6 +116,63 @@ func initConfig(confs flagConfig) {
 			}
 		}
 		Info["config_path"] = ConfigPath
+	}
+	if StreamConfigPath != "" {
+		if !filepath.IsAbs(StreamConfigPath) {
+			if cwd, err := os.Getwd(); err == nil {
+				StreamConfigPath = filepath.Join(cwd, StreamConfigPath)
+			}
+		}
+		Info["stream_config_path"] = StreamConfigPath
+	}
+}
+
+func platformStreamConfig(goos string) string {
+	switch goos {
+	case "linux":
+		return "go2rtc_linux.yaml"
+	case "windows":
+		return "go2rtc_windows.yaml"
+	case "darwin":
+		return "go2rtc_mac.yaml"
+	default:
+		return ""
+	}
+}
+
+func isPlatformStreamConfig(path string) bool {
+	base := strings.TrimSuffix(strings.ToLower(filepath.Base(path)), filepath.Ext(path))
+	switch base {
+	case "go2rtc_linux", "go2rtc_windows", "go2rtc_mac", "go2rtc_darwin":
+		return true
+	default:
+		return false
+	}
+}
+
+func configContainsStreamSettings(data []byte) bool {
+	if len(data) == 0 {
+		return false
+	}
+
+	var root map[string]any
+	if err := yaml.Unmarshal(data, &root); err != nil {
+		return false
+	}
+	for _, key := range []string{"ffmpeg", "streams", "publish", "preload", "simulate"} {
+		if _, ok := root[key]; ok {
+			return true
+		}
+	}
+	return false
+}
+
+func isStreamConfigKey(key string) bool {
+	switch key {
+	case "ffmpeg", "streams", "publish", "preload", "simulate":
+		return true
+	default:
+		return false
 	}
 }
 

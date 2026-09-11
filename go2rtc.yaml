@@ -1,19 +1,8 @@
-# go2rtc.yml
-ffmpeg:
-  file: "-re -stream_loop -1 -i {input}"
+# 工程配置。视频流配置请放在当前系统对应的 go2rtc_* 文件中。
 log:
   level: info
   onvif: debug
 
-streams:
-  # main:
-  # - ffmpeg:device?video=0&video_size=1280x720&framerate=30#video=h264
-  main:
-    - ffmpeg:D:/huangsheng/测试视频/2026.06.28-第1期下-4K.高码率.mp4#video=h264#input=file#audio=copy
-  main2:
-    - ffmpeg:D:/huangsheng/测试视频/2026.06.21-第12期下-4K.高码率.mp4#video=h264#input=file#audio=copy
-  qaz:
-    - ffmpeg:device?video=0&video_size=1920x1080&framerate=30#video=h264
 api:
   # ONVIF 协议以及 Web UI 监听地址
   listen: ":2984"
@@ -25,6 +14,7 @@ onvif:
   model: "Virtual IPC-9000"
   serial: "CAM-001"
   hardware: "Virtual IPC"
+
 rtsp:
   listen: ":9554"
 
@@ -143,27 +133,3 @@ event:
       endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
       startOperation: Changed
       endOperation: Deleted
-simulate:
-  ptz_enabled: false
-  ptz:
-    main:
-      max_zoom: 4
-      pan_speed: 0.6
-      tilt_speed: 0.6
-      zoom_speed: 0.5
-  onvif_qualities:
-    main:
-      - width: 0
-        height: 0
-    main2:
-      - width: 0
-        height: 0
-    qaz:
-      - width: 0
-        height: 0
-  disabled_streams:
-    - main
-    - main2
-  onvif_enabled: true
-  streams_enabled: true
-  rtsp_enabled: true

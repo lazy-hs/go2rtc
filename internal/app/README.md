@@ -4,7 +4,11 @@ The application module is responsible for reading configuration files, running o
 
 The configuration can be edited through the application's WebUI with code highlighting, syntax and specification checking.
 
-- By default, go2rtc will search for the `go2rtc.yaml` config file in the current working directory
+- By default, go2rtc loads `go2rtc.yaml` and the platform stream config from the current working directory:
+  - Linux: `go2rtc_linux.yaml`
+  - Windows: `go2rtc_windows.yaml`
+  - macOS: `go2rtc_mac.yaml`
+- `go2rtc.yaml` is the project config. Platform files contain stream-related settings such as `ffmpeg`, `streams`, `publish`, `preload`, and `simulate`.
 - go2rtc supports multiple config files:
   - `go2rtc -c config1.yaml -c config2.yaml -c config3.yaml`
 - go2rtc supports inline config in multiple formats from the command line:
@@ -14,13 +18,13 @@ The configuration can be edited through the application's WebUI with code highli
 - Each subsequent config will overwrite the previous one (but only for defined params)
 
 ```
-go2rtc -config "{log: {format: text}}" -config /config/go2rtc.yaml -config "{rtsp: {listen: ''}}" -config /usr/local/go2rtc/go2rtc.yaml
+go2rtc -config "{log: {format: text}}" -config /config/go2rtc.yaml -config /config/go2rtc_linux.yaml -config "{rtsp: {listen: ''}}"
 ```
 
 or a simpler version
 
 ```
-go2rtc -c log.format=text -c /config/go2rtc.yaml -c rtsp.listen='' -c /usr/local/go2rtc/go2rtc.yaml
+go2rtc -c log.format=text -c /config/go2rtc.yaml -c /config/go2rtc_linux.yaml -c rtsp.listen=''
 ```
 
 ## Environment variables

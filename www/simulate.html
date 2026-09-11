@@ -1509,6 +1509,33 @@
             font-size: 13px;
         }
 
+        .task-batch-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            min-height: 38px;
+            padding: 0 12px;
+            border-radius: 10px;
+            white-space: nowrap;
+        }
+
+        .task-batch-action svg {
+            width: 15px;
+            height: 15px;
+            flex: 0 0 auto;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .task-batch-action.is-off {
+            border-color: rgba(52, 211, 153, 0.34);
+            background: rgba(52, 211, 153, 0.10);
+            color: #6ee7b7;
+        }
+
         .sort-control {
             display: inline-flex;
             align-items: center;
@@ -4045,6 +4072,10 @@
                 <p>集中查看任务运行状态与访问地址。点击任务行可打开详情抽屉，支持启停、编辑、复制和删除。</p>
             </div>
             <div class="toolbar-pills">
+                <button class="secondary task-batch-action" id="toggle-all-streams" type="button" aria-controls="sim-list" title="禁用全部视频流">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v9"></path><path d="M7.05 5.05a7 7 0 1 0 9.9 0"></path></svg>
+                    <span id="toggle-all-streams-label">禁用全部视频流</span>
+                </button>
                 <label class="sort-control" for="stream-sort">
                     <span>排序</span>
                     <select id="stream-sort">
@@ -4583,6 +4614,8 @@
     const highlightLabel = document.getElementById('current-highlight-label');
     const streamRefreshLabel = document.getElementById('stream-refresh-label');
     const summaryRefreshTime = document.getElementById('summary-refresh-time');
+    const toggleAllStreamsBtn = document.getElementById('toggle-all-streams');
+    const toggleAllStreamsLabel = document.getElementById('toggle-all-streams-label');
     const opsStatusDot = document.getElementById('ops-status-dot');
     const opsStatusTitle = document.getElementById('ops-status-title');
     const opsStatusDetail = document.getElementById('ops-status-detail');
@@ -4735,6 +4768,7 @@
     let streamPageSizeValue = 20;
     let detailStreamName = '';
     let taskDrawerReturnFocus = null;
+    let allStreamsActionBusy = false;
     const customSelectInstances = new Map();
     const backendBrowserPathStorageKey = 'go2rtc-simulate-browser-path';
     const uploadPathStorageKey = 'go2rtc-simulate-upload-path';
@@ -5882,6 +5916,25 @@
             const targetStatusNode = scope === 'all' ? document.getElementById('streams-enabled-status') : statusNode;
             if (targetStatusNode) targetStatusNode.textContent = status;
         }
+        syncAllStreamsAction();
+    }
+
+    function syncAllStreamsAction() {
+        if (!toggleAllStreamsBtn) return;
+        const streams = Object.entries(cachedStreams || {})
+            .filter(([, stream]) => getManagedSources(stream).length > 0);
+        const streamsEnabled = Boolean(meta.streams_enabled);
+        const label = allStreamsActionBusy
+            ? '处理中...'
+            : (streamsEnabled ? '禁用全部视频流' : '恢复全部视频流');
+        toggleAllStreamsLabel.textContent = label;
+        toggleAllStreamsBtn.disabled = allStreamsActionBusy || streams.length === 0;
+        toggleAllStreamsBtn.classList.toggle('is-off', !streamsEnabled);
+        toggleAllStreamsBtn.setAttribute('aria-busy', String(allStreamsActionBusy));
+        toggleAllStreamsBtn.setAttribute('aria-label', label);
+        toggleAllStreamsBtn.title = streamsEnabled
+            ? '停止所有视频流任务，任务配置仍会保留'
+            : '恢复所有未单独停用的视频流任务';
     }
 
     function sortStreamEntries(entries) {
@@ -7407,6 +7460,7 @@
         streamPagePrev.disabled = streamPage <= 1;
         streamPageNext.disabled = streamPage >= pageCount;
         updateOpsOverview(entries, parsedByName);
+        syncAllStreamsAction();
 
         if (!entries.length) {
             if (detailStreamName) {
@@ -7909,6 +7963,25 @@
     streamPageNext.addEventListener('click', () => {
         streamPage += 1;
         renderStreams(cachedStreams);
+    });
+
+    toggleAllStreamsBtn?.addEventListener('click', async () => {
+        const enabled = !Boolean(meta.streams_enabled);
+        if (!enabled && !confirm('确认禁用全部视频流？\n\n任务配置会保留，所有视频流卡片将停止发布。之后可点击“恢复全部视频流”重新启用。')) {
+            return;
+        }
+
+        allStreamsActionBusy = true;
+        syncAllStreamsAction();
+        try {
+            await setGlobalState('streams', enabled);
+        } catch (error) {
+            setStatus(error.message, true);
+            showToast(error.message, 'error');
+        } finally {
+            allStreamsActionBusy = false;
+            syncAllStreamsAction();
+        }
     });
 
     publishControls?.addEventListener('change', async event => {

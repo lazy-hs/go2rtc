@@ -145,7 +145,8 @@
     const url = new URL('api', location.href);
     fetch(url, {cache: 'no-cache'}).then(r => r.json()).then(data => {
         const info = document.querySelector('.info');
-        info.innerText = `version: ${data.version} / config: ${data.config_path}`;
+        const configPath = data.stream_config_path || data.config_path;
+        info.innerText = `version: ${data.version} / stream config: ${configPath}`;
     });
 
     reload();

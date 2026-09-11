@@ -1,0 +1,60 @@
+# macOS 视频流配置
+ffmpeg:
+  file: "-re -stream_loop -1 -i {input}"
+
+streams:
+  main:
+    - 'ffmpeg:/Users/lazy/huangsheng/资源/video/2026.06.28-第1期下-4K.高码率.mp4#video=h264#input=file#audio=aac'
+  package:
+    - 'ffmpeg:/Users/lazy/huangsheng/监控中心/竞品分析/萤石/视频素材/包裹检测/标准纸箱-1米-2.mp4#video=h264#input=file#audio=aac'
+  cam1:
+    - 'ffmpeg:/Users/lazy/huangsheng/资源/video/cross/route_01_室外1_P1P2双人四摄_先后通行_从cam4到cam3到cam1到cam2/cam1/cam01_route01_take01.mp4#video=h264#input=file#audio=aac'
+  cam2:
+    - 'ffmpeg:/Users/lazy/huangsheng/资源/video/cross/route_01_室外1_P1P2双人四摄_先后通行_从cam4到cam3到cam1到cam2/cam2/cam02_route01_take01.mp4#video=h264#input=file'
+  cam3:
+    - 'ffmpeg:/Users/lazy/huangsheng/资源/video/cross/route_01_室外1_P1P2双人四摄_先后通行_从cam4到cam3到cam1到cam2/cam3/cam03_route01_take02.mp4#video=h264#input=file'
+  cam4:
+    - 'ffmpeg:/Users/lazy/huangsheng/资源/video/cross/route_01_室外1_P1P2双人四摄_先后通行_从cam4到cam3到cam1到cam2/cam4/cam04_route01_take02.mp4#video=h264#input=file'
+  main2:
+    - 'ffmpeg:/Users/lazy/huangsheng/资源/video/2026.06.21-第12期下-4K.高码率.mp4#video=h264#input=file'
+
+simulate:
+  ptz_enabled: false
+  ptz:
+    main:
+      max_zoom: 4
+      pan_speed: 0.6
+      tilt_speed: 0.6
+      zoom_speed: 0.5
+  onvif_qualities:
+    main:
+      - width: 0
+        height: 0
+    package:
+      - width: 0
+        height: 0
+    cam1:
+      - width: 0
+        height: 0
+    cam2:
+      - width: 0
+        height: 0
+    cam3:
+      - width: 0
+        height: 0
+    cam4:
+      - width: 0
+        height: 0
+    main2:
+      - width: 0
+        height: 0
+  disabled_streams:
+    - cam1
+    - cam3
+    - cam4
+    - main
+    - main2
+    - package
+  onvif_enabled: true
+  streams_enabled: true
+  rtsp_enabled: true

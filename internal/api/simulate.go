@@ -51,8 +51,9 @@ type simulateONVIFStreamQuality struct {
 }
 
 func simulateHandler(w http.ResponseWriter, r *http.Request) {
-	configuredStreams, configuredOrder := configuredStreamsFromFile(app.ConfigPath)
-	streamsEnabled, onvifEnabled, rtspEnabled := configuredServiceStatesFromFile(app.ConfigPath)
+	streamConfigPath := app.StreamConfigPathOrConfig()
+	configuredStreams, configuredOrder := configuredStreamsFromFile(streamConfigPath)
+	streamsEnabled, onvifEnabled, rtspEnabled := configuredServiceStatesFromFile(streamConfigPath)
 	ResponseJSON(w, &simulateInfo{
 		BasePath:           basePath,
 		ConfiguredOrder:    configuredOrder,
@@ -66,7 +67,7 @@ func simulateHandler(w http.ResponseWriter, r *http.Request) {
 		ONVIFConfigAPI:     simulateEndpoint("api/simulate/onvif"),
 		ONVIFPath:          simulateEndpoint("onvif/device_service"),
 		PTZAPI:             simulateEndpoint("api/simulate/ptz"),
-		PTZEnabled:         configuredPTZEnabledFromFile(app.ConfigPath),
+		PTZEnabled:         configuredPTZEnabledFromFile(streamConfigPath),
 		RTSPPath:           "/",
 		RTSPPort:           simulateRTSPPort(app.ConfigPath),
 		StreamStateAPI:     simulateEndpoint("api/streams/state"),
@@ -74,8 +75,8 @@ func simulateHandler(w http.ResponseWriter, r *http.Request) {
 		StreamsEnabled:     streamsEnabled,
 		ONVIFEnabled:       onvifEnabled,
 		RTSPEnabled:        rtspEnabled,
-		DisabledStreams:    configuredDisabledStreamsFromFile(app.ConfigPath),
-		ONVIFQualities:     configuredONVIFQualitiesFromFile(app.ConfigPath),
+		DisabledStreams:    configuredDisabledStreamsFromFile(streamConfigPath),
+		ONVIFQualities:     configuredONVIFQualitiesFromFile(streamConfigPath),
 		StreamsAPI:         simulateEndpoint("api/streams"),
 		UploadAPI:          simulateEndpoint("api/simulate/upload"),
 		UploadDir:          filepath.ToSlash(simulateUploadDir),

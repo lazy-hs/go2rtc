@@ -29,7 +29,7 @@ func Init() {
 
 	log = app.GetLogger("streams")
 	streamsMu.Lock()
-	streamOrder = streamOrderFromConfig(app.ConfigPath)
+	streamOrder = streamOrderFromConfig(app.StreamConfigPathOrConfig())
 	disabledStreams = stringSet(cfg.Simulate.DisabledStreams)
 	streamsEnabled = cfg.Simulate.StreamsEnabled == nil || *cfg.Simulate.StreamsEnabled
 

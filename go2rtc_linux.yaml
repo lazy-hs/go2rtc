@@ -1,11 +1,12 @@
+# Linux 视频流配置
 ffmpeg:
   file: "-re -stream_loop -1 -i {input}"
 
 streams:
   main:
-    - 'ffmpeg:/root/hsheng/videos/2026.06.28-第1期下-4K.高码率.mp4#video=h264#audio=aac#input=file'  
+    - 'ffmpeg:/root/hsheng/videos/2026.06.28-第1期下-4K.高码率.mp4#video=h264#audio=aac#input=file'
   main2:
-    - 'ffmpeg:/root/hsheng/videos/2026.06.21-第12期下-4K.高码率.mp4#video=h264#audio=aac#input=file'  
+    - 'ffmpeg:/root/hsheng/videos/2026.06.21-第12期下-4K.高码率.mp4#video=h264#audio=aac#input=file'
   car:
     - 'ffmpeg:/root/hsheng/videos/监控中心二期算法测试数据/人脸/光线充足/car.mp4#video=h264#audio=aac#input=file'
   package:
@@ -20,105 +21,3 @@ streams:
     - 'ffmpeg:/root/hsheng/videos/监控中心二期算法测试数据/宠物/光线充足/小狗照镜子.mp4#video=h264#audio=aac#input=file'
   face-dog:
     - 'ffmpeg:/root/hsheng/videos/监控中心二期算法测试数据/人脸/人脸与狗.mp4#video=h264#input=file#audio=aac'
-  
-api:
-  # ONVIF 协议以及 Web UI 监听地址
-  listen: ":2984"
-rtsp:
-  listen: ":9554"
-# webrtc:
-#   listen: ":9555"
-app:
-  # 只启用必要模块
-  modules:
-  - "api"
-  - "http"
-  - "rtsp"
-  - "onvif"
-  - "exec"
-  - "ffmpeg"
-event:
-  # 事件产生时间间隔
-  interval: "1m"
-  # 初始事件数
-  burst: 10
-  # 事件模板，每次上报随机选择一条
-  templates:
-    # 烟雾火焰 (Fire)
-    - topic: "tns1:RuleEngine/FlameDetector"
-      startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
-      endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
-      startOperation: "Changed"
-      endOperation: "Deleted"
-    # 区域闯入 (FieldIntrusion)
-    - topic: "tns1:RuleEngine/FieldDetector/ObjectsInside"
-      startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
-      endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
-      startOperation: "Changed"
-      endOperation: "Deleted"
-    # 越线 (LineCrossing)
-    - topic: "tns1:RuleEngine/LineDetector/Crossed"
-      startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
-      endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
-      startOperation: "Changed"
-      endOperation: "Deleted"
-    # 区域离开 (FieldExit)
-    - topic: "tns1:RuleEngine/FieldDetector/Outside"
-      startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
-      endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
-      startOperation: "Changed"
-      endOperation: "Deleted"
-    # 物品丢失 (ObjectRemoval)
-    - topic: "tns1:RuleEngine/RemovedObjectDetector"
-      startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
-      endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
-      startOperation: "Changed"
-      endOperation: "Deleted"
-    # 人脸检测 (HumanFace)
-    - topic: "tns1:RuleEngine/FaceDetector"
-      startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
-      endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
-      startOperation: "Changed"
-      endOperation: "Deleted"
-    # 画面变化 (HumanMotionDetect)
-    - topic: "tns1:VideoSource/MotionAlarm"
-      startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
-      endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
-      startOperation: "Changed"
-      endOperation: "Deleted"
-    # 人形检测 (Human)
-    - topic: "tns1:RuleEngine/MyRuleDetector/PeopleDetect"
-      startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
-      endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
-      startOperation: "Changed"
-      endOperation: "Deleted"
-    # 车辆检测 (Vehicle)
-    - topic: "tns1:RuleEngine/MyRuleDetector/VehicleDetect"
-      startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
-      endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
-      startOperation: "Changed"
-      endOperation: "Deleted"
-    # 包裹检测 (Package)
-    - topic: "tns1:RuleEngine/PackageDetector"
-      startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
-      endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
-      startOperation: "Changed"
-      endOperation: "Deleted"
-    # 设备故障 (DeviceFailure)
-    - topic: "tns1:Device/HardwareFailure"
-      startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
-      endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
-      startOperation: "Changed"
-      endOperation: "Deleted"
-    # 镜头遮挡 (TamperDetect)
-    - topic: "tns1:VideoSource/GlobalSceneChange"
-      startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
-      endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
-      startOperation: "Changed"
-      endOperation: "Deleted"
-    # 设备移动 (DeviceMoval)
-    - topic: "tns1:RuleEngine/MyRuleDetector/ShockDetection"
-      startData: '<tt:SimpleItem Value="true" Name="IsMotion"/>'
-      endData: '<tt:SimpleItem Value="false" Name="IsMotion"/>'
-      startOperation: "Changed"
-      endOperation: "Deleted"

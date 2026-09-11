@@ -6,8 +6,8 @@
 
 # go2rtc_freebsd*
 # go2rtc_linux*
-go2rtc_mac*
-go2rtc_win*
+# go2rtc_mac*
+# go2rtc_win*
 
 /go2rtc
 /go2rtc.exe

@@ -52,4 +52,4 @@ ENTRYPOINT ["/sbin/tini", "--"]
 VOLUME /config
 WORKDIR /config
 
-CMD ["go2rtc", "-config", "/config/go2rtc.yaml"]
+CMD ["go2rtc", "-config", "/config/go2rtc.yaml", "-config", "/config/go2rtc_linux.yaml"]

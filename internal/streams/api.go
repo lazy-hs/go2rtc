@@ -418,10 +418,11 @@ func isConfigPersistenceUnavailable(err error) bool {
 
 func appConfiguredStreams() map[string][]string {
 	streams := map[string][]string{}
-	if app.ConfigPath == "" {
+	configPath := app.StreamConfigPathOrConfig()
+	if configPath == "" {
 		return streams
 	}
-	data, err := os.ReadFile(app.ConfigPath)
+	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return streams
 	}

@@ -39,10 +39,16 @@
 go run .
 ```
 
-go2rtc 默认读取当前目录的 `go2rtc.yaml`。也可以明确指定配置文件：
+go2rtc 默认读取当前目录的 `go2rtc.yaml`，并根据运行系统自动加载对应的视频流配置：
+
+- Linux：`go2rtc_linux.yaml`
+- Windows：`go2rtc_windows.yaml`
+- macOS：`go2rtc_mac.yaml`
+
+`go2rtc.yaml` 只保存工程配置，例如服务端口、模块、日志和 ONVIF 设备信息；平台文件只保存 FFmpeg、`streams` 和 `simulate` 等视频流配置。也可以明确指定配置文件：
 
 ```shell
-go run . -config /path/to/go2rtc.yaml
+go run . -config /path/to/go2rtc.yaml -config /path/to/go2rtc_linux.yaml
 ```
 
 ### 构建后运行
@@ -73,7 +79,7 @@ chmod +x ./go2rtc
 | go2rtc 原生 WebUI | `http://localhost:2984/`              |
 | 视频流模拟与转发控制台     | `http://localhost:2984/simulate.html` |
 
-当前 `go2rtc.yaml` 使用的端口如下：
+当前工程配置使用的端口如下：
 
 | 服务                                      |     端口 | 说明                |
 | --------------------------------------- | -----: | ----------------- |
@@ -151,12 +157,9 @@ Content-Type: application/json
 
 ## 基础配置
 
-下面的示例使用相对安全的演示路径，请按部署环境修改媒体文件位置和监听地址：
+工程配置和视频流配置分开保存。下面是 `go2rtc.yaml` 中的工程配置：
 
 ```yaml
-ffmpeg:
-  file: "-re -stream_loop -1 -i {input}"
-
 api:
   listen: ":2984"
   upload_dir: "static"
@@ -167,6 +170,13 @@ rtsp:
 
 webrtc:
   listen: ":9555"
+```
+
+在当前系统对应的 `go2rtc_linux.yaml`、`go2rtc_windows.yaml` 或 `go2rtc_mac.yaml` 中配置视频流：
+
+```yaml
+ffmpeg:
+  file: "-re -stream_loop -1 -i {input}"
 
 streams:
   demo:
@@ -184,6 +194,8 @@ simulate:
       - width: 1280
         height: 720
 ```
+
+平台流配置文件不存在时，仍可以在自定义主配置中保留 `streams` 以兼容旧版单文件配置。
 
 `api.config` 控制 Web UI 中 Config 配置页面的显示状态，默认为 `true`；设置为 `false` 时会隐藏导航入口，并关闭 `config.html` 和 `api/config`。
 
@@ -390,7 +402,7 @@ chmod +x packaging/build.sh
 
 ## Linux 与 Docker 注意事项
 
-- 如果需要永久保存页面上的任务启停、编辑、ONVIF 或事件配置，必须保证 `go2rtc.yaml` 可写；
+- 如果需要永久保存页面上的工程设置、ONVIF/事件设置、任务启停和流编辑，必须保证 `go2rtc.yaml` 以及当前系统对应的平台流配置文件可写；
 - 配置只读时仍可临时启停任务，但重启后恢复配置文件状态；
 - 容器内的媒体文件路径必须通过 Volume 映射；
 - 摄像头设备需要映射 `/dev/video*` 等设备，并授予相应权限；
@@ -459,7 +471,10 @@ api:
 .
 ├── VERSION                 # 唯一版本号来源
 ├── VERSIONING.md           # 版本规则与发布流程
-├── go2rtc.yaml             # 当前运行配置
+├── go2rtc.yaml             # 工程配置
+├── go2rtc_linux.yaml       # Linux 视频流配置
+├── go2rtc_windows.yaml     # Windows 视频流配置
+├── go2rtc_mac.yaml         # macOS 视频流配置
 ├── cmd/version/            # 版本管理命令
 ├── internal/               # go2rtc 核心模块与新增后端接口
 ├── www/simulate.html       # 视频流模拟与转发控制台

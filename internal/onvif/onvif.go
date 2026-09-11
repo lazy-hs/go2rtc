@@ -348,10 +348,11 @@ func configuredONVIFProfile(token string) (onvif.Profile, bool) {
 }
 
 func configuredONVIFStreamQualities(name string) []onvifStreamQuality {
-	if app.ConfigPath == "" || name == "" {
+	configPath := app.StreamConfigPathOrConfig()
+	if configPath == "" || name == "" {
 		return nil
 	}
-	data, err := os.ReadFile(app.ConfigPath)
+	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil
 	}

@@ -23,7 +23,7 @@ services:
     environment:
       - TZ=Atlantic/Bermuda  # timezone in logs
     volumes:
-      - "~/go2rtc:/config"   # folder for go2rtc.yaml file (edit from WebUI)
+      - "~/go2rtc:/config"   # go2rtc.yaml and go2rtc_linux.yaml
 ```
 
 ## Basic Deployment
@@ -38,6 +38,10 @@ docker run -d \
   -v ~/go2rtc:/config \
   alexxit/go2rtc
 ```
+
+Linux Docker deployments use both `/config/go2rtc.yaml` and
+`/config/go2rtc_linux.yaml`. Keep both files in the mounted directory when
+using the repository's platform-specific stream configuration.
 
 ## Deployment with GPU Acceleration
 

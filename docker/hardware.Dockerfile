@@ -57,4 +57,4 @@ WORKDIR /config
 ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES compute,video,utility
 
-CMD ["go2rtc", "-config", "/config/go2rtc.yaml"]
+CMD ["go2rtc", "-config", "/config/go2rtc.yaml", "-config", "/config/go2rtc_linux.yaml"]
