@@ -15,10 +15,133 @@
             position: relative;
             flex: 1 1 auto;
             min-height: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 14px 18px 18px;
         }
 
         #network {
+            position: relative;
+            flex: 1 1 auto;
+            min-height: 360px;
+            overflow: hidden;
+            border: 1px solid rgba(34, 50, 77, 0.92);
+            border-radius: 18px;
+            background:
+                linear-gradient(rgba(34, 50, 77, 0.16) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(34, 50, 77, 0.16) 1px, transparent 1px),
+                rgba(2, 6, 23, 0.34);
+            background-size: 32px 32px;
+            box-shadow: 0 20px 50px rgba(2, 6, 23, 0.24);
             height: 100%;
+        }
+
+        #network-canvas {
+            position: absolute;
+            inset: 0;
+        }
+
+        .network-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+            padding: 12px 14px;
+            border: 1px solid rgba(34, 50, 77, 0.92);
+            border-radius: 16px;
+            background: rgba(17, 24, 39, 0.72);
+            box-shadow: 0 12px 32px rgba(2, 6, 23, 0.18);
+        }
+
+        .network-heading {
+            display: grid;
+            gap: 3px;
+        }
+
+        .network-heading strong {
+            color: #e2e8f0;
+            font-size: 16px;
+            letter-spacing: .01em;
+        }
+
+        .network-heading span {
+            color: #94a3b8;
+            font-size: 12px;
+        }
+
+        .network-stats,
+        .network-legend,
+        .network-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .network-stat,
+        .network-legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #cbd5e1;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .network-stat b {
+            color: #f8fafc;
+            font-size: 14px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .network-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.08);
+        }
+
+        .network-dot.host { background: #60a5fa; }
+        .network-dot.producer { background: #f97316; }
+        .network-dot.consumer { background: #34d399; }
+        .network-dot.node { background: #fbbf24; }
+
+        .network-action {
+            min-height: 32px;
+            padding: 6px 10px;
+            border: 1px solid rgba(43, 63, 99, 0.95);
+            border-radius: 10px;
+            background: rgba(15, 23, 42, 0.76);
+            color: #cbd5e1;
+            font: inherit;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .network-action:hover {
+            border-color: rgba(34, 211, 238, 0.44);
+            color: #a5f3fc;
+        }
+
+        .network-status {
+            position: absolute;
+            right: 14px;
+            bottom: 12px;
+            padding: 5px 8px;
+            border: 1px solid rgba(34, 211, 238, 0.16);
+            border-radius: 999px;
+            background: rgba(2, 6, 23, 0.72);
+            color: #94a3b8;
+            font-size: 11px;
+            pointer-events: none;
+        }
+
+        .network-status.is-error {
+            border-color: rgba(251, 113, 133, 0.34);
+            color: #fda4af;
         }
 
         .network-empty-state {
@@ -50,6 +173,27 @@
             font-size: 13px;
             line-height: 1.6;
         }
+
+        @media (max-width: 720px) {
+            #network-shell {
+                padding: 10px 12px 12px;
+            }
+
+            .network-toolbar {
+                align-items: flex-start;
+            }
+
+            .network-stats {
+                order: 3;
+                width: 100%;
+                padding-top: 2px;
+                border-top: 1px solid rgba(34, 50, 77, 0.7);
+            }
+
+            #network {
+                min-height: 300px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -57,10 +201,28 @@
 <script src="main.js"></script>
 
 <div id="network-shell">
-    <div id="network"></div>
-    <div id="network-empty-state" class="network-empty-state" role="status" aria-live="polite" hidden>
-        <strong>暂无消费者拉流</strong>
-        <span>当前没有客户端正在拉取视频流，开始播放或连接流后，网络关系将在这里显示。</span>
+    <section class="network-toolbar" aria-label="网络链路概览">
+        <div class="network-heading">
+            <strong>网络链路</strong>
+            <span id="network-scope">全部流 · 每 5 秒自动刷新</span>
+        </div>
+        <div class="network-stats" aria-live="polite">
+            <span class="network-stat"><i class="network-dot host"></i>主机 <b id="stat-host">0</b></span>
+            <span class="network-stat"><i class="network-dot producer"></i>生产者 <b id="stat-producer">0</b></span>
+            <span class="network-stat"><i class="network-dot consumer"></i>消费者 <b id="stat-consumer">0</b></span>
+            <span class="network-stat"><i class="network-dot node"></i>编解码 <b id="stat-node">0</b></span>
+        </div>
+        <div class="network-actions">
+            <button class="network-action" id="network-fit" type="button">整理视图</button>
+        </div>
+    </section>
+    <div id="network">
+        <div id="network-canvas"></div>
+        <span class="network-status" id="network-status" role="status" aria-live="polite">正在连接…</span>
+        <div id="network-empty-state" class="network-empty-state" role="status" aria-live="polite" hidden>
+            <strong>暂无消费者拉流</strong>
+            <span>当前没有客户端正在拉取视频流，开始播放或连接流后，网络关系将在这里显示。</span>
+        </div>
     </div>
 </div>
 
@@ -69,22 +231,102 @@
     window.addEventListener('load', () => {
         const url = new URL('api/streams.dot' + location.search, location.href);
 
-        const container = document.getElementById('network');
+        const container = document.getElementById('network-canvas');
         const emptyState = document.getElementById('network-empty-state');
+        const status = document.getElementById('network-status');
+        const fitButton = document.getElementById('network-fit');
+        const scope = document.getElementById('network-scope');
+        const stat = {
+            host: document.getElementById('stat-host'),
+            producer: document.getElementById('stat-producer'),
+            consumer: document.getElementById('stat-consumer'),
+            node: document.getElementById('stat-node'),
+        };
+
+        const srcFilters = new URLSearchParams(location.search).getAll('src');
+        if (srcFilters.length) {
+            scope.textContent = `${srcFilters.join('、')} · 每 5 秒自动刷新`;
+        }
+
+        const compactLayout = window.matchMedia('(max-width: 720px)').matches;
+        // /api/streams.dot already describes the data flow; this view only
+        // assigns stable visual roles and lays the directed graph out by level.
         const options = {
+            autoResize: true,
+            layout: {
+                hierarchical: {
+                    enabled: true,
+                    direction: compactLayout ? 'UD' : 'LR',
+                    sortMethod: 'directed',
+                    levelSeparation: compactLayout ? 90 : 170,
+                    nodeSpacing: compactLayout ? 70 : 90,
+                    treeSpacing: compactLayout ? 120 : 220,
+                    blockShifting: true,
+                    edgeMinimization: true,
+                    parentCentralization: true,
+                },
+            },
             edges: {
-                font: {align: 'middle'},
+                arrows: {to: {enabled: true, scaleFactor: 0.7}},
+                color: {color: 'rgba(148, 163, 184, 0.72)', highlight: '#67e8f9'},
+                font: {
+                    align: 'middle',
+                    color: '#cbd5e1',
+                    face: 'Consolas, JetBrains Mono, monospace',
+                    size: 11,
+                    strokeWidth: 3,
+                    strokeColor: '#020617',
+                },
                 smooth: false,
             },
-            nodes: {shape: 'box'},
+            groups: {
+                host: {
+                    shape: 'box',
+                    color: {background: '#60a5fa', border: '#bfdbfe', highlight: {background: '#93c5fd', border: '#dbeafe'}},
+                    font: {color: '#0f172a', size: 13, face: 'Consolas, JetBrains Mono, monospace', bold: true},
+                    margin: 10,
+                },
+                producer: {
+                    shape: 'box',
+                    color: {background: '#f97316', border: '#fed7aa', highlight: {background: '#fb923c', border: '#ffedd5'}},
+                    font: {color: '#431407', size: 12, face: 'Consolas, JetBrains Mono, monospace', bold: true},
+                    margin: 9,
+                },
+                consumer: {
+                    shape: 'box',
+                    color: {background: '#34d399', border: '#a7f3d0', highlight: {background: '#6ee7b7', border: '#d1fae5'}},
+                    font: {color: '#022c22', size: 12, face: 'Consolas, JetBrains Mono, monospace', bold: true},
+                    margin: 9,
+                },
+                node: {
+                    shape: 'box',
+                    color: {background: '#fbbf24', border: '#fef3c7', highlight: {background: '#fcd34d', border: '#fffbeb'}},
+                    font: {color: '#422006', size: 12, face: 'Consolas, JetBrains Mono, monospace', bold: true},
+                    margin: 8,
+                },
+            },
+            nodes: {
+                borderWidth: 1,
+                shape: 'box',
+                shadow: {enabled: true, color: 'rgba(2, 6, 23, 0.32)', size: 8, x: 0, y: 3},
+            },
             physics: false,
         };
 
         let network;
 
-        function hasConsumerNodes(data) {
-            const nodes = Array.isArray(data.nodes) ? data.nodes : data.nodes?.get?.() || [];
-            return nodes.some(node => node.group === 'consumer');
+        function getItems(collection) {
+            return Array.isArray(collection) ? collection : collection?.get?.() || [];
+        }
+
+        function updateStats(data) {
+            const counts = {host: 0, producer: 0, consumer: 0, node: 0};
+            for (const item of getItems(data.nodes)) {
+                if (Object.prototype.hasOwnProperty.call(counts, item.group)) counts[item.group]++;
+            }
+            for (const key of Object.keys(stat)) stat[key].textContent = counts[key];
+            emptyState.hidden = counts.consumer > 0;
+            return counts;
         }
 
         async function update() {
@@ -92,11 +334,13 @@
                 const response = await fetch(url, {cache: 'no-cache'});
                 const dotData = await response.text();
                 const data = vis.parseDOTNetwork(dotData);
-                emptyState.hidden = hasConsumerNodes(data);
+                const counts = updateStats(data);
+                status.textContent = counts.consumer ? `已更新 · ${new Date().toLocaleTimeString()}` : '等待客户端连接';
+                status.classList.remove('is-error');
 
                 if (!network) {
                     network = new vis.Network(container, data, options);
-                    network.storePositions();
+                    network.once('afterDrawing', () => network.fit({animation: false}));
                 } else {
                     const positions = network.getPositions();
                     const viewPosition = network.getViewPosition();
@@ -115,10 +359,16 @@
                 }
             } catch (error) {
                 console.error('Error fetching or updating network data:', error);
+                status.textContent = '网络数据获取失败';
+                status.classList.add('is-error');
             }
 
             setTimeout(update, 5000);
         }
+
+        fitButton.addEventListener('click', () => {
+            if (network) network.fit({animation: {duration: 450, easingFunction: 'easeInOutQuad'}});
+        });
 
         update();
     });

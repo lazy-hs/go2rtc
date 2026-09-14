@@ -6,6 +6,9 @@ import (
 	"strings"
 )
 
+// AppendDOT serializes one stream's active connections as a directed graph.
+// The graph is host -> connection -> codec nodes -> connection -> host;
+// edge labels contain the byte counters for that hop.
 func AppendDOT(dot []byte, stream *Stream) []byte {
 	for _, prod := range stream.producers {
 		if prod.conn == nil {
