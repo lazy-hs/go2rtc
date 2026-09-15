@@ -4845,16 +4845,35 @@
         }
     }
 
-    async function waitForRestart() {
+    function pageURLWithPort(port) {
+        const url = new URL(location.href);
+        url.port = String(port);
+        return url.toString();
+    }
+
+    async function waitForRestart(pageURL = location.href) {
         const startedAt = Date.now();
         let observedOffline = false;
+        const targetURL = new URL(pageURL, location.href);
+        const sameOrigin = targetURL.origin === location.origin;
+        const targetBaseURL = path => new URL(path, targetURL).toString();
         await new Promise(resolve => setTimeout(resolve, 350));
 
         while (Date.now() - startedAt < 15000) {
             try {
+                if (!sameOrigin) {
+                    // A changed API port is a different browser origin. An opaque
+                    // response still proves that the new HTTP listener is ready.
+                    await fetch(targetBaseURL('api/simulate'), {
+                        cache: 'no-store',
+                        credentials: 'include',
+                        mode: 'no-cors',
+                    });
+                    return true;
+                }
                 const [simulateResponse, streamsResponse] = await Promise.all([
-                    fetch(baseURL('api/simulate'), {cache: 'no-store'}),
-                    fetch(baseURL('api/streams'), {cache: 'no-store'}),
+                    fetch(targetBaseURL('api/simulate'), {cache: 'no-store'}),
+                    fetch(targetBaseURL('api/streams'), {cache: 'no-store'}),
                 ]);
                 if (
                     simulateResponse.ok && streamsResponse.ok &&
@@ -4868,7 +4887,7 @@
         return false;
     }
 
-    async function saveAndRestart(successMessage, setInlineStatus) {
+    async function saveAndRestart(successMessage, setInlineStatus, pageURL = location.href) {
         setInlineStatus('配置已保存，正在重启服务...');
         try {
             const restartResponse = await fetch(baseURL('api/restart'), {method: 'POST'});
@@ -4880,11 +4899,20 @@
             // Restart may close the current HTTP connection before the response finishes.
         }
 
-        if (await waitForRestart()) {
+        if (await waitForRestart(pageURL)) {
             setInlineStatus(successMessage);
             showToast(successMessage, 'success');
-            sessionStorage.setItem('simulate-toast', JSON.stringify({message: successMessage, type: 'success'}));
-            window.setTimeout(() => location.reload(), 900);
+            const targetURL = new URL(pageURL, location.href);
+            if (targetURL.origin === location.origin) {
+                sessionStorage.setItem('simulate-toast', JSON.stringify({message: successMessage, type: 'success'}));
+            }
+            window.setTimeout(() => {
+                if (targetURL.href === location.href) {
+                    location.reload();
+                } else {
+                    location.replace(targetURL.href);
+                }
+            }, 900);
             return true;
         }
 
@@ -7021,7 +7049,9 @@
             input.value = config[field] || '';
             if (field !== 'serial') input.placeholder = defaults[field] || '';
         }
-        onvifConfigForm.elements.service_port.value = config.service_port || data.effective?.service_port || '';
+        const servicePort = config.service_port || data.effective?.service_port || '';
+        onvifConfigForm.elements.service_port.value = servicePort;
+        onvifConfigForm.elements.service_port.dataset.currentPort = String(servicePort);
         onvifConfigForm.elements.service_port.placeholder = defaults.service_port || '2984';
         onvifConfigForm.elements.rtsp_port.value = config.rtsp_port || data.effective?.rtsp_port || meta.rtsp_port || '';
         onvifConfigForm.elements.rtsp_port.placeholder = defaults.rtsp_port || '9554';
@@ -7859,6 +7889,9 @@
             const config = Object.fromEntries(new FormData(onvifConfigForm).entries());
             config.service_port = readPortField(onvifConfigForm, 'service_port', 'ONVIF 服务端口');
             config.rtsp_port = readPortField(onvifConfigForm, 'rtsp_port', 'RTSP 端口');
+            const currentServicePort = Number(onvifConfigForm.elements.service_port.dataset.currentPort) || 0;
+            const servicePortChanged = config.service_port > 0 && config.service_port !== currentServicePort;
+            const restartPageURL = servicePortChanged ? pageURLWithPort(config.service_port) : location.href;
             const response = await fetch(baseURL(meta.onvif_config_api), {
                 method: 'PUT',
                 headers: {'Content-Type': 'application/json'},
@@ -7867,7 +7900,14 @@
             if (!response.ok) throw new Error(await response.text() || '保存 ONVIF 设备信息失败');
             const data = await response.json();
             updateONVIFIdentitySummary(data.effective || data.config);
-            const restarted = await saveAndRestart('设备信息保存成功，服务已重启', message => setONVIFConfigStatus(message));
+            const successMessage = servicePortChanged
+                ? `设备信息保存成功，正在切换到新端口 ${config.service_port}`
+                : '设备信息保存成功，服务已重启';
+            const restarted = await saveAndRestart(
+                successMessage,
+                message => setONVIFConfigStatus(message),
+                restartPageURL,
+            );
             if (!restarted) saveONVIFConfigBtn.disabled = false;
         } catch (error) {
             const message = saveFailureMessage(error, '保存 ONVIF 设备信息失败');
