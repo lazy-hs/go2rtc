@@ -1,11 +1,13 @@
 package rtsp
 
 import (
+	"net/url"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/AlexxIT/go2rtc/internal/app"
+	"github.com/AlexxIT/go2rtc/internal/streams"
 	"github.com/stretchr/testify/require"
 )
 
@@ -49,6 +51,45 @@ func TestResolveRTSPQualityAlias(t *testing.T) {
 func TestNormalizeRTSPQualityUsesEvenWidth(t *testing.T) {
 	require.Equal(t, streamQuality{Width: 3642, Height: 2048}, normalizeRTSPQuality(streamQuality{Height: 2048}))
 	require.Equal(t, streamQuality{Width: 1280, Height: 720}, normalizeRTSPQuality(streamQuality{Height: 720}))
+}
+
+func TestONVIFQualityStreamSharesConfiguredProfile(t *testing.T) {
+	oldConfigPath := app.ConfigPath
+	oldStreamConfigPath := app.StreamConfigPath
+	t.Cleanup(func() {
+		app.ConfigPath = oldConfigPath
+		app.StreamConfigPath = oldStreamConfigPath
+		qualityStreamCache.Lock()
+		qualityStreamCache.items = map[qualityStreamKey]*streams.Stream{}
+		qualityStreamCache.Unlock()
+	})
+
+	configPath := filepath.Join(t.TempDir(), "go2rtc.yaml")
+	require.NoError(t, os.WriteFile(configPath, []byte(`simulate:
+  onvif_qualities:
+    camera1:
+      - width: 1280
+        height: 720
+        fps: 20
+        bitrate: 2500k
+        maxrate: 3000k
+        bufsize: 5000k
+`), 0644))
+	app.ConfigPath = configPath
+	app.StreamConfigPath = ""
+
+	query := url.Values{}
+	query.Set("onvif_width", "1280")
+	query.Set("onvif_height", "720")
+	fallback := streams.NewStream("rtsp://example.com/camera1")
+
+	first := onvifQualityStream("camera1", query, fallback)
+	second := onvifQualityStream("camera1", query, fallback)
+	require.Same(t, first, second)
+	require.Equal(t,
+		"ffmpeg:camera1#video=h264#audio=copy#width=1280#height=720#fps=20#bitrate=2500k#maxrate=3000k#bufsize=5000k#hardware=auto",
+		first.Sources()[0],
+	)
 }
 
 func TestLocalURLUsesConfiguredAuth(t *testing.T) {

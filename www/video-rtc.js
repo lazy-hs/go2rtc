@@ -466,17 +466,20 @@ export class VideoRTC extends HTMLElement {
 
                 if (!sb.updating && sb.buffered && sb.buffered.length) {
                     const end = sb.buffered.end(sb.buffered.length - 1);
-                    const start = end - 5;
+                    const targetLatency = 0.8;
+                    const maxLatency = 2.0;
+                    const start = end - 2.5;
                     const start0 = sb.buffered.start(0);
                     if (start > start0) {
                         sb.remove(start0, start);
                         ms.setLiveSeekableRange(start, end);
                     }
-                    if (this.video.currentTime < start) {
-                        this.video.currentTime = start;
-                    }
                     const gap = end - this.video.currentTime;
-                    this.video.playbackRate = gap > 0.1 ? gap : 0.1;
+                    if (gap > maxLatency || this.video.currentTime < start) {
+                        this.video.currentTime = Math.max(start, end - targetLatency);
+                    }
+                    const drift = gap - targetLatency;
+                    this.video.playbackRate = Math.max(0.97, Math.min(1.03, 1 + drift * 0.05));
                     // console.debug('VideoRTC.buffered', gap, this.video.playbackRate, this.video.readyState);
                 }
             });
@@ -487,6 +490,12 @@ export class VideoRTC extends HTMLElement {
             this.ondata = data => {
                 if (sb.updating || bufLen > 0) {
                     const b = new Uint8Array(data);
+                    if (b.byteLength > buf.byteLength) return;
+                    if (bufLen + b.byteLength > buf.byteLength) {
+                        // Drop queued data and keep the newest fragment. This
+                        // bounds memory and lets MSE recover after a stall.
+                        bufLen = 0;
+                    }
                     buf.set(b, bufLen);
                     bufLen += b.byteLength;
                     // console.debug('VideoRTC.buffer', b.byteLength, bufLen);

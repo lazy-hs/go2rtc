@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"os/exec"
 	"strings"
+	"sync"
 
 	"github.com/AlexxIT/go2rtc/internal/api"
 	"github.com/AlexxIT/go2rtc/pkg/ffmpeg"
@@ -28,6 +29,10 @@ func Init(bin string) {
 // MakeHardware converts software FFmpeg args to hardware args
 // empty engine for autoselect
 func MakeHardware(args *ffmpeg.Args, engine string, defaults map[string]string) {
+	if strings.EqualFold(engine, "auto") {
+		engine = ""
+	}
+
 	for i, codec := range args.Codecs {
 		if len(codec) < 10 {
 			continue // skip short line (-c:v mjpeg...)
@@ -47,10 +52,12 @@ func MakeHardware(args *ffmpeg.Args, engine string, defaults map[string]string) 
 
 		// temporary disable probe for H265
 		if engine == "" && name != "h265" {
+			cacheMu.Lock()
 			if engine = cache[name]; engine == "" {
 				engine = ProbeHardware(args.Bin, name)
 				cache[name] = engine
 			}
+			cacheMu.Unlock()
 		}
 
 		switch engine {
@@ -160,6 +167,7 @@ func MakeHardware(args *ffmpeg.Args, engine string, defaults map[string]string) 
 }
 
 var cache = map[string]string{}
+var cacheMu sync.Mutex
 
 func run(bin string, args string) bool {
 	err := exec.Command(bin, strings.Split(args, " ")...).Run()

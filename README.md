@@ -247,6 +247,24 @@ simulate:
 
 普通 RTSP 地址保持任务本身的编码和码率；ONVIF 客户端选择不同 Profile 时，服务按配置提供对应清晰度地址。
 
+档位还可以单独限制帧率和码率。需要转码的档位默认尝试硬件自动探测（不可用时回退软件，当前自动探测优先覆盖 H.264），同一源和同一档位会复用一个转码进程：
+
+```yaml
+simulate:
+  onvif_qualities:
+    demo:
+      - width: 1280
+        height: 720
+        fps: 25
+        bitrate: 2500k
+        maxrate: 3000k
+        bufsize: 5000k
+        codec: h264
+        hardware: auto
+```
+
+其中 `codec` 支持 `h264`、`h265` 等 FFmpeg 编码模板；`hardware` 可填写 `auto`、`vaapi`、`cuda`、`videotoolbox`、`dxva2`、`v4l2m2m` 或 `rkmpp`。不需要转码时应保留原始 Profile，以避免额外的解码和编码开销。
+
 ### 模拟 PTZ
 
 PTZ 模拟支持：

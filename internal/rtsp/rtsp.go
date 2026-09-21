@@ -21,8 +21,28 @@ import (
 )
 
 type streamQuality struct {
-	Width  int `yaml:"width"`
-	Height int `yaml:"height"`
+	Width    int    `yaml:"width"`
+	Height   int    `yaml:"height"`
+	FPS      int    `yaml:"fps"`
+	Bitrate  string `yaml:"bitrate"`
+	Maxrate  string `yaml:"maxrate"`
+	Bufsize  string `yaml:"bufsize"`
+	Codec    string `yaml:"codec"`
+	Hardware string `yaml:"hardware"`
+}
+
+// qualityStreamCache keeps one derived stream per source/profile. Without
+// this cache every RTSP client creates its own FFmpeg scaler/encoder process.
+var qualityStreamCache = struct {
+	sync.Mutex
+	items map[qualityStreamKey]*streams.Stream
+}{items: map[qualityStreamKey]*streams.Stream{}}
+
+const maxQualityStreamCacheEntries = 256
+
+type qualityStreamKey struct {
+	Source  string
+	Quality streamQuality
 }
 
 type authConfig struct {
@@ -430,15 +450,61 @@ func onvifQualityStream(name string, query url.Values, fallback *streams.Stream)
 		return fallback
 	}
 	quality := normalizeRTSPQuality(streamQuality{Width: width, Height: height})
+	// Match the requested dimensions back to the configured profile so optional
+	// FPS/bitrate/codec settings survive the ONVIF RTSP URI round trip.
+	if configured := configuredRTSPStreamQuality(name, quality); configured != nil {
+		configured.Width = quality.Width
+		configured.Height = quality.Height
+		quality = *configured
+	}
 
-	params := []string{"video=h264", "audio=copy"}
+	qualityStreamCache.Lock()
+	defer qualityStreamCache.Unlock()
+	key := qualityStreamKey{Source: name, Quality: quality}
+	if stream := qualityStreamCache.items[key]; stream != nil {
+		return stream
+	}
+
+	codec := quality.Codec
+	if codec == "" {
+		codec = "h264"
+	}
+	params := []string{"video=" + codec, "audio=copy"}
 	if quality.Width > 0 {
 		params = append(params, "width="+strconv.Itoa(quality.Width))
 	}
 	if quality.Height > 0 {
 		params = append(params, "height="+strconv.Itoa(quality.Height))
 	}
+	if quality.FPS > 0 {
+		params = append(params, "fps="+strconv.Itoa(quality.FPS))
+	}
+	if quality.Bitrate != "" {
+		params = append(params, "bitrate="+quality.Bitrate)
+	}
+	if quality.Maxrate != "" {
+		params = append(params, "maxrate="+quality.Maxrate)
+	}
+	if quality.Bufsize != "" {
+		params = append(params, "bufsize="+quality.Bufsize)
+	}
+	// Hardware auto-detection is cached by the FFmpeg module and falls back to
+	// software when no supported accelerator is available.
+	hardware := quality.Hardware
+	if hardware == "" {
+		hardware = "auto"
+	}
+	params = append(params, "hardware="+hardware)
 	stream := streams.NewStream([]string{"ffmpeg:" + name + "#" + strings.Join(params, "#")})
+	if len(qualityStreamCache.items) >= maxQualityStreamCacheEntries {
+		// Quality profiles are cheap to recreate and client-supplied dimensions
+		// must not make this registry grow without bound.
+		for cachedKey := range qualityStreamCache.items {
+			delete(qualityStreamCache.items, cachedKey)
+			break
+		}
+	}
+	qualityStreamCache.items[key] = stream
 	return stream
 }
 
@@ -484,6 +550,16 @@ func configuredRTSPStreamQualities(name string) []streamQuality {
 	}
 	if quality, ok := cfg.Simulate.ONVIFQuality[name]; ok {
 		return []streamQuality{quality}
+	}
+	return nil
+}
+
+func configuredRTSPStreamQuality(name string, requested streamQuality) *streamQuality {
+	for _, quality := range configuredRTSPStreamQualities(name) {
+		normalized := normalizeRTSPQuality(quality)
+		if normalized.Width == requested.Width && normalized.Height == requested.Height {
+			return &quality
+		}
 	}
 	return nil
 }
