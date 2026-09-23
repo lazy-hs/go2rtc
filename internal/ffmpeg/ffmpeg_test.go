@@ -31,9 +31,9 @@ func TestParseArgsFile(t *testing.T) {
 			expect: `ffmpeg -hide_banner -re -i /media/bbb.mp4 -c:v libx264 -g 50 -profile:v high -level:v 4.1 -preset:v superfast -tune:v zerolatency -pix_fmt:v yuv420p -an -user_agent ffmpeg/go2rtc -rtsp_transport tcp -f rtsp {output}`,
 		},
 		{
-			name:   "[FILE] simulated video defaults to 30 FPS",
+			name:   "[FILE] file streams keep their source frame rate",
 			source: "/media/bbb.mp4#video=h264#input=file",
-			expect: `ffmpeg -hide_banner -re -i /media/bbb.mp4 -r:v 30 -c:v libx264 -g 50 -profile:v high -level:v 4.1 -preset:v superfast -tune:v zerolatency -pix_fmt:v yuv420p -an -user_agent ffmpeg/go2rtc -rtsp_transport tcp -f rtsp {output}`,
+			expect: `ffmpeg -hide_banner -re -i /media/bbb.mp4 -c:v libx264 -g 50 -profile:v high -level:v 4.1 -preset:v superfast -tune:v zerolatency -pix_fmt:v yuv420p -an -user_agent ffmpeg/go2rtc -rtsp_transport tcp -f rtsp {output}`,
 		},
 		{
 			name:   "[FILE] explicit frame rate overrides the simulated default",
@@ -449,6 +449,7 @@ func TestRTSPAudioCopyFallback(t *testing.T) {
 	require.Len(t, locations, 2)
 	require.Contains(t, locations[0], "-c:a copy")
 	require.Contains(t, locations[1], "-c:a aac")
+	require.Contains(t, locations[1], "-ar:a 16000 -ac:a 1")
 
 	locations = nil
 	producer, err = getRTSPAudioCopyProducer(source, func(location string) (core.Producer, error) {

@@ -5,7 +5,7 @@ log:
 
 api:
   # ONVIF 协议以及 Web UI 监听地址
-  listen: ":2984"
+  listen: :2985
   config: false
 
 onvif:
@@ -16,7 +16,7 @@ onvif:
   hardware: "Virtual IPC"
 
 rtsp:
-  listen: ":9554"
+  listen: :9554
 
 webrtc:
   listen: ":9555"
@@ -42,20 +42,6 @@ event:
   burst: 5
   permanent: true
   templates:
-    - enabled: true
-      name: 镜头遮挡
-      topic: tns1:VideoSource/GlobalSceneChange
-      startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
-      endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
-      startOperation: Changed
-      endOperation: Deleted
-    - enabled: true
-      name: 画面变化
-      topic: tns1:VideoSource/MotionAlarm
-      startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
-      endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
-      startOperation: Changed
-      endOperation: Deleted
     - enabled: true
       name: 烟雾火焰
       topic: tns1:RuleEngine/FlameDetector
@@ -87,48 +73,6 @@ event:
     - enabled: true
       name: 物品丢失
       topic: tns1:RuleEngine/RemovedObjectDetector
-      startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
-      endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
-      startOperation: Changed
-      endOperation: Deleted
-    - enabled: true
-      name: 人脸检测
-      topic: tns1:RuleEngine/FaceDetector
-      startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
-      endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
-      startOperation: Changed
-      endOperation: Deleted
-    - enabled: true
-      name: 人形检测
-      topic: tns1:RuleEngine/MyRuleDetector/PeopleDetect
-      startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
-      endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
-      startOperation: Changed
-      endOperation: Deleted
-    - enabled: true
-      name: 车辆检测
-      topic: tns1:RuleEngine/MyRuleDetector/VehicleDetect
-      startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
-      endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
-      startOperation: Changed
-      endOperation: Deleted
-    - enabled: true
-      name: 包裹检测
-      topic: tns1:RuleEngine/PackageDetector
-      startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
-      endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
-      startOperation: Changed
-      endOperation: Deleted
-    - enabled: true
-      name: 设备故障
-      topic: tns1:Device/HardwareFailure
-      startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
-      endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
-      startOperation: Changed
-      endOperation: Deleted
-    - enabled: true
-      name: 设备移动
-      topic: tns1:RuleEngine/MyRuleDetector/ShockDetection
       startData: <tt:SimpleItem Value="true" Name="IsMotion"/>
       endData: <tt:SimpleItem Value="false" Name="IsMotion"/>
       startOperation: Changed

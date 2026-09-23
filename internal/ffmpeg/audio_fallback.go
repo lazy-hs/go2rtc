@@ -25,7 +25,9 @@ func replaceAudioCopyWithAAC(rawURL string) string {
 	parts := strings.Split(rawURL, "#")
 	for i := 1; i < len(parts); i++ {
 		if parts[i] == "audio=copy" {
-			parts[i] = "audio=aac"
+			// RTSP clients are much more interoperable with mono AAC than
+			// with the source file's DTS/5.1 layout.
+			parts[i] = "audio=aac/16000"
 			break
 		}
 	}

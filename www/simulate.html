@@ -5448,8 +5448,6 @@
         } else if (sourceMode === 'rtsp' && !options.preserveCodec) {
             form.elements.video.value = 'copy';
             form.elements.audio.value = 'copy';
-        } else if (sourceMode === 'file' && !options.preserveCodec && form.elements.video.value === 'copy') {
-            form.elements.video.value = 'h264';
         }
         syncCustomSelect(form.elements.video);
         syncCustomSelect(form.elements.audio);
@@ -6978,7 +6976,7 @@
         form.elements.rtsp_password.value = '';
         form.elements.camera_size.value = '';
         form.elements.camera_framerate.value = '';
-        form.elements.video.value = 'h264';
+        form.elements.video.value = 'copy';
         form.elements.audio.value = '';
         form.elements.custom_width.value = '';
         form.elements.custom_height.value = '';
