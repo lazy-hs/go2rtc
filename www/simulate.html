@@ -3339,10 +3339,10 @@
         .task-list-head,
         .task-row {
             display: grid;
-            grid-template-columns: 104px minmax(120px, 1.15fr) minmax(140px, 1.3fr) 64px 108px minmax(150px, 1.2fr) 200px;
+            grid-template-columns: 104px minmax(120px, 1.15fr) minmax(140px, 1.3fr) 64px 108px minmax(150px, 1.2fr) 260px;
             gap: 12px;
             align-items: center;
-            min-width: 980px;
+            min-width: 1040px;
         }
 
         .task-list-head {
@@ -3449,10 +3449,6 @@
             min-width: 0;
         }
 
-        .task-row-cell:nth-child(6) .copy-btn {
-            flex: 0 0 32px;
-        }
-
         .task-row-metric {
             color: var(--text);
             font-size: 13px;
@@ -3477,8 +3473,28 @@
             white-space: nowrap;
         }
 
+        .task-row-actions .play-button {
+            color: var(--accent-strong);
+        }
+
+        .task-row-actions .copy-button {
+            flex: 0 0 34px;
+            color: var(--text-muted);
+        }
+
+        .task-row-actions .play-button svg {
+            width: 15px;
+            height: 15px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
         .task-row-actions .stream-toggle {
             margin-right: auto;
+            order: -1;
         }
 
         .task-list-message {
@@ -7536,8 +7552,8 @@
                 <div class="task-row-cell"><span class="task-row-source" title="${escapeHTML(sourceSummary(view.parsed))}">${escapeHTML(sourceSummary(view.parsed))}</span></div>
                 <div class="task-row-cell"><span class="task-row-metric">${view.online}</span><span class="task-row-subline">${view.consumerInfo.ipCount} 个 IP</span></div>
                 <div class="task-row-cell"><span class="task-row-subline">${escapeHTML(directRTSP ? '透传' : (view.parsed.video || '未指定').toUpperCase())}</span><span class="task-row-subline">${escapeHTML(directRTSP ? '保持上游音频' : audioLabel(view.parsed.audio))}</span></div>
-                <div class="task-row-cell"><code class="task-row-address" title="${escapeHTML(view.rtspDisplay)}">${escapeHTML(view.rtspDisplay)}</code><button class="copy-btn inline" type="button" data-copy="${encodeURIComponent(view.rtsp)}" data-copy-label="RTSP 地址" aria-label="复制 RTSP 地址"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div>
-                <div class="task-row-actions"><label class="switch-control stream-toggle" title="${view.globallyDisabled ? '请先开启整体推流' : (view.individuallyDisabled ? '启动推流' : '停止推流')}"><input type="checkbox" data-stream-toggle="${encodeURIComponent(name)}" ${view.individuallyDisabled ? '' : 'checked'} ${view.globallyDisabled ? 'disabled' : ''}><span class="switch-track" aria-hidden="true"></span></label><button class="secondary" type="button" data-open-stream="${encodeURIComponent(name)}">详情</button><button class="danger icon-btn" type="button" data-delete="${encodeURIComponent(name)}" title="删除任务" aria-label="删除任务"><svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></div>
+                <div class="task-row-cell"><code class="task-row-address" title="${escapeHTML(view.rtspDisplay)}">${escapeHTML(view.rtspDisplay)}</code></div>
+                <div class="task-row-actions"><label class="switch-control stream-toggle" title="${view.globallyDisabled ? '请先开启整体推流' : (view.individuallyDisabled ? '启动推流' : '停止推流')}"><input type="checkbox" data-stream-toggle="${encodeURIComponent(name)}" ${view.individuallyDisabled ? '' : 'checked'} ${view.globallyDisabled ? 'disabled' : ''}><span class="switch-track" aria-hidden="true"></span></label><button class="copy-btn icon-btn copy-button" type="button" data-copy="${encodeURIComponent(view.rtsp)}" data-copy-label="RTSP 地址" aria-label="复制 RTSP 地址" title="复制 RTSP 地址"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button><button class="icon-btn play-button" type="button" data-play-stream="${encodeURIComponent(name)}" title="播放视频流" aria-label="播放 ${escapeHTML(name)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 7 8 5-8 5V7Z"></path></svg></button><button class="secondary" type="button" data-open-stream="${encodeURIComponent(name)}">详情</button><button class="danger icon-btn" type="button" data-delete="${encodeURIComponent(name)}" title="删除任务" aria-label="删除任务"><svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></div>
             `;
             simList.appendChild(row);
         }
@@ -8186,6 +8202,15 @@
     });
 
     simList.addEventListener('click', async event => {
+        const playButton = event.target.closest('button[data-play-stream]');
+        if (playButton) {
+            event.stopPropagation();
+            const playerURL = new URL('stream.html', location.href);
+            playerURL.searchParams.set('src', decodeURIComponent(playButton.dataset.playStream));
+            window.open(playerURL.href, '_blank', 'noopener,noreferrer');
+            return;
+        }
+
         const openButton = event.target.closest('button[data-open-stream]');
         if (openButton) {
             event.stopPropagation();
