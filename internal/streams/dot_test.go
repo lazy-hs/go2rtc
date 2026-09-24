@@ -40,3 +40,21 @@ func TestAppendDOTRemoteHostKeepsIPAddress(t *testing.T) {
 		t.Fatalf("remote connection should keep its real IP address:\n%s", dot)
 	}
 }
+
+func TestAppendDOTLoopbackRTSPUsesSemanticHost(t *testing.T) {
+	c := &conn{
+		ID:         3,
+		FormatName: "rtsp",
+		Protocol:   "tcp",
+		RemoteAddr: "127.0.0.1:8554",
+	}
+
+	dot := string(c.appendDOT(nil, "producer"))
+
+	if strings.Contains(dot, "127.0.0.1") {
+		t.Fatalf("loopback RTSP must not be presented as a remote IP:\n%s", dot)
+	}
+	if !strings.Contains(dot, `"local-loopback" [group=host, label="本地进程", title="本地回环连接，无远程 IP"]`) {
+		t.Fatalf("loopback RTSP should have a semantic label:\n%s", dot)
+	}
+}

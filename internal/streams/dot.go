@@ -3,6 +3,7 @@ package streams
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"strings"
 )
 
@@ -114,8 +115,12 @@ type conn struct {
 
 func (c *conn) appendDOT(dot []byte, group string) []byte {
 	host := c.host()
-	if c.Protocol == "pipe" {
-		dot = fmt.Appendf(dot, "%q [group=host, label=%q, title=%q];\n", host, "本地进程", "本地管道连接，无远程 IP")
+	if strings.HasPrefix(host, "local-") {
+		title := "本地回环连接，无远程 IP"
+		if c.Protocol == "pipe" {
+			title = "本地管道连接，无远程 IP"
+		}
+		dot = fmt.Appendf(dot, "%q [group=host, label=%q, title=%q];\n", host, "本地进程", title)
 	} else {
 		dot = fmt.Appendf(dot, "%q [group=host];\n", host)
 	}
@@ -153,12 +158,13 @@ func (c *conn) host() (s string) {
 
 	if s[0] == '[' {
 		if i := strings.Index(s, "]"); i > 0 {
-			return s[1:i]
+			s = s[1:i]
 		}
+	} else if i := strings.IndexAny(s, " ,:"); i > 0 {
+		s = s[:i]
 	}
-
-	if i := strings.IndexAny(s, " ,:"); i > 0 {
-		return s[:i]
+	if ip := net.ParseIP(s); ip != nil && ip.IsLoopback() {
+		return "local-loopback"
 	}
 	return
 }
