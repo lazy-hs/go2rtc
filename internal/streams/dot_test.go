@@ -3,6 +3,9 @@ package streams
 import (
 	"strings"
 	"testing"
+
+	"github.com/AlexxIT/go2rtc/pkg/core"
+	pkgrtsp "github.com/AlexxIT/go2rtc/pkg/rtsp"
 )
 
 func TestAppendDOTLocalPipeUsesSemanticHost(t *testing.T) {
@@ -56,5 +59,19 @@ func TestAppendDOTLoopbackRTSPUsesSemanticHost(t *testing.T) {
 	}
 	if !strings.Contains(dot, `"local-loopback" [group=host, label="本地进程", title="本地回环连接，无远程 IP"]`) {
 		t.Fatalf("loopback RTSP should have a semantic label:\n%s", dot)
+	}
+}
+
+func TestAppendDOTTrafficCountsOnlyExternalConnections(t *testing.T) {
+	producer := &pkgrtsp.Conn{Connection: core.Connection{Recv: 1250}}
+	consumer := &pkgrtsp.Conn{Connection: core.Connection{Send: 2250}}
+	stream := &Stream{
+		producers: []*Producer{{conn: producer}},
+		consumers: []core.Consumer{consumer},
+	}
+
+	_, traffic := appendDOTTraffic(nil, stream)
+	if traffic != 2250 {
+		t.Fatalf("total traffic = %d, want 2250", traffic)
 	}
 }

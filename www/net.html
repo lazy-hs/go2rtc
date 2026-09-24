@@ -107,6 +107,8 @@
         .network-dot.producer { background: #f97316; }
         .network-dot.consumer { background: #34d399; }
         .network-dot.node { background: #fbbf24; }
+        .network-dot.traffic { background: #a78bfa; }
+        .network-dot.rate { background: #f472b6; }
 
         .network-action {
             min-height: 32px;
@@ -211,6 +213,8 @@
             <span class="network-stat"><i class="network-dot producer"></i>生产者 <b id="stat-producer">0</b></span>
             <span class="network-stat"><i class="network-dot consumer"></i>消费者 <b id="stat-consumer">0</b></span>
             <span class="network-stat"><i class="network-dot node"></i>编解码 <b id="stat-node">0</b></span>
+            <span class="network-stat" title="服务端向外发送的累计流量"><i class="network-dot traffic"></i>总流量 <b id="stat-traffic">0 B</b></span>
+            <span class="network-stat" title="按最近两次刷新间隔计算的平均速率"><i class="network-dot rate"></i>瞬时流量 <b id="stat-rate">0 B/s</b></span>
         </div>
         <div class="network-actions">
             <button class="network-action" id="network-fit" type="button">整理视图</button>
@@ -241,6 +245,8 @@
             producer: document.getElementById('stat-producer'),
             consumer: document.getElementById('stat-consumer'),
             node: document.getElementById('stat-node'),
+            traffic: document.getElementById('stat-traffic'),
+            rate: document.getElementById('stat-rate'),
         };
 
         const srcFilters = new URLSearchParams(location.search).getAll('src');
@@ -314,17 +320,65 @@
         };
 
         let network;
+        let previousTraffic = null;
+        let previousTrafficAt = 0;
+        const trafficStorageKey = `go2rtc.network.traffic:${location.pathname}${location.search}`;
+
+        try {
+            const savedTraffic = JSON.parse(sessionStorage.getItem(trafficStorageKey) || 'null');
+            if (Number.isFinite(savedTraffic?.bytes) && Number.isFinite(savedTraffic?.at)) {
+                previousTraffic = savedTraffic.bytes;
+                previousTrafficAt = savedTraffic.at;
+            }
+        } catch (error) {
+            // Storage can be unavailable in privacy-restricted browser contexts.
+        }
 
         function getItems(collection) {
             return Array.isArray(collection) ? collection : collection?.get?.() || [];
         }
 
-        function updateStats(data) {
+        function formatBytes(value) {
+            let bytes = Number(value);
+            if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
+
+            const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+            let unit = 0;
+            while (bytes >= 1000 && unit < units.length - 1) {
+                bytes /= 1000;
+                unit++;
+            }
+            return unit === 0 ? `${Math.floor(bytes)} B` : `${bytes.toFixed(2)} ${units[unit]}`;
+        }
+
+        function updateStats(data, totalTraffic) {
             const counts = {host: 0, producer: 0, consumer: 0, node: 0};
             for (const item of getItems(data.nodes)) {
                 if (Object.prototype.hasOwnProperty.call(counts, item.group)) counts[item.group]++;
             }
-            for (const key of Object.keys(stat)) stat[key].textContent = counts[key];
+            for (const key of Object.keys(counts)) stat[key].textContent = counts[key];
+
+            const traffic = Number(totalTraffic);
+            const now = Date.now();
+            let rate = 0;
+            if (Number.isFinite(traffic)) {
+                if (previousTraffic !== null && traffic >= previousTraffic && now > previousTrafficAt) {
+                    rate = (traffic - previousTraffic) / ((now - previousTrafficAt) / 1000);
+                }
+                previousTraffic = traffic;
+                previousTrafficAt = now;
+                try {
+                    sessionStorage.setItem(trafficStorageKey, JSON.stringify({bytes: traffic, at: now}));
+                } catch (error) {
+                    // Storage can be unavailable in privacy-restricted browser contexts.
+                }
+            } else {
+                previousTraffic = null;
+                previousTrafficAt = 0;
+            }
+
+            stat.traffic.textContent = formatBytes(traffic);
+            stat.rate.textContent = `${formatBytes(rate)}/s`;
             emptyState.hidden = counts.consumer > 0;
             return counts;
         }
@@ -334,7 +388,7 @@
                 const response = await fetch(url, {cache: 'no-cache'});
                 const dotData = await response.text();
                 const data = vis.parseDOTNetwork(dotData);
-                const counts = updateStats(data);
+                const counts = updateStats(data, response.headers.get('X-Go2RTC-Total-Traffic-Bytes'));
                 status.textContent = counts.consumer ? `已更新 · ${new Date().toLocaleTimeString()}` : '等待客户端连接';
                 status.classList.remove('is-error');
 

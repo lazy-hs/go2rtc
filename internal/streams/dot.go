@@ -11,6 +11,15 @@ import (
 // The graph is host -> connection -> codec nodes -> connection -> host;
 // edge labels contain the byte counters for that hop.
 func AppendDOT(dot []byte, stream *Stream) []byte {
+	dot, _ = appendDOTTraffic(dot, stream)
+	return dot
+}
+
+// appendDOTTraffic returns the graph and the bytes sent by the server.
+// Only consumer send bytes are counted; producer receive bytes and codec
+// or other internal graph hops are intentionally excluded.
+func appendDOTTraffic(dot []byte, stream *Stream) ([]byte, int64) {
+	var traffic int64
 	for _, prod := range stream.producers {
 		if prod.conn == nil {
 			continue
@@ -27,8 +36,9 @@ func AppendDOT(dot []byte, stream *Stream) []byte {
 			continue
 		}
 		dot = c.appendDOT(dot, "consumer")
+		traffic += int64(c.BytesSend)
 	}
-	return dot
+	return dot, traffic
 }
 
 func marshalConn(v any) (*conn, error) {

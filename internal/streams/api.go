@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/AlexxIT/go2rtc/internal/api"
@@ -455,21 +456,27 @@ func apiStreamsDOT(w http.ResponseWriter, r *http.Request) {
 
 	dot := make([]byte, 0, 1024)
 	dot = append(dot, "digraph {\n"...)
+	var totalTraffic int64
 	if query.Has("src") {
 		for _, name := range query["src"] {
 			if stream := streams[name]; stream != nil {
-				dot = AppendDOT(dot, stream)
+				var traffic int64
+				dot, traffic = appendDOTTraffic(dot, stream)
+				totalTraffic += traffic
 			}
 		}
 	} else {
 		for _, stream := range streams {
-			dot = AppendDOT(dot, stream)
+			var traffic int64
+			dot, traffic = appendDOTTraffic(dot, stream)
+			totalTraffic += traffic
 		}
 	}
 	dot = append(dot, '}')
 
 	dot = []byte(creds.SecretString(string(dot)))
 
+	w.Header().Set("X-Go2RTC-Total-Traffic-Bytes", strconv.FormatInt(totalTraffic, 10))
 	api.Response(w, dot, "text/vnd.graphviz")
 }
 

@@ -11,6 +11,7 @@ import (
 
 	"github.com/AlexxIT/go2rtc/internal/app"
 	"github.com/AlexxIT/go2rtc/pkg/core"
+	pkgrtsp "github.com/AlexxIT/go2rtc/pkg/rtsp"
 	"github.com/stretchr/testify/require"
 )
 
@@ -55,6 +56,21 @@ func TestAPIStreamStateGet(t *testing.T) {
         "rtsp_enabled": true,
         "disabled_streams": ["camera1", "camera2"]
     }`, res.Body.String())
+}
+
+func TestAPIStreamsDOTIncludesTotalTrafficHeader(t *testing.T) {
+	stream := &Stream{
+		producers: []*Producer{{conn: &pkgrtsp.Conn{Connection: core.Connection{Recv: 1250}}}},
+		consumers: []core.Consumer{&pkgrtsp.Conn{Connection: core.Connection{Send: 2250}}},
+	}
+	withStreamStateTestData(t, map[string]*Stream{"camera": stream}, map[string]bool{})
+
+	req := httptest.NewRequest(http.MethodGet, "/api/streams.dot", nil)
+	res := httptest.NewRecorder()
+	apiStreamsDOT(res, req)
+
+	require.Equal(t, http.StatusOK, res.Code)
+	require.Equal(t, "2250", res.Header().Get("X-Go2RTC-Total-Traffic-Bytes"))
 }
 
 func TestChangeGlobalStreamsStatePreservesIndividualDisabledState(t *testing.T) {
