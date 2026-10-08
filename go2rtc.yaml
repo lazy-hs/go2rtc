@@ -37,7 +37,7 @@ app:
     - "mjpeg"
 
 event:
-  enabled: true
+  enabled: false
   interval: 1m
   burst: 5
   permanent: true

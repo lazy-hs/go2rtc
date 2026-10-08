@@ -126,8 +126,16 @@ func MakeHardware(args *ffmpeg.Args, engine string, defaults map[string]string) 
 			args.InsertFilter("hwmap=derive_device=qsv,format=qsv")
 
 		case EngineVideoToolbox:
-			args.Input = "-hwaccel videotoolbox -hwaccel_output_format videotoolbox_vld " + args.Input
 			args.Codecs[i] = defaults[name+"/"+engine]
+
+			// VideoToolbox decoders return hardware frames. Software filters such
+			// as scale and transpose can't consume videotoolbox_vld directly and
+			// FFmpeg fails while inserting auto_scale. Keep hardware decoding for
+			// filter-free transcoding; when filters are present, decode to software
+			// frames and still use the VideoToolbox hardware encoder.
+			if len(args.Filters) == 0 {
+				args.Input = "-hwaccel videotoolbox -hwaccel_output_format videotoolbox_vld " + args.Input
+			}
 
 		case EngineV4L2M2M:
 			args.Codecs[i] = defaults[name+"/"+engine]

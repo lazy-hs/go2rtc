@@ -384,15 +384,27 @@ func _TestParseArgsHwVideotoolbox(t *testing.T) {
 
 	// [RTSP] video with rotation, should be transcoded, so select H264
 	args = parseArgs("rtsp://example.com#video=h264#rotate=180#hardware=videotoolbox")
-	require.Equal(t, `ffmpeg -hide_banner -hwaccel videotoolbox -hwaccel_output_format videotoolbox_vld -allowed_media_types video -fflags nobuffer -flags low_delay -timeout 5000000 -user_agent go2rtc/ffmpeg -rtsp_flags prefer_tcp -i rtsp://example.com -c:v h264_videotoolbox -g 50 -bf 0 -profile:v high -level:v 4.1 -an -vf "transpose=1,transpose=1" -user_agent ffmpeg/go2rtc -rtsp_transport tcp -f rtsp {output}`, args.String())
+	require.Equal(t, `ffmpeg -hide_banner -allowed_media_types video -fflags nobuffer -flags low_delay -timeout 5000000 -user_agent go2rtc/ffmpeg -rtsp_flags prefer_tcp -i rtsp://example.com -c:v h264_videotoolbox -g 50 -bf 0 -profile:v high -level:v 4.1 -an -vf "transpose=1,transpose=1" -user_agent ffmpeg/go2rtc -rtsp_transport tcp -f rtsp {output}`, args.String())
 
 	// [RTSP] video with resize to 1280x720, should be transcoded, so select H265
 	args = parseArgs("rtsp://example.com#video=h265#width=1280#height=720#hardware=videotoolbox")
-	require.Equal(t, `ffmpeg -hide_banner -hwaccel videotoolbox -hwaccel_output_format videotoolbox_vld -allowed_media_types video -fflags nobuffer -flags low_delay -timeout 5000000 -user_agent go2rtc/ffmpeg -rtsp_flags prefer_tcp -i rtsp://example.com -c:v hevc_videotoolbox -g 50 -bf 0 -profile:v high -level:v 5.1 -an -vf "scale=1280:720" -user_agent ffmpeg/go2rtc -rtsp_transport tcp -f rtsp {output}`, args.String())
+	require.Equal(t, `ffmpeg -hide_banner -allowed_media_types video -fflags nobuffer -flags low_delay -timeout 5000000 -user_agent go2rtc/ffmpeg -rtsp_flags prefer_tcp -i rtsp://example.com -c:v hevc_videotoolbox -g 50 -bf 0 -profile:v high -level:v 5.1 -an -vf "scale=1280:720" -user_agent ffmpeg/go2rtc -rtsp_transport tcp -f rtsp {output}`, args.String())
 
 	// [DEVICE] MJPEG video with size 1920x1080 will be transcoded to H265
 	args = parseArgs("device?video=0&video_size=1920x1080#video=h265#hardware=videotoolbox")
 	require.Equal(t, `ffmpeg -hide_banner -hwaccel videotoolbox -hwaccel_output_format videotoolbox_vld -f dshow -video_size 1920x1080 -i video="0" -c:v hevc_videotoolbox -g 50 -bf 0 -profile:v high -level:v 5.1 -an -user_agent ffmpeg/go2rtc -rtsp_transport tcp -f rtsp {output}`, args.String())
+}
+
+func TestParseArgsHwVideotoolboxFilters(t *testing.T) {
+	args := parseArgs("rtsp://example.com#video=h264#rotate=180#hardware=videotoolbox")
+	require.NotContains(t, args.Input, "-hwaccel videotoolbox")
+	require.Contains(t, args.String(), `-c:v h264_videotoolbox`)
+	require.Contains(t, args.String(), `-vf "transpose=1,transpose=1"`)
+
+	args = parseArgs("rtsp://example.com#video=h265#width=1280#height=720#hardware=videotoolbox")
+	require.NotContains(t, args.Input, "-hwaccel videotoolbox")
+	require.Contains(t, args.String(), `-c:v hevc_videotoolbox`)
+	require.Contains(t, args.String(), `-vf "scale=1280:720"`)
 }
 
 func TestDeckLink(t *testing.T) {

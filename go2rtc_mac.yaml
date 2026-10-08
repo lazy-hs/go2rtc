@@ -4,7 +4,7 @@ ffmpeg:
 
 streams:
   main:
-    - 'ffmpeg:/Users/lazy/huangsheng/资源/video/2026.06.28-第1期下-4K.高码率.mp4#video=h264#input=file#audio=aac'
+    - ffmpeg:/Users/lazy/huangsheng/资源/video/2026.06.28-第1期下-4K.高码率.mp4#video=h264#input=file#audio=aac
   package:
     - 'ffmpeg:/Users/lazy/huangsheng/监控中心/竞品分析/萤石/视频素材/包裹检测/标准纸箱-1米-2.mp4#video=h264#input=file#audio=aac'
   cam1:
@@ -29,7 +29,7 @@ simulate:
   onvif_qualities:
     main:
       - width: 0
-        height: 0
+        height: 1080
     package:
       - width: 0
         height: 0
@@ -50,9 +50,9 @@ simulate:
         height: 0
   disabled_streams:
     - cam1
+    - cam2
     - cam3
     - cam4
-    - main
     - main2
     - package
   onvif_enabled: true
