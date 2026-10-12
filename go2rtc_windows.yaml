@@ -4,7 +4,7 @@ ffmpeg:
 
 streams:
   main:
-    - 'ffmpeg:D:/huangsheng/测试视频/2026.06.28-第1期下-4K.高码率.mp4#video=h264#input=file#audio=copy'
+    - ffmpeg:D:/huangsheng/测试视频/2026.06.28-第1期下-4K.高码率.mp4#video=h264#input=file#audio=copy
   main2:
     - 'ffmpeg:D:/huangsheng/测试视频/2026.06.21-第12期下-4K.高码率.mp4#video=h264#input=file#audio=copy'
   qaz:
@@ -17,6 +17,16 @@ streams:
     - ffmpeg:D:/huangsheng/资源/hsheng/videos/jiumen/28-4K.高码率.mp4#video=copy#input=file#audio=aac/16000
   jiumen3:
     - ffmpeg:D:/huangsheng/资源/hsheng/videos/jiumen/29-4K.高码率.mp4#video=copy#input=file#audio=aac/16000
+  cam1:
+    - ffmpeg:D:/huangsheng/project/go2-rtc/static/cam01_route24_take01.mp4#video=copy#input=file
+  cam2:
+    - ffmpeg:D:/huangsheng/project/go2-rtc/static/cam02_route24_take01.mp4#video=copy#input=file
+  cam3:
+    - ffmpeg:D:/huangsheng/project/go2-rtc/static/cam03_route24_take01.mp4#video=copy#input=file
+  cam4:
+    - ffmpeg:D:/huangsheng/project/go2-rtc/static/cam04_route24_take02.mp4#video=copy#input=file
+  2960x1666:
+    - ffmpeg:D:/huangsheng/project/go2-rtc/static/output.mp4#video=copy#input=file
 
 simulate:
   ptz_enabled: false
@@ -28,8 +38,8 @@ simulate:
       zoom_speed: 0.5
   onvif_qualities:
     main:
-      - width: 0
-        height: 0
+      - width: 2960
+        height: 1666
     main2:
       - width: 0
         height: 0
@@ -41,18 +51,33 @@ simulate:
         height: 0
     car:
       - width: 0
-        height: 0
+        height: 4320
     jiumen2:
       - width: 0
         height: 0
     jiumen3:
       - width: 0
         height: 0
+    cam1:
+      - width: 0
+        height: 0
+    cam2:
+      - width: 0
+        height: 0
+    cam3:
+      - width: 0
+        height: 0
+    cam4:
+      - width: 0
+        height: 0
+    2960x1666:
+      - width: 0
+        height: 0
   disabled_streams:
-    - car
     - jiumen
     - jiumen2
     - jiumen3
+    - main
     - main2
     - qaz
   onvif_enabled: true

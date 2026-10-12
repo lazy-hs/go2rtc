@@ -87,7 +87,7 @@ func TestONVIFQualityStreamSharesConfiguredProfile(t *testing.T) {
 	second := onvifQualityStream("camera1", query, fallback)
 	require.Same(t, first, second)
 	require.Equal(t,
-		"ffmpeg:camera1#video=h264#audio=copy#width=1280#height=720#fps=20#bitrate=2500k#maxrate=3000k#bufsize=5000k#hardware=auto",
+		"ffmpeg:camera1#video=h264#audio=copy#width=1280#height=720#fps=20#bitrate=2500k#maxrate=3000k#bufsize=5000k#hardware=software",
 		first.Sources()[0],
 	)
 }

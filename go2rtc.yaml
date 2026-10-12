@@ -16,7 +16,7 @@ onvif:
   hardware: "Virtual IPC"
 
 rtsp:
-  listen: :9554
+  listen: :9556
 
 webrtc:
   listen: ":9555"

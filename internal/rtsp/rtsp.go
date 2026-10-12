@@ -492,7 +492,12 @@ func onvifQualityStream(name string, query url.Values, fallback *streams.Stream)
 	// software when no supported accelerator is available.
 	hardware := quality.Hardware
 	if hardware == "" {
-		hardware = "auto"
+		// Custom ONVIF dimensions must work across Windows Intel drivers.
+		// Auto selection may choose DXVA2/QSV, whose hwmap path rejects
+		// otherwise valid camera sizes (for example 2960x1666). Keep the
+		// exact requested dimensions and use software encoding unless the
+		// profile explicitly opts into a hardware engine.
+		hardware = "software"
 	}
 	params = append(params, "hardware="+hardware)
 	stream := streams.NewStream([]string{"ffmpeg:" + name + "#" + strings.Join(params, "#")})
