@@ -24,7 +24,7 @@
         #network {
             position: relative;
             flex: 1 1 auto;
-            min-height: 360px;
+            min-height: 440px;
             overflow: hidden;
             border: 1px solid rgba(34, 50, 77, 0.92);
             border-radius: 18px;
@@ -35,6 +35,16 @@
             background-size: 32px 32px;
             box-shadow: 0 20px 50px rgba(2, 6, 23, 0.24);
             height: 100%;
+        }
+
+        #network::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background:
+                linear-gradient(90deg, rgba(2, 6, 23, 0.62), transparent 18%, transparent 82%, rgba(2, 6, 23, 0.62)),
+                linear-gradient(180deg, rgba(2, 6, 23, 0.48), transparent 20%, transparent 84%, rgba(2, 6, 23, 0.46));
         }
 
         #network-canvas {
@@ -139,6 +149,7 @@
             color: #94a3b8;
             font-size: 11px;
             pointer-events: none;
+            z-index: 3;
         }
 
         .network-status.is-error {
@@ -159,6 +170,7 @@
             box-shadow: 0 20px 50px rgba(2, 6, 23, 0.3);
             text-align: center;
             transform: translate(-50%, -50%);
+            z-index: 4;
         }
 
         .network-empty-state[hidden] {
@@ -174,6 +186,54 @@
             color: #94a3b8;
             font-size: 13px;
             line-height: 1.6;
+        }
+
+        .network-detail {
+            position: absolute;
+            left: 18px;
+            bottom: 18px;
+            z-index: 5;
+            width: min(520px, calc(100% - 36px));
+            max-height: min(52vh, 360px);
+            display: grid;
+            gap: 10px;
+            padding: 14px;
+            border: 1px solid rgba(34, 211, 238, 0.22);
+            border-radius: 16px;
+            background: rgba(8, 13, 25, 0.94);
+            box-shadow: 0 24px 60px rgba(2, 6, 23, 0.38);
+            backdrop-filter: blur(14px);
+            transform: translateY(8px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .16s ease, transform .16s ease;
+        }
+
+        .network-detail.is-visible {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .network-detail strong {
+            color: #f8fafc;
+            font-size: 13px;
+            line-height: 1.35;
+        }
+
+        .network-detail pre {
+            max-height: 260px;
+            margin: 0;
+            padding: 11px 12px;
+            border: 1px solid rgba(34, 50, 77, 0.78);
+            border-radius: 12px;
+            background: rgba(2, 6, 23, 0.72);
+            color: #cbd5e1;
+            font-size: 12px;
+            line-height: 1.55;
+            white-space: pre-wrap;
+            overflow: auto;
+            overflow-wrap: anywhere;
         }
 
         @media (max-width: 720px) {
@@ -193,7 +253,15 @@
             }
 
             #network {
-                min-height: 300px;
+                min-height: 420px;
+            }
+
+            .network-detail {
+                left: 10px;
+                right: 10px;
+                bottom: 10px;
+                width: auto;
+                max-height: 44vh;
             }
         }
     </style>
@@ -222,6 +290,10 @@
     </section>
     <div id="network">
         <div id="network-canvas"></div>
+        <aside id="network-detail" class="network-detail" aria-live="polite" aria-hidden="true">
+            <strong id="network-detail-title">连接详情</strong>
+            <pre id="network-detail-body"></pre>
+        </aside>
         <span class="network-status" id="network-status" role="status" aria-live="polite">正在连接…</span>
         <div id="network-empty-state" class="network-empty-state" role="status" aria-live="polite" hidden>
             <strong>暂无消费者拉流</strong>
@@ -237,6 +309,9 @@
 
         const container = document.getElementById('network-canvas');
         const emptyState = document.getElementById('network-empty-state');
+        const detail = document.getElementById('network-detail');
+        const detailTitle = document.getElementById('network-detail-title');
+        const detailBody = document.getElementById('network-detail-body');
         const status = document.getElementById('network-status');
         const fitButton = document.getElementById('network-fit');
         const scope = document.getElementById('network-scope');
@@ -264,9 +339,9 @@
                     enabled: true,
                     direction: compactLayout ? 'UD' : 'LR',
                     sortMethod: 'directed',
-                    levelSeparation: compactLayout ? 90 : 170,
-                    nodeSpacing: compactLayout ? 70 : 90,
-                    treeSpacing: compactLayout ? 120 : 220,
+                    levelSeparation: compactLayout ? 120 : 220,
+                    nodeSpacing: compactLayout ? 95 : 130,
+                    treeSpacing: compactLayout ? 150 : 280,
                     blockShifting: true,
                     edgeMinimization: true,
                     parentCentralization: true,
@@ -283,7 +358,9 @@
                     strokeWidth: 3,
                     strokeColor: '#020617',
                 },
-                smooth: false,
+                smooth: {enabled: true, type: 'cubicBezier', forceDirection: compactLayout ? 'vertical' : 'horizontal', roundness: 0.28},
+                width: 1.5,
+                selectionWidth: 2.4,
             },
             groups: {
                 host: {
@@ -291,30 +368,39 @@
                     color: {background: '#60a5fa', border: '#bfdbfe', highlight: {background: '#93c5fd', border: '#dbeafe'}},
                     font: {color: '#0f172a', size: 13, face: 'Consolas, JetBrains Mono, monospace', bold: true},
                     margin: 10,
+                    widthConstraint: {maximum: 190},
                 },
                 producer: {
                     shape: 'box',
                     color: {background: '#f97316', border: '#fed7aa', highlight: {background: '#fb923c', border: '#ffedd5'}},
                     font: {color: '#431407', size: 12, face: 'Consolas, JetBrains Mono, monospace', bold: true},
                     margin: 9,
+                    widthConstraint: {maximum: 180},
                 },
                 consumer: {
                     shape: 'box',
                     color: {background: '#34d399', border: '#a7f3d0', highlight: {background: '#6ee7b7', border: '#d1fae5'}},
                     font: {color: '#022c22', size: 12, face: 'Consolas, JetBrains Mono, monospace', bold: true},
                     margin: 9,
+                    widthConstraint: {maximum: 180},
                 },
                 node: {
                     shape: 'box',
                     color: {background: '#fbbf24', border: '#fef3c7', highlight: {background: '#fcd34d', border: '#fffbeb'}},
                     font: {color: '#422006', size: 12, face: 'Consolas, JetBrains Mono, monospace', bold: true},
                     margin: 8,
+                    widthConstraint: {maximum: 150},
                 },
             },
             nodes: {
                 borderWidth: 1,
                 shape: 'box',
                 shadow: {enabled: true, color: 'rgba(2, 6, 23, 0.32)', size: 8, x: 0, y: 3},
+                chosen: {node: true, label: false},
+            },
+            interaction: {
+                hover: true,
+                tooltipDelay: 999999,
             },
             physics: false,
         };
@@ -383,11 +469,115 @@
             return counts;
         }
 
+        function cleanDetailText(value) {
+            const text = String(value || '').replace(/<br\s*\/?>/gi, '\n').replace(/<\/?[^>]+>/g, '');
+            const textarea = document.createElement('textarea');
+            textarea.innerHTML = text;
+            return textarea.value.trim();
+        }
+
+        function prepareDetails(data) {
+            for (const item of getItems(data.nodes)) {
+                if (!item.title) continue;
+                item._detail = cleanDetailText(item.title);
+                item.title = '';
+            }
+            for (const item of getItems(data.edges)) {
+                if (!item.title) continue;
+                item._detail = cleanDetailText(item.title);
+                item.title = '';
+            }
+        }
+
+        function parseNetworkData(dotData) {
+            if (/^digraph\s*\{\s*\}$/i.test(dotData.trim())) {
+                return {nodes: [], edges: []};
+            }
+            return vis.parseDOTNetwork(dotData);
+        }
+
+        function normalizeLayoutLevels(data) {
+            const nodes = getItems(data.nodes);
+            const edges = getItems(data.edges);
+            const localIds = new Set(
+                nodes
+                    .filter(node => node.group === 'host' && node.label === '本地进程')
+                    .map(node => String(node.id))
+            );
+
+            if (!localIds.size) return;
+
+            const outgoing = new Map();
+            const incomingCount = new Map(nodes.map(node => [String(node.id), 0]));
+            for (const edge of edges) {
+                const from = String(edge.from);
+                const to = String(edge.to);
+                if (!outgoing.has(from)) outgoing.set(from, []);
+                outgoing.get(from).push(to);
+                incomingCount.set(to, (incomingCount.get(to) || 0) + 1);
+            }
+
+            const levelById = new Map();
+            const queue = [];
+            for (const id of localIds) {
+                levelById.set(id, 0);
+                queue.push(id);
+            }
+
+            for (let index = 0; index < queue.length; index++) {
+                const id = queue[index];
+                const nextLevel = (levelById.get(id) || 0) + 1;
+                for (const nextId of outgoing.get(id) || []) {
+                    if (localIds.has(nextId) || levelById.has(nextId)) continue;
+                    levelById.set(nextId, nextLevel);
+                    queue.push(nextId);
+                }
+            }
+
+            const roots = nodes
+                .map(node => String(node.id))
+                .filter(id => !localIds.has(id) && (incomingCount.get(id) || 0) === 0);
+            for (const id of roots) {
+                if (!levelById.has(id)) levelById.set(id, 1);
+            }
+
+            for (const node of nodes) {
+                const id = String(node.id);
+                if (localIds.has(id)) {
+                    node.level = 0;
+                } else {
+                    node.level = Math.max(1, levelById.get(id) ?? 1);
+                }
+            }
+        }
+
+        function findItem(dataSet, id) {
+            return dataSet?.get?.(id) || getItems(dataSet).find(item => item.id === id);
+        }
+
+        function showDetail(title, text) {
+            if (!text) return hideDetail();
+            detailTitle.textContent = title;
+            detailBody.textContent = text;
+            detail.classList.add('is-visible');
+            detail.setAttribute('aria-hidden', 'false');
+        }
+
+        function hideDetail() {
+            detail.classList.remove('is-visible');
+            detail.setAttribute('aria-hidden', 'true');
+        }
+
         async function update() {
             try {
                 const response = await fetch(url, {cache: 'no-cache'});
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
                 const dotData = await response.text();
-                const data = vis.parseDOTNetwork(dotData);
+                const data = parseNetworkData(dotData);
+                prepareDetails(data);
+                normalizeLayoutLevels(data);
                 const counts = updateStats(data, response.headers.get('X-Go2RTC-Total-Traffic-Bytes'));
                 status.textContent = counts.consumer ? `已更新 · ${new Date().toLocaleTimeString()}` : '等待客户端连接';
                 status.classList.remove('is-error');
@@ -395,6 +585,18 @@
                 if (!network) {
                     network = new vis.Network(container, data, options);
                     network.once('afterDrawing', () => network.fit({animation: false}));
+                    network.on('hoverNode', event => {
+                        const node = findItem(network.body.data.nodes, event.node);
+                        showDetail(node?.label || '节点详情', node?._detail);
+                    });
+                    network.on('hoverEdge', event => {
+                        const edge = findItem(network.body.data.edges, event.edge);
+                        showDetail(edge?.label || '连接详情', edge?._detail);
+                    });
+                    network.on('blurNode', hideDetail);
+                    network.on('blurEdge', hideDetail);
+                    network.on('dragStart', hideDetail);
+                    network.on('zoom', hideDetail);
                 } else {
                     const positions = network.getPositions();
                     const viewPosition = network.getViewPosition();

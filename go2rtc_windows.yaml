@@ -10,13 +10,13 @@ streams:
   qaz:
     - 'ffmpeg:device?video=0&video_size=1920x1080&framerate=30#video=h264'
   jiumen:
-    - ffmpeg:D:/huangsheng/资源/hsheng/videos/jiumen/27-4K.高码率.mp4#video=copy#input=file#audio=aac/16000
+    - ffmpeg:D:/huangsheng/资源/hsheng/videos/jiumen/27-4K.高码率.mp4#video=h264#input=file
   car:
     - ffmpeg:D:/huangsheng/资源/hsheng/videos/监控中心二期算法测试数据/人脸/光线充足/car.mp4#video=h264#input=file
   jiumen2:
-    - ffmpeg:D:/huangsheng/资源/hsheng/videos/jiumen/28-4K.高码率.mp4#video=copy#input=file#audio=aac/16000
+    - ffmpeg:D:/huangsheng/资源/hsheng/videos/jiumen/28-4K.高码率.mp4#video=h264#input=file
   jiumen3:
-    - ffmpeg:D:/huangsheng/资源/hsheng/videos/jiumen/29-4K.高码率.mp4#video=copy#input=file#audio=aac/16000
+    - ffmpeg:D:/huangsheng/资源/hsheng/videos/jiumen/29-4K.高码率.mp4#video=h264#input=file
   cam1:
     - ffmpeg:D:/huangsheng/project/go2-rtc/static/cam01_route24_take01.mp4#video=copy#input=file
   cam2:
@@ -74,11 +74,10 @@ simulate:
       - width: 0
         height: 0
   disabled_streams:
+    - cam3
     - jiumen
     - jiumen2
     - jiumen3
-    - main
-    - main2
     - qaz
   onvif_enabled: true
   streams_enabled: true
