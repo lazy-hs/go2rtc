@@ -36,8 +36,9 @@ func Init() {
 	log = app.GetLogger("onvif")
 
 	var cfg struct {
-		Event    eventConfig  `yaml:"event"`
-		Device   deviceConfig `yaml:"onvif"`
+		Event    eventConfig    `yaml:"event"`
+		Device   deviceConfig   `yaml:"onvif"`
+		Streams  map[string]any `yaml:"streams"`
 		Simulate struct {
 			PTZEnabled   *bool                      `yaml:"ptz_enabled"`
 			PTZ          map[string]ptzStreamConfig `yaml:"ptz"`
@@ -52,7 +53,7 @@ func Init() {
 	if cfg.Simulate.PTZEnabled != nil {
 		ptzEnabled = *cfg.Simulate.PTZEnabled
 	}
-	ptz = newPTZManagerWithEnabled(cfg.Simulate.PTZ, ptzEnabled)
+	ptz = newPTZManagerWithEnabled(ptzConfigsForStreams(cfg.Streams, cfg.Simulate.PTZ), ptzEnabled)
 	ptzPositionChanged = func(source string, state ptzState) {
 		rtsp.UpdateONVIFPTZ(source, ptz.maxZoom(source), state.Pan, state.Tilt, state.Zoom)
 	}
@@ -149,11 +150,22 @@ func onvifDeviceService(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if isPTZRequest(r.URL.Path, operation) {
+		profile := onvif.FindTagValue(request, "ProfileToken")
+		source := ptzSourceByProfile(profile)
 		b, err = ptzResponse(r.URL.Path, request, operation)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
-			log.Warn().Err(err).Str("operation", operation).Msg("[onvif] ptz request")
+			log.Warn().Err(err).Str("operation", operation).Str("profile", profile).
+				Str("source", source).Str("remote_addr", r.RemoteAddr).Msg("[onvif] ptz request failed")
 			return
+		}
+		if isPTZControlOperation(operation) {
+			state, _ := ptz.snapshot(source)
+			log.Info().Str("operation", operation).Str("profile", profile).Str("source", source).
+				Str("remote_addr", r.RemoteAddr).Float64("pan", state.Pan).Float64("tilt", state.Tilt).
+				Float64("zoom", state.Zoom).Float64("pan_velocity", state.PanVelocity).
+				Float64("tilt_velocity", state.TiltVelocity).Float64("zoom_velocity", state.ZoomVelocity).
+				Msg("[onvif] ptz control")
 		}
 		writeSOAPResponse(w, b)
 		return

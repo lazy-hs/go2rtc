@@ -29,7 +29,7 @@ streams:
     - ffmpeg:D:/huangsheng/project/go2-rtc/static/output.mp4#video=copy#input=file
 
 simulate:
-  ptz_enabled: false
+  ptz_enabled: true
   ptz:
     main:
       max_zoom: 4
@@ -74,10 +74,16 @@ simulate:
       - width: 0
         height: 0
   disabled_streams:
+    - 2960x1666
+    - cam1
+    - cam2
     - cam3
+    - cam4
     - jiumen
     - jiumen2
     - jiumen3
+    - main
+    - main2
     - qaz
   onvif_enabled: true
   streams_enabled: true

@@ -31,6 +31,22 @@ func TestPTZManagerMovesAndClamps(t *testing.T) {
 	require.InDelta(t, 0.6, state.Zoom, 0.0001)
 }
 
+func TestPTZEnabledForEveryConfiguredStream(t *testing.T) {
+	disabled := false
+	configs := ptzConfigsForStreams(
+		map[string]any{"main": nil, "car": nil, "camera": nil},
+		map[string]ptzStreamConfig{"main": {MaxZoom: 6}, "camera": {Enabled: &disabled}},
+	)
+	manager := newPTZManagerWithEnabled(configs, true)
+	require.True(t, manager.enabled("main"))
+	require.True(t, manager.enabled("car"))
+	require.False(t, manager.enabled("camera"))
+	require.Equal(t, 6.0, manager.maxZoom("main"))
+	require.Equal(t, 4.0, manager.maxZoom("car"))
+	pan := 0.5
+	require.NoError(t, manager.absoluteMove("car", &pan, nil, nil))
+}
+
 func TestPTZGlobalSwitch(t *testing.T) {
 	manager := newPTZManager(map[string]ptzStreamConfig{"main": {}})
 	require.True(t, manager.globalEnabled())

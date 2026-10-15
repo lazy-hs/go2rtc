@@ -71,6 +71,7 @@ func apiSimulatePTZ(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			applyPTZGlobalEnabled(*request.Enabled)
+			log.Info().Bool("enabled", ptz.globalEnabled()).Msg("[onvif] ptz global control")
 			api.ResponseJSON(w, simulatePTZGlobalStatus{Enabled: ptz.globalEnabled()})
 		default:
 			w.Header().Set("Allow", "GET, PUT")
@@ -127,11 +128,17 @@ func apiSimulatePTZ(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
+		log.Warn().Err(err).Str("source", source).Str("action", request.Action).
+			Str("remote_addr", r.RemoteAddr).Msg("[onvif] ptz api control failed")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	status, _ := simulatePTZStatusFor(source)
+	log.Info().Str("source", source).Str("action", request.Action).Str("remote_addr", r.RemoteAddr).
+		Float64("pan", status.Pan).Float64("tilt", status.Tilt).Float64("zoom", status.Zoom).
+		Float64("pan_velocity", status.PanVelocity).Float64("tilt_velocity", status.TiltVelocity).
+		Float64("zoom_velocity", status.ZoomVelocity).Msg("[onvif] ptz api control")
 	api.ResponseJSON(w, status)
 }
 

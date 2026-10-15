@@ -68,6 +68,16 @@ var ptz = newPTZManager(nil)
 // the state layer independent lets ONVIF and the local API use the same model.
 var ptzPositionChanged = func(string, ptzState) {}
 
+// ptzConfigsForStreams gives every configured stream PTZ defaults while
+// retaining per-stream settings and explicit opt-outs.
+func ptzConfigsForStreams(streams map[string]any, overrides map[string]ptzStreamConfig) map[string]ptzStreamConfig {
+	configs := make(map[string]ptzStreamConfig, len(streams))
+	for name := range streams {
+		configs[name] = overrides[name]
+	}
+	return configs
+}
+
 func newPTZManager(configs map[string]ptzStreamConfig) *ptzManager {
 	return newPTZManagerWithEnabled(configs, len(configs) > 0)
 }
@@ -487,6 +497,17 @@ func isPTZRequest(rPath, operation string) bool {
 		pkgonvif.PTZGetNodes, pkgonvif.PTZGetPresets, pkgonvif.PTZGetStatus, pkgonvif.PTZGotoHomePosition,
 		pkgonvif.PTZGotoPreset, pkgonvif.PTZRelativeMove, pkgonvif.PTZRemovePreset,
 		pkgonvif.PTZSetHomePosition, pkgonvif.PTZSetPreset, pkgonvif.PTZStop:
+		return true
+	default:
+		return false
+	}
+}
+
+func isPTZControlOperation(operation string) bool {
+	switch operation {
+	case pkgonvif.PTZAbsoluteMove, pkgonvif.PTZRelativeMove, pkgonvif.PTZContinuousMove,
+		pkgonvif.PTZStop, pkgonvif.PTZGotoHomePosition, pkgonvif.PTZSetHomePosition,
+		pkgonvif.PTZGotoPreset, pkgonvif.PTZSetPreset, pkgonvif.PTZRemovePreset:
 		return true
 	default:
 		return false

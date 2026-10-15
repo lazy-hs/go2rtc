@@ -135,7 +135,7 @@ func configuredPTZEnabledFromFile(configPath string) bool {
 		return false
 	}
 	if cfg.Simulate.PTZEnabled != nil {
-		return *cfg.Simulate.PTZEnabled && len(cfg.Simulate.PTZ) > 0
+		return *cfg.Simulate.PTZEnabled
 	}
 	return len(cfg.Simulate.PTZ) > 0
 }
